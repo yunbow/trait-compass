@@ -1,5 +1,8 @@
 # Trait Compass — 発達特性と困りごとを整理し、支援への道しるべに
 
+[![CI](https://github.com/yunbow/trait-compass/actions/workflows/ci.yml/badge.svg)](https://github.com/yunbow/trait-compass/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./LICENSE)
+
 発達特性(ADHD 傾向・ASD 傾向・感覚過敏など)と日常の困りごとを整理し、支援情報につなげる、ブラウザ完結型のセルフチェックアプリです。回答・スコアリング・結果表示はすべてブラウザ内で完結し、サーバーが必要なのは支援情報検索や AI 機能などの明示的にオプトインした機能のみです。本アプリは医学的な診断・判定を行うものではなく、あくまで自己理解と支援先探しのための目安を提供します。
 
 支援情報には東京都・区市町村のオープンデータを活用しており、[東京都知事杯オープンデータ・ハッカソン 2026](https://odhackathon.metro.tokyo.lg.jp/) への応募作品として開発しています。開発チーム: [CivicUnknot](https://yunbow.github.io/civic-unknot/)。
