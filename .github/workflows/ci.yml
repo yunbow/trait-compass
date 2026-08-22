@@ -1,0 +1,70 @@
+name: CI
+
+# 全PR・push で lint/type-check/test と依存関係の脆弱性チェックを実行する。
+# npm workspaces(app/batch)のそれぞれに対して lint/type-check/test を実行する。
+#
+# 2026-08-21 追記(TICKET-0024 CI統合): app ワークスペースには追加で RAG 定量評価
+# (`npm run eval`, app/eval/README.md)をローカル D1(ゲート、シークレット不要・外部課金ゼロ)
+# として組み込んだ。本番 Vectorize/Workers AI・実LLM(Vertex AI Gemini)を使う評価は非ゲートの
+# 別ワークフロー(.github/workflows/rag-eval-production.yml)が担当する(役割分担の詳細は
+# app/eval/README.md「CI統合」を参照)。
+# Node バージョンは 20→24 に更新した(app/eval/*.eval.ts が Node のネイティブ TypeScript 実行
+# (型ストリッピング、フラグ無しで安定動作するのは Node 24 以降)に依存するため、
+# `npm run eval` を通す都合上 app ワークスペースだけでなく本ワークフロー全体を揃えた)。
+
+on:
+  pull_request: {}
+  push: {}
+
+jobs:
+  lint-typecheck-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        workspace: [app, batch]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint --workspace=${{ matrix.workspace }}
+      - run: npm run type-check --workspace=${{ matrix.workspace }}
+      - run: npm run test --workspace=${{ matrix.workspace }}
+      # RAG 定量評価(app ワークスペースのみ、TICKET-0024)。
+      # ローカル D1(--local、シークレット不要)を migrate → 実運用シード → eval 用ゴールデン
+      # シードの順で投入してから実行する(順序が重要: eval-golden-seed.sql は
+      # db:seed:local:manual と同じく facilities/datasets への INSERT のみで、依存関係はないが、
+      # app/eval/README.md の「前提」セクションと同じ順序に揃えている)。
+      # EVAL_TARGET・EVAL_JUDGE を明示的に未設定のままにすることで、タグベース検索経路
+      # (ベクトル未構築環境へのグレースフルフォールバック)+ LLM 呼び出し無しの経路のみを通る
+      # (外部通信・課金が一切発生しない、app/eval/README.md 冒頭参照)。
+      - name: Set up local D1 for RAG eval
+        if: matrix.workspace == 'app'
+        run: |
+          npm run db:migrate:local --workspace=app
+          npm run db:seed:local:manual --workspace=app
+          npm run db:seed:local:eval --workspace=app
+      - name: Run RAG quantitative eval (npm run eval)
+        if: matrix.workspace == 'app'
+        run: npm run eval --workspace=app
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # 2026-08-07時点で wrangler→miniflare(alpha)が同梱する undici に既知の High 脆弱性が
+      # 残っている。wrangler 4.119.0(この時点のnpm最新版)側で未修正のため、当リポジトリ側の
+      # 対応では解消できない(upstream待ち)。postcss(next経由)・sharp(wrangler経由)は
+      # next 16.3.0 + wrangler更新で解消済み。upstream修正が出るまでPRをブロックしないよう
+      # continue-on-error とし、結果はログで可視化する(security.md §10 SLA: High は7日以内に
+      # 対応、状況を定期的に再確認する)。
+      - run: npm audit --audit-level=high
+        continue-on-error: true

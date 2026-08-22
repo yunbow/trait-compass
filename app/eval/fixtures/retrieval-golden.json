@@ -1,0 +1,110 @@
+[
+  {
+    "id": "R-01",
+    "description": "世田谷区・18歳未満・対人関係の相談 → 地域の相談窓口 + 広域相談窓口(fac-009)が正解。広域ガイド(fac-008)は相談窓口ではないため対象外。",
+    "query": "友達とのトラブルが多くて困っています",
+    "tags": ["対人・コミュニケーション"],
+    "ageGroup": "child",
+    "municipality": "世田谷区",
+    "expectedFacilityIds": ["fac-001", "fac-009"]
+  },
+  {
+    "id": "R-02",
+    "description": "新宿区・18歳以上・対人関係の相談 → 地域の相談窓口(age=both) + 広域相談窓口が正解",
+    "query": "職場での対人関係がうまくいかない",
+    "tags": ["対人・コミュニケーション"],
+    "ageGroup": "adult",
+    "municipality": "新宿区",
+    "expectedFacilityIds": ["fac-002", "fac-009"]
+  },
+  {
+    "id": "R-03",
+    "description": "八王子市・18歳以上・こころ/感覚の相談 → 地域の相談窓口 + 広域相談窓口が正解(広域窓口はタグ未一致でも相談窓口として一般的に対応可能とみなす)",
+    "query": "感覚が過敏で疲れやすく、気持ちの浮き沈みも大きい",
+    "tags": ["こころ・感情", "感覚"],
+    "ageGroup": "adult",
+    "municipality": "八王子市",
+    "expectedFacilityIds": ["fac-003", "fac-009"]
+  },
+  {
+    "id": "R-04",
+    "description": "府中市・18歳未満・相談窓口を探している → fac-004は医療機関(is_medical=1)のため除外。地域の非医療窓口が無いため広域相談窓口(fac-009)のみが正解",
+    "query": "発達の相談ができる場所を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "府中市",
+    "expectedFacilityIds": ["fac-009"]
+  },
+  {
+    "id": "R-05",
+    "description": "武蔵野市・全般・福祉ガイドの利用相談 → 地域のガイド + 広域ガイド(fac-008)が正解。広域相談窓口(fac-009)は資料閲覧のニーズには対象外。",
+    "query": "障害福祉サービスの使い方が分からない",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "武蔵野市",
+    "expectedFacilityIds": ["fac-005", "fac-008"]
+  },
+  {
+    "id": "R-06",
+    "description": "大田区・18歳未満・不注意/段取りの相談 → 大田区の支援制度(手当)のみが正解。支援制度に対応する広域窓口はseedデータに存在しない(既知のデータ範囲の限界)。",
+    "query": "子どもの発達に関する手当制度を知りたい",
+    "tags": ["不注意・段取り"],
+    "ageGroup": "child",
+    "municipality": "大田区",
+    "expectedFacilityIds": ["fac-006"]
+  },
+  {
+    "id": "R-07",
+    "description": "港区・18歳以上・就労の相談 → 港区の就労支援制度のみが正解(支援制度カテゴリに対応する広域窓口なし)",
+    "query": "発達障害がある成人の就労支援制度を知りたい",
+    "tags": ["不注意・段取り"],
+    "ageGroup": "adult",
+    "municipality": "港区",
+    "expectedFacilityIds": ["fac-007"]
+  },
+  {
+    "id": "R-08",
+    "description": "江戸川区・全般・支援ガイドの相談 → 地域のガイド + 広域ガイド(fac-008)が正解",
+    "query": "発達障害の子ども・大人向けの支援ガイドを見たい",
+    "tags": ["学習・からだ"],
+    "ageGroup": "adult",
+    "municipality": "江戸川区",
+    "expectedFacilityIds": ["fac-010", "fac-008"]
+  },
+  {
+    "id": "R-09",
+    "description": "目黒区(seedデータに区市町村単位の窓口なし)・18歳未満・相談窓口を探している → 広域相談窓口(fac-009)のみが正解(ガイドは相談窓口を探すニーズには対象外)",
+    "query": "発達に関する相談窓口を探している",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "目黒区",
+    "expectedFacilityIds": ["fac-009"]
+  },
+  {
+    "id": "R-10",
+    "description": "世田谷区・18歳以上 → fac-001はage_range='child'のため対象外、広域相談窓口(fac-009)のみが正解",
+    "query": "大人になってからの発達の困りごとについて相談したい",
+    "tags": ["対人・コミュニケーション"],
+    "ageGroup": "adult",
+    "municipality": "世田谷区",
+    "expectedFacilityIds": ["fac-009"]
+  },
+  {
+    "id": "R-11",
+    "description": "新宿区・18歳未満・こだわり関連の相談 → 地域の相談窓口(全年齢対応) + 広域相談窓口が正解",
+    "query": "特定のものへのこだわりが強く切り替えが難しい",
+    "tags": ["こだわり"],
+    "ageGroup": "child",
+    "municipality": "新宿区",
+    "expectedFacilityIds": ["fac-002", "fac-009"]
+  },
+  {
+    "id": "R-12",
+    "description": "大田区・18歳以上・タグ指定なし(全般) → 大田区の支援制度は子ども専用のため対象外。広域相談窓口(fac-009)を最終フォールバックの正解とする(支援制度に対応する広域窓口が無いため)。",
+    "query": "支援制度について何か教えてほしい",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "大田区",
+    "expectedFacilityIds": ["fac-009"]
+  }
+]

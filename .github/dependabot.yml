@@ -1,0 +1,11 @@
+version: 2
+updates:
+  # npm workspaces(app/batch)を root の package-lock.json 経由でまとめて管理する。
+  # 直近では wrangler → miniflare(alpha)経由の undici 脆弱性が upstream 未修正のまま
+  # 残っており(2026-08-07時点、npm audit)、修正版が公開されたタイミングを自動検知して
+  # PR を作るのが目的(security.md §10「Detect vulnerabilities with Dependabot」)。
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10

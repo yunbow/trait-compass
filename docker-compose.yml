@@ -1,0 +1,63 @@
+# dev 用サイドカー。アプリ本体は `npm run dev` (next dev 直接実行) で起動する。
+name: trait-compass
+
+services:
+  minio:                      # R2 代替(P0)。S3 互換 API を提供する。
+    image: pgsty/minio:latest
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "19000:9000"   # S3 API
+      - "19001:9001"   # Web コンソール
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio-init:                 # バケット初期化(ワンショット・冪等)
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    restart: "no"
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin &&
+      mc mb --ignore-existing local/trait-compass &&
+      mc anonymous set download local/trait-compass"
+
+  qdrant:                      # Vectorize 代替(P1)。REST API のみ使用(gRPC ポートは公開しない)。
+    image: qdrant/qdrant:latest
+    restart: unless-stopped
+    ports:
+      - "16333:6333"   # REST API。他プロジェクトの既定ポート(6333)と衝突しないようホスト側をずらす
+    volumes:
+      - qdrantdata:/qdrant/storage
+    healthcheck:
+      test: ["CMD", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/6333"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  ollama:                      # 埋め込み bge-m3(P1)。OpenAI 互換 /v1/embeddings を使う。
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    ports:
+      - "21434:11434"  # 他プロジェクトの既定ポート(11434)と衝突しないようホスト側をずらす
+    volumes:
+      - ollamadata:/root/.ollama
+    # 初回のみ、コンテナ起動後に実行してモデルを取得する(以降は volume に永続化される):
+    #   docker compose exec ollama ollama pull bge-m3
+    # 動作確認:
+    #   curl http://localhost:21434/api/tags
+
+volumes:
+  miniodata:
+  qdrantdata:
+  ollamadata:

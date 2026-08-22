@@ -18,3 +18,35 @@
 .env
 .env.*
 !.env.example
+
+# Node / build tooling
+node_modules/
+dist/
+.DS_Store
+*.log
+
+# Next.js / OpenNext / Cloudflare
+.next/
+.open-next/
+.wrangler/
+
+# Test artifacts
+# 先頭の "/" でリポジトリ直下の vitest カバレッジ出力のみを対象にする(anchor しないと
+# src/app/coverage/・src/features/coverage/ 等の「coverage」という名のソースディレクトリも
+# 誤って無視されてしまう)。
+/app/coverage/
+test-results/
+playwright-report/
+
+# RAG定量評価パイプラインのレポート出力(実体は app/eval/reports/)。
+eval/reports/
+app/eval/reports/
+
+# オープンデータの原本キャッシュ(data/open-data/sources.yaml から再取得できるため、
+# 原本ファイル自体はコミットしない。data/open-data/直下のREADME.md・sources.yamlは
+# このパターンにマッチしないため残る)。
+/data/open-data/*/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts

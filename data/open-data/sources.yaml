@@ -1,0 +1,235 @@
+# data/open-data/ に置く原本データの出典マニフェスト。
+#
+# 2026-07-13時点の調査(WebSearch/WebFetchによる確認)で実在を確認したもののみ記載する。
+# 実在未確認のURLを推測で追加しないこと(workers/ingest/datasets.config.ts と同じ運用ルール)。
+#
+# already_wired_in_ingest_worker: true の場合、workers/ingest/datasets.config.ts の
+# INGEST_DATASETS で既に自動取込対象になっている。ここでの再取得は不要
+# (二重実装を避けるため、対応する id をコメントで参照する)。
+
+- id: tokyo-public-school-list
+  dataset_id: ds-tokyo-public-school-list
+  ckan_package_id: t000021d2000000191
+  title: 公立学校統計調査報告書【東京都公立学校一覧】(CSV)
+  sourceOrg: 東京都教育委員会
+  url: https://catalog.data.metro.tokyo.lg.jp/dataset/t000021d2000000191
+  format: CSV
+  granularity: school
+  updateFrequency: yearly
+  license: cc-by-4.0
+  license_confirmed_at: 2026-08-18
+  license_evidence_url: https://catalog.data.metro.tokyo.lg.jp/api/3/action/package_show?id=t000021d2000000191
+  ingest_target: none
+  fetch: direct
+  files:
+    - url: https://www.kyoiku.metro.tokyo.lg.jp/documents/d/kyoiku/r7_shougakkou_ichiran
+      filename: r7_shougakkou_ichiran.csv
+    - url: https://www.kyoiku.metro.tokyo.lg.jp/documents/d/kyoiku/r7_ichiran_01
+      filename: r7_ichiran_01.csv
+    - url: https://www.kyoiku.metro.tokyo.lg.jp/documents/d/kyoiku/r7_koutougakkou_address
+      filename: r7_koutougakkou_address.csv
+    - url: https://www.kyoiku.metro.tokyo.lg.jp/documents/d/kyoiku/r7_tokubetsushien_ichiran_address
+      filename: r7_tokubetsushien_ichiran_address.csv
+  already_wired_in_ingest_worker: false
+  note: >-
+    学校名・所在地・電話番号の基礎データ。都立高校(チャレンジ/エンカレッジスクール含む)・
+    都立特別支援学校の学校名・住所・電話番号を含む(通学区域[どの住所がどの特別支援学校の
+    対象か]そのものは含まない。そちらは引き続き tokyo-special-needs-school-search 参照)。
+    2026-07-20時点ではkyoiku.metro.tokyo.lg.jp自体の著作権ページ
+    (administration/web/rights.html、全著作権留保)のみを根拠にlicense: noneと判定していたが、
+    2026-08-18の再調査で同一データ(r7_ichiran_01等)が東京都オープンデータカタログ
+    (catalog.data.metro.tokyo.lg.jp、package id: t000021d2000000191)にも東京都教育庁により
+    正式登録されており、CKAN package_show APIでlicense_id: CC-BY-4.0と明記されていることを
+    確認した。都庁データの許諾申請メール文面が言及する「公表」(サイトへの単純掲載)と「公開」
+    (オープンデータカタログへの正式登録)の違いに該当し、後者を優先してlicense: cc-by-4.0に
+    訂正。ingest_targetはschool_registryへ投入するnormalize関数が未実装のためnoneのまま
+    (ライセンス判定は解消済み、パース実装は別タスク)。
+
+- id: tokyo-education-institutions-catalog
+  dataset_id: ds-tokyo-education-institutions-catalog
+  ckan_package_id: t131202d0000000126
+  title: 教育機関一覧(東京都オープンデータカタログ)
+  sourceOrg: 東京都
+  url: https://catalog.data.metro.tokyo.lg.jp/dataset/t131202d0000000126
+  format: CSV
+  granularity: school
+  updateFrequency: yearly
+  license: cc-by-4.0
+  license_confirmed_at: 2026-07-20
+  license_evidence_url: https://catalog.data.metro.tokyo.lg.jp/api/3/action/package_show?id=t131202d0000000126
+  ingest_target: school_registry
+  fetch: direct
+  files:
+    - url: https://www.city.nerima.tokyo.jp/kusei/tokei/opendata/opendatasite/kosodate/educational_institut.files/131202_educational_institution.csv
+      filename: 131202_educational_institution.csv
+  already_wired_in_ingest_worker: false
+  note: タイトルは『教育機関一覧』だが実体は練馬区の小中学校一覧(約60件)。スコープ誤認注意
+
+- id: tokyo-academic-report
+  dataset_id: ds-tokyo-academic-report
+  ckan_package_id: t000021d2000000175
+  title: 公立学校統計調査報告書(学校調査編、特別支援学級設置数を含む)
+  sourceOrg: 東京都教育委員会
+  url: https://www.kyoiku.metro.tokyo.lg.jp/about/statistics_and_research/academic_report/report2025
+  format: CSV
+  granularity: municipality_aggregate # 実データ確認済み: 区市町村別集計、学校名なし
+  updateFrequency: yearly
+  license: cc-by-4.0
+  license_confirmed_at: 2026-07-20
+  license_evidence_url: https://catalog.data.metro.tokyo.lg.jp/api/3/action/package_search?q=t000021d2000000175
+  ingest_target: none
+  fetch: direct
+  files:
+    - url: https://www.kyoiku.metro.tokyo.lg.jp/documents/d/kyoiku/r7_chousahen_05
+      filename: r7_chousahen_05.csv
+    - url: https://www.kyoiku.metro.tokyo.lg.jp/documents/d/kyoiku/r7_chousahen_19
+      filename: r7_chousahen_19.csv
+  already_wired_in_ingest_worker: false
+  note: >-
+    集計単位が学校別か区市町村別か、公開ページの説明だけでは判別できなかった(2026-07-13時点)。
+    ファイル自体を精査するまでは data/manual/ 側の一次調査結果を正とする。
+    CKAN紐付けリソースは令和5年度版のみで鮮度差あり。区市町村集計のため facilities/school_registry へは投入しない
+
+- id: mext-school-code-list
+  dataset_id: ds-mext-school-code-list
+  title: 学校コード一覧
+  sourceOrg: 文部科学省
+  url: https://www.mext.go.jp/b_menu/toukei/mext_01087.html
+  format: CSV
+  granularity: school
+  updateFrequency: irregular
+  license: government-standard-terms-2.0
+  license_confirmed_at: 2026-07-20
+  license_evidence_url: https://www.mext.go.jp/b_menu/1351168.htm
+  ingest_target: school_registry
+  fetch: direct
+  files:
+    - url: https://www.mext.go.jp/content/20260529-mxt_chousa01-000011635_2.csv
+      filename: mext-school-code-east.csv
+  already_wired_in_ingest_worker: false
+  note: URLの日付プレフィックスは更新毎に変わるため追従が必要。暫定版→確定版のライフサイクルあり
+
+- id: hattatsu-shien-center
+  dataset_id: ds-hattatsu-shien-center
+  title: 発達障害情報・支援センター(発達障害を理解する)
+  sourceOrg: 国立障害者リハビリテーションセンター
+  url: https://www.rehab.go.jp/ddis/understand
+  format: HTML
+  granularity: article
+  updateFrequency: irregular
+  license: pdl-1.0
+  license_confirmed_at: 2026-07-13
+  license_evidence_url: http://www.rehab.go.jp/agree
+  ingest_target: facilities
+  fetch: direct
+  files:
+    - url: https://www.rehab.go.jp/ddis/understand/whatsdd
+      filename: whatsdd.html
+    - url: https://www.rehab.go.jp/ddis/understand/definition
+      filename: definition.html
+    - url: https://www.rehab.go.jp/ddis/understand/facts
+      filename: facts.html
+  already_wired_in_ingest_worker: false
+  note: >-
+    「発達障害を理解する」(/ddis/understand/)配下の全3ページ(2026-07-20時点でサイトマップ確認済み、
+    これが全量)。隣接カテゴリ(/ddis/aware、/ddis/howto)には20件超の追加候補ページがあるが、
+    今回はスコープ外(follow-up候補)。dataset_id は workers/ingest/datasets.config.ts の
+    ds-hattatsu-shien-center と共有する(datasets メタ行はworkflow.ts側も更新しうるが、
+    facilities実データはこちら(scripts/data/)からのみ投入する)。
+
+- id: wam-net-disability-services
+  dataset_id: ds-wam-net-disability-services
+  title: 障害福祉サービス等情報公表システム オープンデータ(9ファイル・8サービス分類)
+  sourceOrg: 独立行政法人福祉医療機構(WAM NET)
+  url: https://www.wam.go.jp/content/wamnet/pcpub/top/sfkopendata/
+  format: CSV
+  granularity: facility
+  updateFrequency: semiannual
+  license: pdl-1.0
+  license_confirmed_at: 2026-07-20
+  license_evidence_url: https://www.wam.go.jp/content/wamnet/pcpub/syogai/shofukupubsys/shofukupubsys02.html
+  ingest_target: facilities
+  fetch: direct
+  files:
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_63.zip
+      filename: sfkopendata_202603_63.zip
+      extract: true
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_65.zip
+      filename: sfkopendata_202603_65.zip
+      extract: true
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_67.zip
+      filename: sfkopendata_202603_67.zip
+      extract: true
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_66.zip
+      filename: sfkopendata_202603_66.zip
+      extract: true
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_70.zip
+      filename: sfkopendata_202603_70.zip
+      extract: true
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_41.zip
+      filename: sfkopendata_202603_41.zip
+      extract: true
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_42.zip
+      filename: sfkopendata_202603_42.zip
+      extract: true
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_60.zip
+      filename: sfkopendata_202603_60.zip
+      extract: true
+    - url: https://www.wam.go.jp/content/files/pcpub/top/sfkopendata/202603/sfkopendata_202603_62.zip
+      filename: sfkopendata_202603_62.zip
+      extract: true
+  already_wired_in_ingest_worker: false
+  note: >-
+    全国一括ZIP配布のため、東京都・区市町村への絞り込みは取込スクリプト側で行う必要がある。
+    出典記載必須(出典:障害福祉サービス等情報公表システム)。9ファイルから8分類
+    (児童発達支援、放課後等デイサービス、保育所等訪問支援、居宅訪問型児童発達支援、障害児相談支援、自立訓練、就労移行支援、就労定着支援)を取得し、全国一括のため取込側で都道府県コード13でフィルタ
+
+- id: iryo-joho-net
+  dataset_id: ds-iryo-joho-net
+  title: 医療情報ネット(医療機能情報提供制度、旧ひまわり)
+  sourceOrg: 厚生労働省 / 東京都
+  url: https://www.hokeniryo.metro.tokyo.lg.jp/iryo/iryo_hoken/iryo_kinou
+  format: CSV
+  granularity: facility
+  updateFrequency: semiannual
+  license: pdl-1.0
+  license_confirmed_at: 2026-07-20
+  license_evidence_url: https://www.mhlw.go.jp/stf/seisakunitsuite/bunya/kenkou_iryou/iryou/newpage_43373.html
+  ingest_target: facilities
+  fetch: direct
+  files:
+    - url: https://www.mhlw.go.jp/content/11121000/01-1_hospital_facility_info_20251201.zip
+      filename: 01-1_hospital_facility_info_20251201.zip
+      extract: true
+  already_wired_in_ingest_worker: false
+  note: >-
+    診療科目(精神科・小児科等)までは取得できるが、「発達障害の診療実績があるか」は
+    項目化されていない。data/manual/ の一次調査(電話確認含む)で補う必要がある。
+    当面は病院施設票のみ投入(診療所は都内約1.3万件で埋め込みコスト過大かつ is_medical=1 で検索除外されるため見送り)。e-Gov全国一括ZIP(27.5MB)は必要時に files へ追加
+
+- id: tokyo-fukushi-hattatsu-shien-kikan
+  title: 発達障害 支援機関・医療機関の情報
+  sourceOrg: 東京都福祉局
+  url: https://catalog.data.metro.tokyo.lg.jp/dataset/t000054d0000000058
+  format: XLSX
+  granularity: facility
+  updateFrequency: unknown
+  license: cc-by-4.0
+  already_wired_in_ingest_worker: true # workers/ingest/datasets.config.ts の ds-tokyo-fukushi-shisetsu
+  note: 既に workers/ingest/ で自動取込済み。ここでは重複取得しない。
+
+- id: tokyo-special-needs-school-search
+  dataset_id: ds-tokyo-special-needs-school-search
+  title: 都立特別支援学校検索(通学区域)
+  sourceOrg: 東京都教育委員会
+  url: https://www.kyoiku.metro.tokyo.lg.jp/school/special_needs_school/search
+  format: HTML
+  granularity: school
+  updateFrequency: yearly
+  license: none
+  license_confirmed_at: 2026-07-20
+  license_evidence_url: https://www.kyoiku.metro.tokyo.lg.jp/policy/rights
+  ingest_target: none
+  fetch: skip
+  already_wired_in_ingest_worker: false
+  note: HTML検索UIのみで機械可読ファイル無しを確認(2026-07-20)。datasets メタ行のみ記録

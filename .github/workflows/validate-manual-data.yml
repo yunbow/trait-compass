@@ -1,0 +1,25 @@
+name: Validate manual survey data
+
+# data/manual/municipalities/**.yaml(区市町村の手動調査データ)は第三者からのPRでの
+# 提出も想定している。ingest-manual-survey.mjs で D1 へ投入する前に、batch/scripts/validate-manual.mjs による
+# Zodスキーマ相当の検証をPR時点で自動実行し、開発者のマージ前チェックを補助する。
+
+on:
+  pull_request:
+    paths:
+      - "data/manual/municipalities/**"
+      - "batch/scripts/validate-manual.mjs"
+      - "data/manual/schema/**"
+  workflow_dispatch: {}
+
+jobs:
+  validate-manual:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npm run data:validate-manual --workspace=batch

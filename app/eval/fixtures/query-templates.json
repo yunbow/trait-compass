@@ -1,0 +1,198 @@
+[
+  {
+    "id": "tag-communication-1",
+    "kind": "tag",
+    "tags": ["対人・コミュニケーション"],
+    "serviceCategory": null,
+    "query": "友達との関わり方や会話の仕方について相談できる窓口を探しています"
+  },
+  {
+    "id": "tag-communication-2",
+    "kind": "tag",
+    "tags": ["対人・コミュニケーション"],
+    "serviceCategory": null,
+    "query": "職場でのコミュニケーションがうまくいかず、相談できる場所を知りたいです"
+  },
+  {
+    "id": "tag-emotion-1",
+    "kind": "tag",
+    "tags": ["こころ・感情"],
+    "serviceCategory": null,
+    "query": "気持ちの浮き沈みが大きく、気軽に相談できる窓口を探しています"
+  },
+  {
+    "id": "tag-emotion-2",
+    "kind": "tag",
+    "tags": ["こころ・感情"],
+    "serviceCategory": null,
+    "query": "落ち込みやすく、こころのことを相談できる場所を知りたいです"
+  },
+  {
+    "id": "tag-attention-planning-1",
+    "kind": "tag",
+    "tags": ["不注意・段取り"],
+    "serviceCategory": null,
+    "query": "忘れ物や片付けが苦手で、生活の段取りについて相談したいです"
+  },
+  {
+    "id": "tag-attention-planning-2",
+    "kind": "tag",
+    "tags": ["不注意・段取り"],
+    "serviceCategory": null,
+    "query": "予定の管理や順序立てが難しく、相談できる窓口を探しています"
+  },
+  {
+    "id": "tag-sensory-1",
+    "kind": "tag",
+    "tags": ["感覚"],
+    "serviceCategory": null,
+    "query": "音や光に敏感で疲れやすく、相談できる窓口を探しています"
+  },
+  {
+    "id": "tag-sensory-2",
+    "kind": "tag",
+    "tags": ["感覚"],
+    "serviceCategory": null,
+    "query": "感覚の過敏さについて相談できる場所を知りたいです"
+  },
+  {
+    "id": "tag-learning-body-1",
+    "kind": "tag",
+    "tags": ["学習・からだ"],
+    "serviceCategory": null,
+    "query": "読み書きや運動の苦手さについて相談できる窓口を探しています"
+  },
+  {
+    "id": "tag-learning-body-2",
+    "kind": "tag",
+    "tags": ["学習・からだ"],
+    "serviceCategory": null,
+    "query": "学校の勉強や体の動かし方でつまずきがあり、相談したいです"
+  },
+  {
+    "id": "tag-restricted-1",
+    "kind": "tag",
+    "tags": ["こだわり"],
+    "serviceCategory": null,
+    "query": "特定のことへのこだわりが強く、切り替えの難しさについて相談したいです"
+  },
+  {
+    "id": "tag-restricted-2",
+    "kind": "tag",
+    "tags": ["こだわり"],
+    "serviceCategory": null,
+    "query": "決まった手順や物へのこだわりについて相談できる窓口を探しています"
+  },
+  {
+    "id": "svc-child-development-1",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "児童発達支援",
+    "query": "未就学の子どもの発達支援を受けられる施設を探しています"
+  },
+  {
+    "id": "svc-child-development-2",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "児童発達支援",
+    "query": "小さい子ども向けの発達支援の通所先を知りたいです"
+  },
+  {
+    "id": "svc-after-school-day-service-1",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "放課後等デイサービス",
+    "query": "学校が終わった後に通える子ども向けの支援施設を探しています"
+  },
+  {
+    "id": "svc-after-school-day-service-2",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "放課後等デイサービス",
+    "query": "放課後に子どもを預けられる発達支援の施設を知りたいです"
+  },
+  {
+    "id": "svc-nursery-visit-support-1",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "保育所等訪問支援",
+    "query": "保育園に訪問して支援してもらえるサービスを探しています"
+  },
+  {
+    "id": "svc-nursery-visit-support-2",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "保育所等訪問支援",
+    "query": "通っている園に専門の支援員が訪問してくれるサービスを知りたいです"
+  },
+  {
+    "id": "svc-home-visit-child-development-1",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "居宅訪問型児童発達支援",
+    "query": "外出が難しい子どものために自宅へ訪問してもらえる支援を探しています"
+  },
+  {
+    "id": "svc-home-visit-child-development-2",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "居宅訪問型児童発達支援",
+    "query": "自宅で子どもの発達支援を受けられるサービスを知りたいです"
+  },
+  {
+    "id": "svc-child-consultation-support-1",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "障害児相談支援",
+    "query": "子どもの福祉サービスの利用計画を一緒に考えてくれる窓口を探しています"
+  },
+  {
+    "id": "svc-child-consultation-support-2",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "障害児相談支援",
+    "query": "子ども向けの福祉サービスについて相談できる窓口を知りたいです"
+  },
+  {
+    "id": "svc-independence-training-1",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "自立訓練",
+    "query": "一人暮らしに向けて生活力を身につける訓練を受けられる施設を探しています"
+  },
+  {
+    "id": "svc-independence-training-2",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "自立訓練",
+    "query": "日常生活の自立に向けた訓練を受けられる場所を知りたいです"
+  },
+  {
+    "id": "svc-employment-transition-1",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "就労移行支援",
+    "query": "働くための準備や訓練を受けられる施設を探しています"
+  },
+  {
+    "id": "svc-employment-transition-2",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "就労移行支援",
+    "query": "就職に向けた支援を受けられる通所先を知りたいです"
+  },
+  {
+    "id": "svc-employment-retention-1",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "就労定着支援",
+    "query": "就職した後も職場に定着できるよう継続してサポートしてくれる窓口を探しています"
+  },
+  {
+    "id": "svc-employment-retention-2",
+    "kind": "service_category",
+    "tags": [],
+    "serviceCategory": "就労定着支援",
+    "query": "働き始めてから長く続けられるよう相談できる窓口を知りたいです"
+  }
+]

@@ -1,0 +1,114 @@
+[
+  {
+    "id": "R-01",
+    "description": "適合: クエリの支援ニーズと施設の対応分野が一致",
+    "facilityId": "fac-001",
+    "query": "子どもが対人関係やこだわりについて相談できる窓口を探しています",
+    "responseText": "この施設は対人関係やこだわりについての相談に力を入れており、お子さまの相談内容に合いそうです。",
+    "expectedVerdict": "relevant"
+  },
+  {
+    "id": "R-02",
+    "description": "適合: 年齢を問わない窓口とクエリの一致",
+    "facilityId": "fac-002",
+    "query": "年齢に関係なく相談できる窓口を知りたい",
+    "responseText": "年齢を問わず相談できる窓口のため、幅広い内容の相談に対応しやすいと考えられます。",
+    "expectedVerdict": "relevant"
+  },
+  {
+    "id": "R-03",
+    "description": "適合: 感覚過敏・気分の浮き沈みの相談ニーズと一致",
+    "facilityId": "fac-003",
+    "query": "感覚が敏感で気持ちの浮き沈みがあり、相談できる窓口を探している",
+    "responseText": "感覚の過敏さや気持ちの浮き沈みに関する相談実績がある窓口です。",
+    "expectedVerdict": "relevant"
+  },
+  {
+    "id": "R-04",
+    "description": "適合: 障害福祉サービスの使い方を知りたいというニーズとガイドの一致",
+    "facilityId": "fac-005",
+    "query": "障害福祉サービスの使い方が分からないので、まとまった情報が欲しい",
+    "responseText": "障害福祉サービス全般の利用方法を分かりやすくまとめたガイドです。",
+    "expectedVerdict": "relevant"
+  },
+  {
+    "id": "R-05",
+    "description": "適合: 就労支援制度の情報ニーズと一致",
+    "facilityId": "fac-007",
+    "query": "就労支援制度について詳しく知りたい",
+    "responseText": "就労支援制度に関する情報を必要としている方に向いている制度です。",
+    "expectedVerdict": "relevant"
+  },
+  {
+    "id": "R-06",
+    "description": "不適合: 就労相談を求めているのに施設は住居相談専門",
+    "facilityId": "fac-001",
+    "query": "一人暮らしのための住居探しを相談したい",
+    "responseText": "対人関係やこだわりについての相談に力を入れている窓口のため、住居探しのご相談にも幅広く対応できると思われます。",
+    "expectedVerdict": "irrelevant"
+  },
+  {
+    "id": "R-07",
+    "description": "不適合: 手当・給付の相談を求めているのに施設は相談支援専門で無関係な理由付け",
+    "facilityId": "fac-002",
+    "query": "障害者手当の申請方法について相談したい",
+    "responseText": "年齢を問わず相談できる窓口のため、手当の申請についても専門的に対応しています。",
+    "expectedVerdict": "irrelevant"
+  },
+  {
+    "id": "R-08",
+    "description": "部分適合: 対応分野は近いが、クエリが求める具体的支援(就労)には直接触れていない",
+    "facilityId": "fac-003",
+    "query": "発達に関する特性を踏まえて就労先を紹介してほしい",
+    "responseText": "感覚の過敏さや気持ちの浮き沈みに関する相談実績がある窓口です。就労先の紹介については触れられていません。",
+    "expectedVerdict": "partially_relevant"
+  },
+  {
+    "id": "R-09",
+    "description": "部分適合: ガイドは制度全般の情報であり、クエリの個別具体的な質問には一部しか答えない",
+    "facilityId": "fac-005",
+    "query": "自分が使える障害福祉サービスの具体的な金額を知りたい",
+    "responseText": "障害福祉サービス全般の利用方法を分かりやすくまとめたガイドです。個別の金額については記載がありません。",
+    "expectedVerdict": "partially_relevant"
+  },
+  {
+    "id": "R-10",
+    "description": "不適合: 就労支援制度の紹介に対して、クエリは医療機関の受診相談",
+    "facilityId": "fac-007",
+    "query": "発達障害の診断を受けられる病院を紹介してほしい",
+    "responseText": "就労支援制度に関する情報を必要としている方に向いている制度です。",
+    "expectedVerdict": "irrelevant"
+  },
+  {
+    "id": "R-11",
+    "description": "適合: 手当制度の相談ニーズと施設の対応が一致",
+    "facilityId": "fac-006",
+    "query": "障害のある子どもの手当について相談したい",
+    "responseText": "お子さまの手当に関する相談を受け付けている窓口です。",
+    "expectedVerdict": "relevant"
+  },
+  {
+    "id": "R-12",
+    "description": "部分適合: 就労支援制度の窓口だが、クエリは就労後の職場定着支援という別の観点",
+    "facilityId": "fac-007",
+    "query": "就職した後の職場での困りごとについて継続的に相談したい",
+    "responseText": "就労支援制度に関する情報を必要としている方に向いている制度です。職場定着後の継続的な相談体制については記載がありません。",
+    "expectedVerdict": "partially_relevant"
+  },
+  {
+    "id": "R-13",
+    "description": "不適合: クエリが求める内容と施設の説明が完全に無関係(こだわり相談 vs 手当窓口)",
+    "facilityId": "fac-006",
+    "query": "対人関係やこだわりについて相談したい",
+    "responseText": "お子さまの手当に関する相談を受け付けている窓口です。",
+    "expectedVerdict": "irrelevant"
+  },
+  {
+    "id": "R-14",
+    "description": "適合: 障害福祉サービス利用方法を知りたいという直接的なニーズと一致",
+    "facilityId": "fac-005",
+    "query": "障害福祉サービスをどう利用すればいいか教えてほしい",
+    "responseText": "障害福祉サービス全般の利用方法を分かりやすくまとめたガイドです。利用開始までの流れも確認できます。",
+    "expectedVerdict": "relevant"
+  }
+]

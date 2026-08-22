@@ -1,0 +1,15 @@
+{
+  "_comment": "テスト用フィクスチャ(TICKET-0049)。hattatsu.go.jp(発達障害情報・支援センター、国立障害者リハビリテーションセンター)の実在ページ構成を参考にした短い要約サンプルであり、本番投入用の実データではない。実データ投入は本チケット時点で未実施(workers/ingest/datasets.config.ts の ds-hattatsu-shien-center の freshnessNote を参照)。",
+  "sections": [
+    {
+      "title": "発達障害とは(発達障害情報・支援センター)",
+      "url": "https://www.rehab.go.jp/ddis/understand/whatsdd",
+      "text": "発達障害者支援法において、発達障害は脳機能に関連する特性であって、その特性が通常低年齢において現れるものと定義されています。年齢や環境によって目立ちやすい特性は変わります。"
+    },
+    {
+      "title": "相談窓口(発達障害情報・支援センター)",
+      "url": "https://www.rehab.go.jp/ddis/consultation/",
+      "text": "発達障害者支援センターは都道府県・指定都市に設置されており、本人やご家族からの相談を幅広く受け付けています。"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+名称,所在地,電話番号,ホームページ,対象,区市町村,分類,備考
+世田谷区発達障がい相談支援センター,東京都世田谷区XX1-2-3,03-0000-1001,https://example.setagaya.tokyo.jp/soudan,18歳未満,,相談窓口,発達に関する相談窓口
+新宿区発達障害者支援窓口,東京都新宿区XX4-5-6,03-0000-1002,https://example.shinjuku.tokyo.jp/soudan,年齢を問わない,,相談窓口,
+八王子市発達障害者支援センター,東京都八王子市XX7-8-9,042-000-1003,https://example.hachioji.tokyo.jp/soudan,成人向け,,相談窓口,18歳以上対象
+都立小児発達医療センター 発達診療科,東京都府中市XX1-1-1,042-000-1004,https://example.fuchu.tokyo.jp/hospital,18歳未満,,医療機関,診療科(小児科)
+東京都発達障害者支援センター,東京都新宿区XX9-9-9,03-0000-1005,https://example.metro.tokyo.jp/hattatsu-center,,東京都,相談窓口,区市町村を問わず利用できる広域窓口
+,,,,,,,
+"江戸川区 発達障害児""者""支援ガイド",東京都江戸川区XX2-2-2,,https://example.edogawa.tokyo.jp/guide.pdf,子どもから大人まで,,福祉ガイド,"備考にカンマ,を含む行"

@@ -1,0 +1,101 @@
+# wrangler.ingest.toml.example — オープンデータ取込 Worker(CKAN → R2 → toMarkdown → D1)専用
+# 設定テンプレート。`cp wrangler.ingest.toml.example wrangler.ingest.toml` してから、
+# 下記コメントに従って値を差し替えて使う(`wrangler.ingest.toml` 自体は各自の Cloudflare
+# アカウント固有の識別子を含むため、このリポジトリでは管理していない)。
+#
+# Next.js アプリ本体(app/wrangler.toml)とは別 Worker として管理する。理由:
+# `@opennextjs/cloudflare` は scheduled ハンドラ(cron トリガー)を扱えないため。
+#
+# ローカル起動: `npm run ingest:dev`(= wrangler dev -c wrangler.ingest.toml)
+# 手動発火(scheduled 相当): curl "http://localhost:8787/cdn-cgi/handler/scheduled?cron=*+*+*+*+*"
+# 手動発火(fetch, POST /trigger): curl -X POST http://localhost:8787/trigger
+#   (ボディで対象を絞り込む場合: curl -X POST http://localhost:8787/trigger \
+#     -H "content-type: application/json" -d '{"datasetIds":["ds-tokyo-fukushi-shisetsu"]}')
+#
+# database_id は app/wrangler.toml と同じ値を設定する(同一 D1 データベースを共有する)。
+# R2 バケットは事前に `wrangler r2 bucket create <お好きな名前>` で作成しておくこと。
+#
+# 全体構成は ../docs/designs/architecture-for-engineers.md、
+# データ取込パイプラインの詳細は ../docs/designs/data-pipelines-for-engineers.md を参照。
+
+name = "trait-compass-ingest"
+main = "ingest/index.ts"
+
+# Workflows バインディングの利用には 2024-10-22 以降の compatibility_date が必要
+# (app/wrangler.toml と同じ日付を使い、Miniflare/workerd のローカルサポート範囲を揃える)。
+compatibility_date = "2026-07-01"
+
+# nodejs_compat: POST /embed(ローカル開発用の手動埋め込み投入)が
+# createEmbedder("ollama")/QdrantVectorStore 経由で `process.env.OLLAMA_BASE_URL`/
+# `process.env.QDRANT_URL` を参照するため必須(app/wrangler.toml と同じ理由)。
+# 未設定のままだと workerd に `process` グローバルが存在せず
+# `POST /embed` が "process is not defined" で失敗する。
+compatibility_flags = ["nodejs_compat"]
+
+[observability]
+enabled = true
+
+# 支援窓口・取込データセットメタ(datasets/facilities/facility_tags)。app/wrangler.toml と
+# 同一の D1 データベースを指す(ローカルは同一 .wrangler/state を共有、本番も同一 DB を想定)。
+[[d1_databases]]
+binding = "DB"
+database_name = "trait-compass"
+database_id = "REPLACE_ME"
+
+# オープンデータの原本(CSV/XLSX)・Workers AI toMarkdown 整形結果を保存する R2 バケット。
+# アプリ本体の画像配信(app/src/lib/storage/r2.ts、S3 互換 API 経由の別バケット)とは分離する。
+[[r2_buckets]]
+binding = "RAW_BUCKET"
+bucket_name = "REPLACE_ME"
+
+# Workers AI(XLSX → Markdown 整形、および facilities の埋め込み生成 `@cf/baai/bge-m3`
+# の両方で同一バインディングを共有する)。ローカル/アカウント設定によっては利用できない
+# 場合があり(Workers AI はローカル実行不可・呼び出すとクラウド課金される)、その場合
+# workflow.ts は正規化・埋め込み双方をスキップするフォールバックへ倒す
+# (env.AI が undefined でも動作する設計)。
+[ai]
+binding = "AI"
+
+# RAG 用ベクトル検索。facilities の埋め込み投入先。EMBEDDINGS_ENABLED=false(既定、下記
+# [vars])の間は参照されないため、未作成のままでも取込 Worker は動作する。有効化する場合は
+# 事前に下記コマンドで作成すること(dimensions は app/src/lib/ai/embedder.ts の
+# EMBEDDING_DIM と一致させること):
+#   wrangler vectorize create trait-compass-facilities --dimensions=1024 --metric=cosine
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "trait-compass-facilities"
+
+# Cloudflare Workflows: CKAN → R2 → (toMarkdown) → D1 の取込パイプライン本体(ingest/workflow.ts)。
+[[workflows]]
+name = "ingest-workflow"
+binding = "INGEST_WORKFLOW"
+class_name = "IngestWorkflow"
+
+# 週1回の定期取込と、掲載情報の訂正・更新報告の日次ダイジェスト通知の2本を、同一 Worker の
+# scheduled ハンドラで扱う(controller.cron で分岐する)。ローカルの wrangler dev では
+# 自動発火しないため、上記の curl コマンドで手動発火する。
+# 注: Cloudflare Cron Triggersの曜日フィールドはUnix標準(0=日曜)ではなく 1=日曜〜7=土曜
+# (SUN〜SATの3文字表記も可)。Unix標準の "0 15 * * 0" は `invalid cron string` で
+# デプロイ時に弾かれるため、"SUN" 表記を使う。
+[triggers]
+crons = ["0 15 * * SUN", "0 0 * * *"]
+
+[vars]
+# 非シークレット環境変数。東京都オープンデータカタログ(CKAN)のベース URL。
+CKAN_BASE_URL = "https://catalog.data.metro.tokyo.lg.jp"
+
+# 埋め込み生成・Vectorize 投入ステップの有効化フラグ。既定 false(文字列比較のため
+# 未設定/"true" 以外はすべて無効)。P0 の取込動作(CKAN→R2→D1)を壊さないための安全側デフォルト。
+# 有効化する前に、上記 [[vectorize]] のインデックスを作成しておくこと。
+EMBEDDINGS_ENABLED = "false"
+
+# facilities のジオコーディング(国土地理院 Geocoding API)ステップの有効化フラグ。既定 false。
+# 有効化すると、address はあるが lat 未設定の facilities に対して1件ずつ1秒スロットルで
+# msearch.gsi.go.jp を呼び出し、結果を D1 に保存する(ingest/geocoding.ts、
+# ingest/workflow.ts の runGeocodingStep を参照)。
+GEOCODING_ENABLED = "false"
+
+# SLACK_WEBHOOK_URL(シークレット、[vars] には書かない)は掲載情報訂正報告の日次ダイジェスト
+# 通知(report-digest.ts)に使う。本番は `wrangler secret put SLACK_WEBHOOK_URL -c wrangler.ingest.toml`
+# で設定する(app 側にはこの変数は不要。日次ダイジェスト通知に一本化しているため)。
+# 未設定でも Worker は正常動作する(postSlackMessage が何もせず戻るだけ)。

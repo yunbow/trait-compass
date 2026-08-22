@@ -1,0 +1,1517 @@
+[
+  {
+    "id": "G-001",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-communication-1)。千代田区(13101)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "友達との関わり方や会話の仕方について相談できる窓口を探しています",
+    "tags": [
+      "対人・コミュニケーション"
+    ],
+    "ageGroup": "child",
+    "municipality": "千代田区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-002",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-communication-2)。千代田区(13101)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "職場でのコミュニケーションがうまくいかず、相談できる場所を知りたいです",
+    "tags": [
+      "対人・コミュニケーション"
+    ],
+    "ageGroup": "adult",
+    "municipality": "千代田区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-003",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-emotion-1)。中央区(13102)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "気持ちの浮き沈みが大きく、気軽に相談できる窓口を探しています",
+    "tags": [
+      "こころ・感情"
+    ],
+    "ageGroup": "child",
+    "municipality": "中央区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-004",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-emotion-2)。中央区(13102)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "落ち込みやすく、こころのことを相談できる場所を知りたいです",
+    "tags": [
+      "こころ・感情"
+    ],
+    "ageGroup": "adult",
+    "municipality": "中央区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-005",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-attention-planning-1)。港区(13103)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "忘れ物や片付けが苦手で、生活の段取りについて相談したいです",
+    "tags": [
+      "不注意・段取り"
+    ],
+    "ageGroup": "child",
+    "municipality": "港区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-006",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-attention-planning-2)。港区(13103)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "予定の管理や順序立てが難しく、相談できる窓口を探しています",
+    "tags": [
+      "不注意・段取り"
+    ],
+    "ageGroup": "adult",
+    "municipality": "港区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-007",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-sensory-1)。新宿区(13104)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "音や光に敏感で疲れやすく、相談できる窓口を探しています",
+    "tags": [
+      "感覚"
+    ],
+    "ageGroup": "child",
+    "municipality": "新宿区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-008",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-sensory-2)。新宿区(13104)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "感覚の過敏さについて相談できる場所を知りたいです",
+    "tags": [
+      "感覚"
+    ],
+    "ageGroup": "adult",
+    "municipality": "新宿区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-009",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-learning-body-1)。文京区(13105)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "読み書きや運動の苦手さについて相談できる窓口を探しています",
+    "tags": [
+      "学習・からだ"
+    ],
+    "ageGroup": "child",
+    "municipality": "文京区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-010",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-learning-body-2)。文京区(13105)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "学校の勉強や体の動かし方でつまずきがあり、相談したいです",
+    "tags": [
+      "学習・からだ"
+    ],
+    "ageGroup": "adult",
+    "municipality": "文京区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-011",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-restricted-1)。台東区(13106)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "特定のことへのこだわりが強く、切り替えの難しさについて相談したいです",
+    "tags": [
+      "こだわり"
+    ],
+    "ageGroup": "child",
+    "municipality": "台東区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-012",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-restricted-2)。台東区(13106)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "決まった手順や物へのこだわりについて相談できる窓口を探しています",
+    "tags": [
+      "こだわり"
+    ],
+    "ageGroup": "adult",
+    "municipality": "台東区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-013",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-development-1)。墨田区(13107)・18歳未満向け。requiredFacilityIds 24件, acceptableFacilityIds 0件。",
+    "query": "未就学の子どもの発達支援を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "墨田区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-0a5b1ba3bf3731dd",
+      "ds-wam-net-disability-services-0d73b338f28740a8",
+      "ds-wam-net-disability-services-bc2aecd359c2d948",
+      "ds-wam-net-disability-services-5cfe7f89a9043883",
+      "ds-wam-net-disability-services-bf8603a6cf9d62cc",
+      "ds-wam-net-disability-services-06743391be6037cd",
+      "ds-wam-net-disability-services-36e11aadfe5b1215",
+      "ds-wam-net-disability-services-8e277e3eaf1703c1",
+      "ds-wam-net-disability-services-f8a7880dea77662c",
+      "ds-wam-net-disability-services-162fa1550ecc5249",
+      "ds-wam-net-disability-services-e9cacda5f2b22eb3",
+      "ds-wam-net-disability-services-ab9c3c1aaa313fd1",
+      "ds-wam-net-disability-services-cdc3d4cb8f2301f6",
+      "ds-wam-net-disability-services-8db57db335151324",
+      "ds-wam-net-disability-services-8cf93c69add68a4a",
+      "ds-wam-net-disability-services-75a57c8f0300a377",
+      "ds-wam-net-disability-services-80316c7ca2d56af4",
+      "ds-wam-net-disability-services-17496b891ae22f9b",
+      "ds-wam-net-disability-services-e2ba3def6739688e",
+      "ds-wam-net-disability-services-1051291bb8460f71",
+      "ds-wam-net-disability-services-45f6e35806ce4994",
+      "ds-wam-net-disability-services-e7c77b87730c620d",
+      "ds-wam-net-disability-services-03e0ea66f2d187ff",
+      "ds-wam-net-disability-services-57c2694b69e5fd87"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-014",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-development-2)。墨田区(13107)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "小さい子ども向けの発達支援の通所先を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "墨田区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-015",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-after-school-day-service-1)。江東区(13108)・18歳未満向け。requiredFacilityIds 55件, acceptableFacilityIds 0件。",
+    "query": "学校が終わった後に通える子ども向けの支援施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "江東区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-f1d2336d21f70406",
+      "ds-wam-net-disability-services-90e900a56f404f9b",
+      "ds-wam-net-disability-services-33b4f0831557c2af",
+      "ds-wam-net-disability-services-24d7ccf7cf2c847a",
+      "ds-wam-net-disability-services-f89ef78900947ea3",
+      "ds-wam-net-disability-services-5a45ffba64d807e2",
+      "ds-wam-net-disability-services-3c18780150a858f3",
+      "ds-wam-net-disability-services-3d5a4026488e8e12",
+      "ds-wam-net-disability-services-cfe07302c82f174b",
+      "ds-wam-net-disability-services-62fc1b09122fa03e",
+      "ds-wam-net-disability-services-aa605774aff09ea5",
+      "ds-wam-net-disability-services-e218cd493731fedc",
+      "ds-wam-net-disability-services-97352e35acd1a886",
+      "ds-wam-net-disability-services-337a4a30bd9161df",
+      "ds-wam-net-disability-services-26354a9a312f2f30",
+      "ds-wam-net-disability-services-dff99da2c2da8481",
+      "ds-wam-net-disability-services-468ca3cf0a252261",
+      "ds-wam-net-disability-services-836ca6fc50e08dfe",
+      "ds-wam-net-disability-services-1e4bd2f4b8cd2a62",
+      "ds-wam-net-disability-services-b0b4015b6e7c46bc",
+      "ds-wam-net-disability-services-bc8f79c467cb3fad",
+      "ds-wam-net-disability-services-4528d922f947ce45",
+      "ds-wam-net-disability-services-0414f637aacf4495",
+      "ds-wam-net-disability-services-e2328c28c6aee268",
+      "ds-wam-net-disability-services-2f01bd121d5dd9bf",
+      "ds-wam-net-disability-services-84da80444eb6c57c",
+      "ds-wam-net-disability-services-2ff4fee9fd7a4cfc",
+      "ds-wam-net-disability-services-d99e01ffb709dd55",
+      "ds-wam-net-disability-services-820f2afb139c0ecc",
+      "ds-wam-net-disability-services-6af251fb0089d9ff",
+      "ds-wam-net-disability-services-df480dc7e140e4cd",
+      "ds-wam-net-disability-services-cd83b8bca4807cf4",
+      "ds-wam-net-disability-services-fa512b0b55370d21",
+      "ds-wam-net-disability-services-d850be3328c7cda3",
+      "ds-wam-net-disability-services-8f85f79f1b4e5fc2",
+      "ds-wam-net-disability-services-b3bbb269284e2848",
+      "ds-wam-net-disability-services-46357b5be0d891e6",
+      "ds-wam-net-disability-services-9b154f9cfd90ecbf",
+      "ds-wam-net-disability-services-5ebf3f3998a05533",
+      "ds-wam-net-disability-services-6cabd607b17e5ece",
+      "ds-wam-net-disability-services-c6611196f7e42f01",
+      "ds-wam-net-disability-services-ad7e8304c5747cd7",
+      "ds-wam-net-disability-services-fa45863d2c8d8f5c",
+      "ds-wam-net-disability-services-810b0a147c49133b",
+      "ds-wam-net-disability-services-5e021fcce538a21e",
+      "ds-wam-net-disability-services-0d21da0bf77c75b2",
+      "ds-wam-net-disability-services-312397b09c22b0d1",
+      "ds-wam-net-disability-services-d3f1c17f88491b82",
+      "ds-wam-net-disability-services-162d370be4b13f1e",
+      "ds-wam-net-disability-services-8c68744ce8d3add2",
+      "ds-wam-net-disability-services-0af9cf17c32baf50",
+      "ds-wam-net-disability-services-4c64c7aa28d7a261",
+      "ds-wam-net-disability-services-21f7938fa1530753",
+      "ds-wam-net-disability-services-0c893bfd62a3175a",
+      "ds-wam-net-disability-services-a38a85c6f35722c7"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-016",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-after-school-day-service-2)。江東区(13108)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "放課後に子どもを預けられる発達支援の施設を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "江東区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-017",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-nursery-visit-support-1)。品川区(13109)・18歳未満向け。requiredFacilityIds 4件, acceptableFacilityIds 0件。",
+    "query": "保育園に訪問して支援してもらえるサービスを探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "品川区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-1d95c2733a8314e1",
+      "ds-wam-net-disability-services-9fd16689c4383384",
+      "ds-wam-net-disability-services-44f42548eb476a4c",
+      "ds-wam-net-disability-services-481aa59034303b27"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-018",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-nursery-visit-support-2)。品川区(13109)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "通っている園に専門の支援員が訪問してくれるサービスを知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "品川区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-019",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-home-visit-child-development-1)。目黒区(13110)・18歳未満向け。requiredFacilityIds 1件, acceptableFacilityIds 0件。",
+    "query": "外出が難しい子どものために自宅へ訪問してもらえる支援を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "目黒区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-2f9572f0873cf7c7"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-020",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-home-visit-child-development-2)。目黒区(13110)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "自宅で子どもの発達支援を受けられるサービスを知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "目黒区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-021",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-consultation-support-1)。大田区(13111)・18歳未満向け。requiredFacilityIds 22件, acceptableFacilityIds 1件。",
+    "query": "子どもの福祉サービスの利用計画を一緒に考えてくれる窓口を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "大田区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-f6899209b4200224",
+      "ds-wam-net-disability-services-199e822d80085325",
+      "ds-wam-net-disability-services-2b68519602001148",
+      "ds-wam-net-disability-services-80d054b6cdcc6731",
+      "ds-wam-net-disability-services-b97edd29fcd8517a",
+      "ds-wam-net-disability-services-c730366992c86797",
+      "ds-wam-net-disability-services-e47fa506cde48034",
+      "ds-wam-net-disability-services-9535363b28bb7a75",
+      "ds-wam-net-disability-services-255690a284aad6af",
+      "ds-wam-net-disability-services-1b01c9ce327dce51",
+      "ds-wam-net-disability-services-3690648736dd5583",
+      "ds-wam-net-disability-services-ff4b2352ec8767c9",
+      "ds-wam-net-disability-services-88af913c4c6acc51",
+      "ds-wam-net-disability-services-287ba877c6e8b390",
+      "ds-wam-net-disability-services-e52ba8de67d73e75",
+      "ds-wam-net-disability-services-8762330ea9548005",
+      "ds-wam-net-disability-services-eabc01a8107c6cea",
+      "ds-wam-net-disability-services-435557ca3bbee8c9",
+      "ds-wam-net-disability-services-f4f16e67c4aa1f69",
+      "ds-wam-net-disability-services-9a3194774ae486f9",
+      "ds-wam-net-disability-services-04292bf8ab95220e",
+      "ds-wam-net-disability-services-7403f83c033702a1"
+    ],
+    "acceptableFacilityIds": [
+      "ds-wam-net-disability-services-6d0a5f54344d9622"
+    ]
+  },
+  {
+    "id": "G-022",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-consultation-support-2)。大田区(13111)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "子ども向けの福祉サービスについて相談できる窓口を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "大田区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-023",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-independence-training-1)。世田谷区(13112)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "一人暮らしに向けて生活力を身につける訓練を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "世田谷区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-024",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-independence-training-2)。世田谷区(13112)・18歳以上向け。requiredFacilityIds 7件, acceptableFacilityIds 0件。",
+    "query": "日常生活の自立に向けた訓練を受けられる場所を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "世田谷区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-92a712777bd0f1e5",
+      "ds-wam-net-disability-services-37112609c70a2477",
+      "ds-wam-net-disability-services-6e75a4995b203cf3",
+      "ds-wam-net-disability-services-3c52821c8a4bb61c",
+      "ds-wam-net-disability-services-3d4fcec7e5c0e427",
+      "ds-wam-net-disability-services-95c72debae876a75",
+      "ds-wam-net-disability-services-4ce7919ea01586c8"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-025",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-transition-1)。渋谷区(13113)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "働くための準備や訓練を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "渋谷区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-026",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-transition-2)。渋谷区(13113)・18歳以上向け。requiredFacilityIds 16件, acceptableFacilityIds 0件。",
+    "query": "就職に向けた支援を受けられる通所先を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "渋谷区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-58f087b3acb9081d",
+      "ds-wam-net-disability-services-d3cd99c8d46ab2b9",
+      "ds-wam-net-disability-services-0291da21edcce197",
+      "ds-wam-net-disability-services-7a9e5b723fe4e27f",
+      "ds-wam-net-disability-services-de81372735c382e7",
+      "ds-wam-net-disability-services-14b70ed99cb833e0",
+      "ds-wam-net-disability-services-4ba99773bff02a48",
+      "ds-wam-net-disability-services-67ee66d26c0aeba4",
+      "ds-wam-net-disability-services-bb138667a89633df",
+      "ds-wam-net-disability-services-765c7c299a8cd405",
+      "ds-wam-net-disability-services-429ef3afdfea32d4",
+      "ds-wam-net-disability-services-026320e553b98ec5",
+      "ds-wam-net-disability-services-4cee0428ec1450ba",
+      "ds-wam-net-disability-services-4bed534c8c2ec2ec",
+      "ds-wam-net-disability-services-769d4f96393589bb",
+      "ds-wam-net-disability-services-ec3dc86cc2e6fab1"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-027",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-retention-1)。中野区(13114)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "就職した後も職場に定着できるよう継続してサポートしてくれる窓口を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "中野区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-028",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-retention-2)。中野区(13114)・18歳以上向け。requiredFacilityIds 4件, acceptableFacilityIds 0件。",
+    "query": "働き始めてから長く続けられるよう相談できる窓口を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "中野区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-68a5ee65fb9ff7a5",
+      "ds-wam-net-disability-services-dad0ac7b53e0512d",
+      "ds-wam-net-disability-services-ea46927ed0c2f487",
+      "ds-wam-net-disability-services-2839afe4d3edb2c2"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-029",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-communication-1)。杉並区(13115)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "友達との関わり方や会話の仕方について相談できる窓口を探しています",
+    "tags": [
+      "対人・コミュニケーション"
+    ],
+    "ageGroup": "child",
+    "municipality": "杉並区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-030",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-communication-2)。杉並区(13115)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "職場でのコミュニケーションがうまくいかず、相談できる場所を知りたいです",
+    "tags": [
+      "対人・コミュニケーション"
+    ],
+    "ageGroup": "adult",
+    "municipality": "杉並区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-031",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-emotion-1)。豊島区(13116)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "気持ちの浮き沈みが大きく、気軽に相談できる窓口を探しています",
+    "tags": [
+      "こころ・感情"
+    ],
+    "ageGroup": "child",
+    "municipality": "豊島区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-032",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-emotion-2)。豊島区(13116)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "落ち込みやすく、こころのことを相談できる場所を知りたいです",
+    "tags": [
+      "こころ・感情"
+    ],
+    "ageGroup": "adult",
+    "municipality": "豊島区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-033",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-attention-planning-1)。北区(13117)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "忘れ物や片付けが苦手で、生活の段取りについて相談したいです",
+    "tags": [
+      "不注意・段取り"
+    ],
+    "ageGroup": "child",
+    "municipality": "北区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-034",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-attention-planning-2)。北区(13117)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "予定の管理や順序立てが難しく、相談できる窓口を探しています",
+    "tags": [
+      "不注意・段取り"
+    ],
+    "ageGroup": "adult",
+    "municipality": "北区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-035",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-sensory-1)。荒川区(13118)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "音や光に敏感で疲れやすく、相談できる窓口を探しています",
+    "tags": [
+      "感覚"
+    ],
+    "ageGroup": "child",
+    "municipality": "荒川区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-036",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-sensory-2)。荒川区(13118)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "感覚の過敏さについて相談できる場所を知りたいです",
+    "tags": [
+      "感覚"
+    ],
+    "ageGroup": "adult",
+    "municipality": "荒川区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-037",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-learning-body-1)。板橋区(13119)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "読み書きや運動の苦手さについて相談できる窓口を探しています",
+    "tags": [
+      "学習・からだ"
+    ],
+    "ageGroup": "child",
+    "municipality": "板橋区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-038",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-learning-body-2)。板橋区(13119)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "学校の勉強や体の動かし方でつまずきがあり、相談したいです",
+    "tags": [
+      "学習・からだ"
+    ],
+    "ageGroup": "adult",
+    "municipality": "板橋区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-039",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-restricted-1)。練馬区(13120)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "特定のことへのこだわりが強く、切り替えの難しさについて相談したいです",
+    "tags": [
+      "こだわり"
+    ],
+    "ageGroup": "child",
+    "municipality": "練馬区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-040",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-restricted-2)。練馬区(13120)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "決まった手順や物へのこだわりについて相談できる窓口を探しています",
+    "tags": [
+      "こだわり"
+    ],
+    "ageGroup": "adult",
+    "municipality": "練馬区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-041",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-development-1)。足立区(13121)・18歳未満向け。requiredFacilityIds 43件, acceptableFacilityIds 0件。",
+    "query": "未就学の子どもの発達支援を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "足立区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-fad48520d990ec8d",
+      "ds-wam-net-disability-services-f524192f515b23b3",
+      "ds-wam-net-disability-services-82d8005e80a21a2f",
+      "ds-wam-net-disability-services-4e5c34f6d88bb7c3",
+      "ds-wam-net-disability-services-bcc60c866929789c",
+      "ds-wam-net-disability-services-48477938842b7743",
+      "ds-wam-net-disability-services-692009ee8a312353",
+      "ds-wam-net-disability-services-6f75fd4d496e3697",
+      "ds-wam-net-disability-services-ab0ba97b82906f22",
+      "ds-wam-net-disability-services-e4dd0ea35233274a",
+      "ds-wam-net-disability-services-8ab7115d904be5fa",
+      "ds-wam-net-disability-services-a0af0d19a1c9a4dd",
+      "ds-wam-net-disability-services-6c65b67c9e2afaff",
+      "ds-wam-net-disability-services-21bb590e5e8545d2",
+      "ds-wam-net-disability-services-a47b68e21813e8fc",
+      "ds-wam-net-disability-services-e53024457596a6f2",
+      "ds-wam-net-disability-services-05031b276bc1e3ba",
+      "ds-wam-net-disability-services-c43e9bc75466d7c8",
+      "ds-wam-net-disability-services-7622ad87ae45c1aa",
+      "ds-wam-net-disability-services-eaa0648a427f92e6",
+      "ds-wam-net-disability-services-0385d486d2995206",
+      "ds-wam-net-disability-services-b1dd186a579bab79",
+      "ds-wam-net-disability-services-12eade0e1e3e26c0",
+      "ds-wam-net-disability-services-a2726e8d984d6d9d",
+      "ds-wam-net-disability-services-6c78c671d8330b06",
+      "ds-wam-net-disability-services-7d92276de6c2d298",
+      "ds-wam-net-disability-services-346a65c59e59cb8a",
+      "ds-wam-net-disability-services-01eb457f92dd61d4",
+      "ds-wam-net-disability-services-cd170fb9ca55c07b",
+      "ds-wam-net-disability-services-d67d798ca264ca52",
+      "ds-wam-net-disability-services-207118da3ffb1570",
+      "ds-wam-net-disability-services-62197b30e21b3c94",
+      "ds-wam-net-disability-services-f6d4ae083f6a0cb5",
+      "ds-wam-net-disability-services-7187e4d19522e361",
+      "ds-wam-net-disability-services-41a9779613f99b9c",
+      "ds-wam-net-disability-services-d87107bf4c860619",
+      "ds-wam-net-disability-services-36dae526f4f5274e",
+      "ds-wam-net-disability-services-30ccae2a8db6d2a4",
+      "ds-wam-net-disability-services-29869b828ea70a6b",
+      "ds-wam-net-disability-services-a4a787ebf38b2aad",
+      "ds-wam-net-disability-services-19154fe1c6926d4b",
+      "ds-wam-net-disability-services-830b5e19d4bee4f4",
+      "ds-wam-net-disability-services-cd9195c395dc54f2"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-042",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-development-2)。足立区(13121)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "小さい子ども向けの発達支援の通所先を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "足立区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-043",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-after-school-day-service-1)。葛飾区(13122)・18歳未満向け。requiredFacilityIds 41件, acceptableFacilityIds 0件。",
+    "query": "学校が終わった後に通える子ども向けの支援施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "葛飾区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-248555444df483a3",
+      "ds-wam-net-disability-services-79f093a73ad5a96e",
+      "ds-wam-net-disability-services-a78b01e0ef860078",
+      "ds-wam-net-disability-services-52f55cca0b68a4ac",
+      "ds-wam-net-disability-services-c1a1fe0399610c46",
+      "ds-wam-net-disability-services-2b548124f7996415",
+      "ds-wam-net-disability-services-e0a632f85325a273",
+      "ds-wam-net-disability-services-f6246c4388773e8d",
+      "ds-wam-net-disability-services-2f643af3a0fd3226",
+      "ds-wam-net-disability-services-c53409f6a29b82e8",
+      "ds-wam-net-disability-services-c990e74a04829f6a",
+      "ds-wam-net-disability-services-2b43a49b2d223d0a",
+      "ds-wam-net-disability-services-125b676548768f39",
+      "ds-wam-net-disability-services-02e3550559f18ffb",
+      "ds-wam-net-disability-services-23ae74d333935e80",
+      "ds-wam-net-disability-services-603005a68ed721ce",
+      "ds-wam-net-disability-services-75b71e5cd11ebd17",
+      "ds-wam-net-disability-services-c8fe4f333859380a",
+      "ds-wam-net-disability-services-96182b357e9a76fe",
+      "ds-wam-net-disability-services-c54316ac1ef4da01",
+      "ds-wam-net-disability-services-97a37f53c116c0af",
+      "ds-wam-net-disability-services-9a988e488106762a",
+      "ds-wam-net-disability-services-a1d7ee0656eef548",
+      "ds-wam-net-disability-services-492e12ff4937a297",
+      "ds-wam-net-disability-services-07986aa8c5b16b59",
+      "ds-wam-net-disability-services-f4225d4e3a9cd556",
+      "ds-wam-net-disability-services-02b5a4939556787e",
+      "ds-wam-net-disability-services-d2be5c2f071f54c8",
+      "ds-wam-net-disability-services-d2cb528a73e47df0",
+      "ds-wam-net-disability-services-2f1e653b666cb7c7",
+      "ds-wam-net-disability-services-b43e8014b49f60c7",
+      "ds-wam-net-disability-services-565f99b02ce6dc53",
+      "ds-wam-net-disability-services-74a4212980c4a3ee",
+      "ds-wam-net-disability-services-85b73c723b5e6b3c",
+      "ds-wam-net-disability-services-c763b97768d62e26",
+      "ds-wam-net-disability-services-4ccd7aae5e6ef2c2",
+      "ds-wam-net-disability-services-4196a64ccfdff9c9",
+      "ds-wam-net-disability-services-dff23caa403423ee",
+      "ds-wam-net-disability-services-d0ee02b140bcafc8",
+      "ds-wam-net-disability-services-6261fb26dcc3a89f",
+      "ds-wam-net-disability-services-150aabfa7979602a"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-044",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-after-school-day-service-2)。葛飾区(13122)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "放課後に子どもを預けられる発達支援の施設を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "葛飾区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-045",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-nursery-visit-support-1)。江戸川区(13123)・18歳未満向け。requiredFacilityIds 5件, acceptableFacilityIds 0件。",
+    "query": "保育園に訪問して支援してもらえるサービスを探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "江戸川区",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-f896bb8f595ccbb4",
+      "ds-wam-net-disability-services-f0b9305b50d35f43",
+      "ds-wam-net-disability-services-054cd36279ec21f6",
+      "ds-wam-net-disability-services-744f09d4dcf31b9f",
+      "ds-wam-net-disability-services-c39bbe51554745f1"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-046",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-nursery-visit-support-2)。江戸川区(13123)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "通っている園に専門の支援員が訪問してくれるサービスを知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "江戸川区",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-047",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-home-visit-child-development-1)。八王子市(13201)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "外出が難しい子どものために自宅へ訪問してもらえる支援を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "八王子市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-048",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-home-visit-child-development-2)。八王子市(13201)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "自宅で子どもの発達支援を受けられるサービスを知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "八王子市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-049",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-consultation-support-1)。立川市(13202)・18歳未満向け。requiredFacilityIds 9件, acceptableFacilityIds 1件。",
+    "query": "子どもの福祉サービスの利用計画を一緒に考えてくれる窓口を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "立川市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-88cdcc27d4f63d4f",
+      "ds-wam-net-disability-services-692d83b462556db7",
+      "ds-wam-net-disability-services-00f56c027ebb13bf",
+      "ds-wam-net-disability-services-20127d69a56425ed",
+      "ds-wam-net-disability-services-26ca6a246df1694b",
+      "ds-wam-net-disability-services-ba97ca446982cb46",
+      "ds-wam-net-disability-services-eb28626a9826d4f3",
+      "ds-wam-net-disability-services-ddfe30281dc45422",
+      "ds-wam-net-disability-services-905d40381662544d"
+    ],
+    "acceptableFacilityIds": [
+      "ds-wam-net-disability-services-6d0a5f54344d9622"
+    ]
+  },
+  {
+    "id": "G-050",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-consultation-support-2)。立川市(13202)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "子ども向けの福祉サービスについて相談できる窓口を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "立川市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-051",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-independence-training-1)。武蔵野市(13203)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "一人暮らしに向けて生活力を身につける訓練を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "武蔵野市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-052",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-independence-training-2)。武蔵野市(13203)・18歳以上向け。requiredFacilityIds 3件, acceptableFacilityIds 0件。",
+    "query": "日常生活の自立に向けた訓練を受けられる場所を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "武蔵野市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-ca82b20bef35c0f7",
+      "ds-wam-net-disability-services-67ac5780f82e248d",
+      "ds-wam-net-disability-services-a05cbf4634d1a491"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-053",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-transition-1)。三鷹市(13204)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "働くための準備や訓練を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "三鷹市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-054",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-transition-2)。三鷹市(13204)・18歳以上向け。requiredFacilityIds 4件, acceptableFacilityIds 0件。",
+    "query": "就職に向けた支援を受けられる通所先を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "三鷹市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-de1d5a92e37b31e4",
+      "ds-wam-net-disability-services-9424248bae2d8f19",
+      "ds-wam-net-disability-services-ecbb53dd44ef766a",
+      "ds-wam-net-disability-services-c79313fd71a4c8e7"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-055",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-retention-1)。青梅市(13205)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "就職した後も職場に定着できるよう継続してサポートしてくれる窓口を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "青梅市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-056",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-retention-2)。青梅市(13205)・18歳以上向け。requiredFacilityIds 2件, acceptableFacilityIds 0件。",
+    "query": "働き始めてから長く続けられるよう相談できる窓口を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "青梅市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-459b5fab5e3d52d0",
+      "ds-wam-net-disability-services-eff29c8a0f01aa34"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-057",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-communication-1)。府中市(13206)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "友達との関わり方や会話の仕方について相談できる窓口を探しています",
+    "tags": [
+      "対人・コミュニケーション"
+    ],
+    "ageGroup": "child",
+    "municipality": "府中市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-058",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-communication-2)。府中市(13206)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "職場でのコミュニケーションがうまくいかず、相談できる場所を知りたいです",
+    "tags": [
+      "対人・コミュニケーション"
+    ],
+    "ageGroup": "adult",
+    "municipality": "府中市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-059",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-emotion-1)。昭島市(13207)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "気持ちの浮き沈みが大きく、気軽に相談できる窓口を探しています",
+    "tags": [
+      "こころ・感情"
+    ],
+    "ageGroup": "child",
+    "municipality": "昭島市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-060",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-emotion-2)。昭島市(13207)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "落ち込みやすく、こころのことを相談できる場所を知りたいです",
+    "tags": [
+      "こころ・感情"
+    ],
+    "ageGroup": "adult",
+    "municipality": "昭島市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-061",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-attention-planning-1)。調布市(13208)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "忘れ物や片付けが苦手で、生活の段取りについて相談したいです",
+    "tags": [
+      "不注意・段取り"
+    ],
+    "ageGroup": "child",
+    "municipality": "調布市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-062",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-attention-planning-2)。調布市(13208)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "予定の管理や順序立てが難しく、相談できる窓口を探しています",
+    "tags": [
+      "不注意・段取り"
+    ],
+    "ageGroup": "adult",
+    "municipality": "調布市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-063",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-sensory-1)。町田市(13209)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "音や光に敏感で疲れやすく、相談できる窓口を探しています",
+    "tags": [
+      "感覚"
+    ],
+    "ageGroup": "child",
+    "municipality": "町田市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-064",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-sensory-2)。町田市(13209)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "感覚の過敏さについて相談できる場所を知りたいです",
+    "tags": [
+      "感覚"
+    ],
+    "ageGroup": "adult",
+    "municipality": "町田市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-065",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-learning-body-1)。小金井市(13210)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "読み書きや運動の苦手さについて相談できる窓口を探しています",
+    "tags": [
+      "学習・からだ"
+    ],
+    "ageGroup": "child",
+    "municipality": "小金井市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-066",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-learning-body-2)。小金井市(13210)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "学校の勉強や体の動かし方でつまずきがあり、相談したいです",
+    "tags": [
+      "学習・からだ"
+    ],
+    "ageGroup": "adult",
+    "municipality": "小金井市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-067",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-restricted-1)。小平市(13211)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "特定のことへのこだわりが強く、切り替えの難しさについて相談したいです",
+    "tags": [
+      "こだわり"
+    ],
+    "ageGroup": "child",
+    "municipality": "小平市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-068",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-restricted-2)。小平市(13211)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "決まった手順や物へのこだわりについて相談できる窓口を探しています",
+    "tags": [
+      "こだわり"
+    ],
+    "ageGroup": "adult",
+    "municipality": "小平市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-069",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-development-1)。日野市(13212)・18歳未満向け。requiredFacilityIds 22件, acceptableFacilityIds 0件。",
+    "query": "未就学の子どもの発達支援を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "日野市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-89399f118d8f81a2",
+      "ds-wam-net-disability-services-34f50d912ecce045",
+      "ds-wam-net-disability-services-7ea2a7d9bb1a1985",
+      "ds-wam-net-disability-services-6157444ff3b1ebee",
+      "ds-wam-net-disability-services-2a79d391c619b352",
+      "ds-wam-net-disability-services-324fb49ad1127d9d",
+      "ds-wam-net-disability-services-f27143c3554f06f4",
+      "ds-wam-net-disability-services-06ea40eece5dc539",
+      "ds-wam-net-disability-services-a12e3fbb2516c2d0",
+      "ds-wam-net-disability-services-9b43ae138749df74",
+      "ds-wam-net-disability-services-7181d9b14380db10",
+      "ds-wam-net-disability-services-a948e809bd135112",
+      "ds-wam-net-disability-services-f9a0ad48fa33ec04",
+      "ds-wam-net-disability-services-fecc38a20f7ead94",
+      "ds-wam-net-disability-services-714e782cbc397d83",
+      "ds-wam-net-disability-services-8a5dee9ed43fa995",
+      "ds-wam-net-disability-services-bbd1766297a83ef4",
+      "ds-wam-net-disability-services-0267539ed575eaf6",
+      "ds-wam-net-disability-services-422518d5d52c035d",
+      "ds-wam-net-disability-services-6a16e3b70a011254",
+      "ds-wam-net-disability-services-9a877993c44bdb79",
+      "ds-wam-net-disability-services-a820e844b40ffdf0"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-070",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-development-2)。日野市(13212)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "小さい子ども向けの発達支援の通所先を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "日野市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-071",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-after-school-day-service-1)。東村山市(13213)・18歳未満向け。requiredFacilityIds 14件, acceptableFacilityIds 0件。",
+    "query": "学校が終わった後に通える子ども向けの支援施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "東村山市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-5d8dc507b0852f50",
+      "ds-wam-net-disability-services-4691745b8a4430b0",
+      "ds-wam-net-disability-services-b077ad2f294e76a9",
+      "ds-wam-net-disability-services-57873e4a81404574",
+      "ds-wam-net-disability-services-c149280357c44531",
+      "ds-wam-net-disability-services-e289ca2bb3650a56",
+      "ds-wam-net-disability-services-631175e65dfa1235",
+      "ds-wam-net-disability-services-a6ff8b9bb7f1641e",
+      "ds-wam-net-disability-services-8a90908cc7df8dd3",
+      "ds-wam-net-disability-services-21b0c2c4ff4de568",
+      "ds-wam-net-disability-services-6fe00838017b6164",
+      "ds-wam-net-disability-services-7465ebf1940dbc60",
+      "ds-wam-net-disability-services-d67ffe4c57618268",
+      "ds-wam-net-disability-services-cc7f107e6ffab543"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-072",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-after-school-day-service-2)。東村山市(13213)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "放課後に子どもを預けられる発達支援の施設を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "東村山市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-073",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-nursery-visit-support-1)。国分寺市(13214)・18歳未満向け。requiredFacilityIds 2件, acceptableFacilityIds 0件。",
+    "query": "保育園に訪問して支援してもらえるサービスを探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "国分寺市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-39e608e327c943ae",
+      "ds-wam-net-disability-services-44217c3c978e9d39"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-074",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-nursery-visit-support-2)。国分寺市(13214)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "通っている園に専門の支援員が訪問してくれるサービスを知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "国分寺市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-075",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-home-visit-child-development-1)。国立市(13215)・18歳未満向け。requiredFacilityIds 1件, acceptableFacilityIds 0件。",
+    "query": "外出が難しい子どものために自宅へ訪問してもらえる支援を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "国立市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-3b3a14015aed3666"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-076",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-home-visit-child-development-2)。国立市(13215)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "自宅で子どもの発達支援を受けられるサービスを知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "国立市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-077",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-consultation-support-1)。福生市(13218)・18歳未満向け。requiredFacilityIds 7件, acceptableFacilityIds 1件。",
+    "query": "子どもの福祉サービスの利用計画を一緒に考えてくれる窓口を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "福生市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-baf5d283f09dfa6d",
+      "ds-wam-net-disability-services-1ed97936f66b94e4",
+      "ds-wam-net-disability-services-11fae6c1d7a2b0e1",
+      "ds-wam-net-disability-services-9ca7e2e35ed604c1",
+      "ds-wam-net-disability-services-50422deaa1a754a3",
+      "ds-wam-net-disability-services-cb0789f1c3489fbd",
+      "ds-wam-net-disability-services-ec148e5d50169e20"
+    ],
+    "acceptableFacilityIds": [
+      "ds-wam-net-disability-services-6d0a5f54344d9622"
+    ]
+  },
+  {
+    "id": "G-078",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-consultation-support-2)。福生市(13218)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "子ども向けの福祉サービスについて相談できる窓口を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "福生市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-079",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-independence-training-1)。狛江市(13219)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "一人暮らしに向けて生活力を身につける訓練を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "狛江市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-080",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-independence-training-2)。狛江市(13219)・18歳以上向け。requiredFacilityIds 1件, acceptableFacilityIds 0件。",
+    "query": "日常生活の自立に向けた訓練を受けられる場所を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "狛江市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-521dcdbc402d2546"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-081",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-transition-1)。東大和市(13220)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "働くための準備や訓練を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "東大和市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-082",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-transition-2)。東大和市(13220)・18歳以上向け。requiredFacilityIds 1件, acceptableFacilityIds 0件。",
+    "query": "就職に向けた支援を受けられる通所先を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "東大和市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-f1de780dada9bec3"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-083",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-retention-1)。清瀬市(13221)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "就職した後も職場に定着できるよう継続してサポートしてくれる窓口を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "清瀬市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-084",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-employment-retention-2)。清瀬市(13221)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "働き始めてから長く続けられるよう相談できる窓口を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "清瀬市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-085",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-communication-1)。東久留米市(13222)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "友達との関わり方や会話の仕方について相談できる窓口を探しています",
+    "tags": [
+      "対人・コミュニケーション"
+    ],
+    "ageGroup": "child",
+    "municipality": "東久留米市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-086",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-communication-2)。東久留米市(13222)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "職場でのコミュニケーションがうまくいかず、相談できる場所を知りたいです",
+    "tags": [
+      "対人・コミュニケーション"
+    ],
+    "ageGroup": "adult",
+    "municipality": "東久留米市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-087",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-emotion-1)。武蔵村山市(13223)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "気持ちの浮き沈みが大きく、気軽に相談できる窓口を探しています",
+    "tags": [
+      "こころ・感情"
+    ],
+    "ageGroup": "child",
+    "municipality": "武蔵村山市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-088",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-emotion-2)。武蔵村山市(13223)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "落ち込みやすく、こころのことを相談できる場所を知りたいです",
+    "tags": [
+      "こころ・感情"
+    ],
+    "ageGroup": "adult",
+    "municipality": "武蔵村山市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-089",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-attention-planning-1)。多摩市(13224)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "忘れ物や片付けが苦手で、生活の段取りについて相談したいです",
+    "tags": [
+      "不注意・段取り"
+    ],
+    "ageGroup": "child",
+    "municipality": "多摩市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-090",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-attention-planning-2)。多摩市(13224)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "予定の管理や順序立てが難しく、相談できる窓口を探しています",
+    "tags": [
+      "不注意・段取り"
+    ],
+    "ageGroup": "adult",
+    "municipality": "多摩市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-091",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-sensory-1)。稲城市(13225)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "音や光に敏感で疲れやすく、相談できる窓口を探しています",
+    "tags": [
+      "感覚"
+    ],
+    "ageGroup": "child",
+    "municipality": "稲城市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-092",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-sensory-2)。稲城市(13225)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "感覚の過敏さについて相談できる場所を知りたいです",
+    "tags": [
+      "感覚"
+    ],
+    "ageGroup": "adult",
+    "municipality": "稲城市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-093",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-learning-body-1)。羽村市(13227)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "読み書きや運動の苦手さについて相談できる窓口を探しています",
+    "tags": [
+      "学習・からだ"
+    ],
+    "ageGroup": "child",
+    "municipality": "羽村市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-094",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-learning-body-2)。羽村市(13227)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "学校の勉強や体の動かし方でつまずきがあり、相談したいです",
+    "tags": [
+      "学習・からだ"
+    ],
+    "ageGroup": "adult",
+    "municipality": "羽村市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-095",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-restricted-1)。あきる野市(13228)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "特定のことへのこだわりが強く、切り替えの難しさについて相談したいです",
+    "tags": [
+      "こだわり"
+    ],
+    "ageGroup": "child",
+    "municipality": "あきる野市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-096",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: tag-restricted-2)。あきる野市(13228)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "決まった手順や物へのこだわりについて相談できる窓口を探しています",
+    "tags": [
+      "こだわり"
+    ],
+    "ageGroup": "adult",
+    "municipality": "あきる野市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-097",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-development-1)。西東京市(13229)・18歳未満向け。requiredFacilityIds 12件, acceptableFacilityIds 0件。",
+    "query": "未就学の子どもの発達支援を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "西東京市",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-467207666cfbca60",
+      "ds-wam-net-disability-services-d3b41b62f04b22fb",
+      "ds-wam-net-disability-services-7bfdb916aefd4c0b",
+      "ds-wam-net-disability-services-02c86bd6cc02c859",
+      "ds-wam-net-disability-services-9c9ba0ff23efa038",
+      "ds-wam-net-disability-services-7ed4c7ae636b69bd",
+      "ds-wam-net-disability-services-09785c8326a1e080",
+      "ds-wam-net-disability-services-02cdb2903348a313",
+      "ds-wam-net-disability-services-b291bae114c00beb",
+      "ds-wam-net-disability-services-9cf5efa74d189a49",
+      "ds-wam-net-disability-services-2d7449795ab9d04f",
+      "ds-wam-net-disability-services-24ddaa5d31c68eb2"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-098",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-development-2)。西東京市(13229)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "小さい子ども向けの発達支援の通所先を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "西東京市",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-099",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-after-school-day-service-1)。瑞穂町(13303)・18歳未満向け。requiredFacilityIds 5件, acceptableFacilityIds 0件。",
+    "query": "学校が終わった後に通える子ども向けの支援施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "瑞穂町",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-c84809ab7d81d24e",
+      "ds-wam-net-disability-services-91d0f89bc5f9d57a",
+      "ds-wam-net-disability-services-74fb8a0d8b001959",
+      "ds-wam-net-disability-services-b87fd6d6b0307058",
+      "ds-wam-net-disability-services-e6848c1dae92b40f"
+    ],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-100",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-after-school-day-service-2)。瑞穂町(13303)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "放課後に子どもを預けられる発達支援の施設を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "瑞穂町",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-101",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-nursery-visit-support-1)。日の出町(13305)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "保育園に訪問して支援してもらえるサービスを探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "日の出町",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-102",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-nursery-visit-support-2)。日の出町(13305)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "通っている園に専門の支援員が訪問してくれるサービスを知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "日の出町",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-103",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-home-visit-child-development-1)。奥多摩町(13308)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "外出が難しい子どものために自宅へ訪問してもらえる支援を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "奥多摩町",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-104",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-home-visit-child-development-2)。奥多摩町(13308)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "自宅で子どもの発達支援を受けられるサービスを知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "奥多摩町",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-105",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-consultation-support-1)。大島町(13361)・18歳未満向け。requiredFacilityIds 1件, acceptableFacilityIds 1件。",
+    "query": "子どもの福祉サービスの利用計画を一緒に考えてくれる窓口を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "大島町",
+    "requiredFacilityIds": [
+      "ds-wam-net-disability-services-2b655874be0ce99b"
+    ],
+    "acceptableFacilityIds": [
+      "ds-wam-net-disability-services-6d0a5f54344d9622"
+    ]
+  },
+  {
+    "id": "G-106",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-child-consultation-support-2)。大島町(13361)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "子ども向けの福祉サービスについて相談できる窓口を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "大島町",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-107",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-independence-training-1)。八丈町(13401)・18歳未満向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "一人暮らしに向けて生活力を身につける訓練を受けられる施設を探しています",
+    "tags": [],
+    "ageGroup": "child",
+    "municipality": "八丈町",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  },
+  {
+    "id": "G-108",
+    "description": "自動生成(eval/lib/generate-golden.ts、テンプレート: svc-independence-training-2)。八丈町(13401)・18歳以上向け。requiredFacilityIds 0件, acceptableFacilityIds 0件。",
+    "query": "日常生活の自立に向けた訓練を受けられる場所を知りたいです",
+    "tags": [],
+    "ageGroup": "adult",
+    "municipality": "八丈町",
+    "requiredFacilityIds": [],
+    "acceptableFacilityIds": []
+  }
+]

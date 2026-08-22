@@ -1,0 +1,2367 @@
+[
+  {
+    "id": "ND-0001",
+    "text": "誰かの話の途中でも、今言わないと忘れてしまいそうで、思わず口を挟んでしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0005",
+    "text": "「今度ご飯でも」のような社交辞令を、本当に誘われたと思って真に受けてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0011",
+    "text": "友達が冗談のつもりで言ったことを本気だと思い込み、真剣に受け止めてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0012",
+    "text": "好きな話題を話し始めると止まらなくなり、相手が退屈していても気づかないことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0023",
+    "text": "電話がかかってくると、出る前から強い緊張を感じて、身構えて時間がかかってしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0024",
+    "text": "自分では普通に話しているつもりでも、声が大きいと後から指摘されて気づくことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0035",
+    "text": "頭の中では考えがまとまっているのに、いざ話そうとすると言葉が出てこないことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0036",
+    "text": "結論から話してと言われても、経緯から順番に説明しないと伝わらない気がしてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0047",
+    "text": "自分の中では話がつながっているつもりで、前提を説明せずに話し始めてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0048",
+    "text": "相手が時計をちらちら見るなど、そろそろ終わりたい様子に気づかず話し続けてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0059",
+    "text": "真剣に話を聞いているときほど、つい、うなずきや相づちを打つのを忘れてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0060",
+    "text": "一つの話をしていると関連することが次々浮かび、気づくと話題が変わってしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0071",
+    "text": "とっさに言葉が出てこないとき、相手の言った言葉の一部をそのまま繰り返してしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0072",
+    "text": "「どう思う?」のように漠然と聞かれると、何から答えればいいか分からず困ることがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0083",
+    "text": "作業をしながら、頭の中を整理するために考えや手順を思わず声に出してしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0084",
+    "text": "会話に入るタイミングがつかめず、言いたいことがあっても発言できないまま終わることがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0095",
+    "text": "口頭だけで説明されたことは、その場では分かっても後になると忘れてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0096",
+    "text": "友達との気軽な雑談の場でも、つい硬い言い回しや専門的な言葉を使ってしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0123",
+    "text": "友達に軽い冗談を言われても、気の利いた言葉で返せず真面目に答えてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0138",
+    "text": "気持ちを込めて話しているつもりでも、声の抑揚が平坦で感情が伝わりにくいと言われることがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0149",
+    "text": "「いつでもいいよ」と言われると、文字どおりの意味で受け取ってしまい対応がずれることがある",
+    "category": "communication",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0192",
+    "text": "会話で質問に答えたあと、相手に聞き返すことを思いつかず会話が途切れてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0193",
+    "text": "話がかみ合わなくなったとき、どう立て直せばいいか分からず黙り込んでしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0211",
+    "text": "説明が分からなくても、その場の流れを止めるのが怖くて分かったふりをしてしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0221",
+    "text": "自分では分かっているつもりで、「あれ」「それ」だけで話して相手に伝わらないことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0228",
+    "text": "図書館など静かな場所にいても、自分の声が大きすぎることに気づかず指摘されることがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0229",
+    "text": "質問されたとき、相手が本当に知りたいこととは違う答えをうっかり返してしまうことがある",
+    "category": "communication",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0002",
+    "text": "会話の相手が退屈そうにしていることに気づかず、まだ話が盛り上がっていると思ってしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0006",
+    "text": "相手が怒っていたり不機嫌だったりすることに、話している間は気づかないことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0013",
+    "text": "人と話すとき、目を見続けるより目をそらした方が話の内容に集中できることがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0014",
+    "text": "誰も口にしないけれどみんなが従っている決まりに、後から言われて初めて気づくことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": true
+  },
+  {
+    "id": "ND-0025",
+    "text": "心の中では強く嬉しかったり悲しかったりしても、それが顔に出ていないと言われることがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0026",
+    "text": "特に用事のないおしゃべりで、何を話せばいいのか分からず困ってしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0037",
+    "text": "何人かで話しているとき、話題の変化についていけず、輪に入れなくなることがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0038",
+    "text": "お礼や謝罪を言うべき場面だったと、その場では気づかず後になって分かることがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0049",
+    "text": "話しているとき、相手が一歩下がって距離を取ろうとしても気づかないことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0050",
+    "text": "冗談やからかいで言われたことを、本気の言葉だと思ってそのまま信じてしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0061",
+    "text": "相手が先生でも友達でも、態度や言葉づかいを変えずに同じように接してしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0062",
+    "text": "「寒いね」のような遠回しな言い方に、何かを頼まれているとは気づかないことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0074",
+    "text": "前に会ったことのある人でも、顔や名前をなかなか思い出せず気まずくなることがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0085",
+    "text": "一人ならできることでも、誰かに見られていると急にうまくできなくなることがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0086",
+    "text": "緊張する場面になると、話したい気持ちがあっても言葉が出てこなくなることがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": true
+  },
+  {
+    "id": "ND-0097",
+    "text": "仲良くなりたい相手と、どのくらいの速さで親しくなればいいのか分からず戸惑うことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0098",
+    "text": "周りが盛り上がっているときに、自分だけ気持ちを合わせられず浮いてしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0124",
+    "text": "グループの中で誰が中心的な存在で誰に合わせればいいのか、つかみにくいことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0139",
+    "text": "相手の表情やしぐさから、うれしいのか困っているのかを読み取るのが難しいことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0150",
+    "text": "場にふさわしい服装や順番などのマナーを知らずに、うっかり外してしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0164",
+    "text": "相手が時計を見たり相づちが減ったりしても気づかず、話を続けてしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0194",
+    "text": "自分が知っている話を、相手も当然知っているはずだと思い込んで話してしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0195",
+    "text": "相手が自分に好意を持っている遠回しなサインに、その場では気づかないことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0212",
+    "text": "相手が黙り込んだとき、それが何を意味しているのか分からず不安になることがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0225",
+    "text": "遠回しな嫌味を言われても、その場では気づかずに言葉通り受け取ってしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0226",
+    "text": "「あれ見て」と指さされても、どこを見ればいいのかすぐには分からないことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0227",
+    "text": "場の雰囲気が変わったことに気づかず、前と同じ調子で話し続けてしまうことがある。",
+    "category": "social-reading",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0052",
+    "text": "一度気になった失敗や相手の一言が、他のことをしていても頭から離れず何度も思い出されることがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0073",
+    "text": "友達の何気ない一言や表情を見て、嫌われてしまったのではと深く傷つくことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0087",
+    "text": "何年も前の失敗が急によみがえり、その時の恥ずかしさを生々しく感じ直すことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0121",
+    "text": "嫌なことがあったあと、気持ちを切り替えられずに何時間も何日も引きずってしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0122",
+    "text": "気持ちが限界を超えると、涙や怒りがあふれて自分でも止められなくなることがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0129",
+    "text": "周りには小さく見える出来事でも、自分の中では感情が一気に大きく揺れることがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0130",
+    "text": "まだ起きていない予定について、起こりうる悪いことばかり繰り返し想像してしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0131",
+    "text": "理不尽だと感じても相手には言えず、気づくと自分を責めて終わらせてしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0141",
+    "text": "強い刺激や負担が重なると、頭が真っ白になってその場で動けなくなってしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0142",
+    "text": "完璧にきちんとできる自信がないと、何日も物事に手をつけられないままになることがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0143",
+    "text": "テストや仕事で小さな失敗をしただけでも、自分はダメな人間だと強く責めてしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": true
+  },
+  {
+    "id": "ND-0153",
+    "text": "さっきまで楽しく笑っていたのに、些細なきっかけで気分が一気に沈んでしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0154",
+    "text": "言われたその場では反応が薄くても、あとになって強い感情がこみ上げることがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0155",
+    "text": "待たされたり邪魔されたりすると、いら立ちが一気に強くなってしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0165",
+    "text": "悔しさや緊張を感じたとき、泣きたくないのに涙が出て止められなくなることがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0166",
+    "text": "自分には関係のないことでも、近くの人の不機嫌な空気に引きずられて疲れることがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0167",
+    "text": "何が不安なのか自分でもはっきりしないうちに、お腹や頭が痛くなってしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0176",
+    "text": "本当は内心いっぱいいっぱいでも、顔には出さず平気なふりを続けてしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0182",
+    "text": "好きな話題になると、一気にテンションが上がってしゃべりすぎてしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0183",
+    "text": "周りの人が不機嫌だったり失敗したりすると、自分のせいのように感じて責めてしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0184",
+    "text": "本当はつらいはずの場面なのに、気持ちが動かず何も感じられなくなってしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0200",
+    "text": "心の中がもやもやしていても、それが怒りなのか不安なのか自分でも区別できないことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0209",
+    "text": "好きだけど怖い、など相反する気持ちが同時にあって身動きが取れなくなることがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0213",
+    "text": "強い怒りや不安が収まったあと、どっと疲れて何もできなくなってしまうことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0214",
+    "text": "うれしい良いことがあっても、あとでつらくなりそうで素直に喜べないことがある。",
+    "category": "emotion-regulation",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0003",
+    "text": "別の部屋に移動すると、そこに何をしに来たのかが一瞬わからなくなり、困ることがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0007",
+    "text": "「まずい」と思った瞬間にはもう行動していて、自分でも止められなかったと感じることがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0015",
+    "text": "大事な約束のはずなのに、直前になって初めて忘れていたことに気づき、あわてることがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0016",
+    "text": "自分でも抑えられないほど感情が一気に大きくなり、あとで振り返って驚くことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0027",
+    "text": "一度「欲しい」と思うと頭からその考えが離れず、我慢できずに買ってしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0028",
+    "text": "集中したいのに、周りの音や物音にすぐ気を取られて作業が止まってしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0039",
+    "text": "列に並んで順番を待っている間、じっとしていられずそわそわして落ち着かないことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0040",
+    "text": "新しいことに夢中で始めたのに、少し経つとやる気がすっかりなくなってしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0051",
+    "text": "頭に浮かんだことを、その場で言ってよいか考える前に、つい口に出してしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0063",
+    "text": "頼まれごとをその場の勢いで引き受けたあと、抱えきれない量だったと気づくことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0064",
+    "text": "じっと座って何もしていないときでも、頭の中では考えが次々湧いて騒がしいことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0076",
+    "text": "強い感情に押されて「もう辞める」と口にしたあと、落ち着いてから後悔することがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0088",
+    "text": "好きなことの細かい内容は覚えていても、興味のない用件は聞いた直後に忘れてしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0099",
+    "text": "夜にしっかり眠ったはずなのに、日中になると抗えないほどの強い眠気に襲われることがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0100",
+    "text": "「後で困る」と頭ではわかっていても、目の前の楽なほうをついつい選んでしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0125",
+    "text": "引き出しや棚に物をしまうと、しまった瞬間にその物のことを忘れてしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0140",
+    "text": "好きなことに没頭していると、呼びかけられても気づかないほど周りが見えなくなることがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0151",
+    "text": "じっと座っていなければならないとき、貧乏ゆすりなど体が勝手に動いてしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0162",
+    "text": "作業に集中していると、数十分のつもりが気づけば数時間も経っていて驚くことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0185",
+    "text": "人と話している最中でも、気づかないうちに頭の中の考えごとに入り込み、話を聞き逃すことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0186",
+    "text": "特に刺激のない静かな状況が続くと、そわそわして落ち着かない気持ちになることがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0205",
+    "text": "何度も見直したはずなのに、数字や文字の細かい間違いを見落としてしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0206",
+    "text": "話している途中で口をはさまれたりすると、自分が何を言おうとしていたのか分からなくなることがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0222",
+    "text": "単調でつまらない時間が続くと、強い苦痛を感じてじっと耐えられなくなることがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0230",
+    "text": "欲しいと感じた瞬間、それが本当に必要かどうか考える前についその場で買ってしまうことがある。",
+    "category": "impulse-memory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0010",
+    "text": "やらなければいけないと分かっていても、締め切りが直前に迫るまで手をつけられないことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0021",
+    "text": "好きなことに没頭していると、名前を呼ばれても気づかないくらい深く集中してしまうことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0022",
+    "text": "同時にやることがいくつもあると、何から手をつければよいか分からず固まってしまうことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0033",
+    "text": "作業がほとんど仕上がっていても、残りの細かい部分が気になって提出できないことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0045",
+    "text": "二つのことを同時に進めようとすると、頭が混乱してどちらも中途半端になることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0046",
+    "text": "夜になるとかえって頭が冴えてしまい、なかなか寝つけず気づくと夜更かしになっていることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0057",
+    "text": "提出しなければならない書類の手続きを、期限ぎりぎりまで後回しにしてしまうことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0058",
+    "text": "「適当にやっておいて」とだけ言われると、何から手をつければよいか分からず困ることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0069",
+    "text": "やることがいくつも同時に重なると、多すぎてかえって何も手につかなくなることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0070",
+    "text": "疲れていても適度に休むことができず、動けなくなるまで頑張り続けてしまうことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0081",
+    "text": "お風呂に入らなきゃと分かっていても、なかなか体が動いて取りかかれないことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0082",
+    "text": "「いつか使うかもしれない」と思うと、なかなか物を手放す決断ができないことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0093",
+    "text": "今していることを切り上げて次の行動に移るのに、大きなエネルギーが必要になることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0094",
+    "text": "何かに集中していると、気づけば何時間も食事をとるのを忘れてしまうことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0105",
+    "text": "何を食べるかのような小さなことでも、なかなか一つに決められず時間がかかることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0106",
+    "text": "「これくらいの時間で終わる」と思った作業が、実際には予定より大幅にかかることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0128",
+    "text": "同時にやることがいくつもあると、どれも同じくらい重要に見えて選べなくなることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0148",
+    "text": "始めてしまえば意外と進められるのに、その「始める」までが一番大変に感じることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0172",
+    "text": "お金を先の見通しを立てて計画的に使うのが難しく、気づくと月末に足りなくなることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0173",
+    "text": "一度にいくつも指示をまとめて受けると、覚えきれずに途中で忘れてしまうことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0197",
+    "text": "作業の九割ほどまで終わっているのに、最後の仕上げになると手が止まってしまうことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0210",
+    "text": "毎日繰り返し行っていることでも、いちいち意識して思い出さないとできないことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0215",
+    "text": "きちんと片付けたつもりでも物の置き場所が定まらず、探し物に多くの時間がかかることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0216",
+    "text": "作業の途中で声をかけられて中断すると、どこまでやっていたか分からなくなることがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0233",
+    "text": "やるべきだと分かっている気の進まない用事を、ついつい後回しにし続けてしまうことがある",
+    "category": "executive-function",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0004",
+    "text": "思ったことをそのまま正直に言ってしまい、後から相手を怒らせていたと気づくことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0008",
+    "text": "友達が悩みを打ち明けてきたとき、話を聞くよりも先に解決策を言ってしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0017",
+    "text": "会話の中で相手の言い間違いに気づくと、その場ですぐに訂正せずにいられないことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0018",
+    "text": "落ち込んでいる人を励まそうとして、共感するより先に解決策を話してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0029",
+    "text": "困っている人を見かけると、特に頼まれていなくてもすぐに手を貸してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0030",
+    "text": "人に頼みごとをするとき、前置きの言葉を省いて用件だけを短く伝えてしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0041",
+    "text": "一度しっかり決めたことでも、間違いがないか何度も確かめずにいられないことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0042",
+    "text": "誰かに褒められたとき、素直に受け取れずについ否定する言葉を返してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0053",
+    "text": "決められたルールに例外を作ることに納得できず、その場で指摘してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0054",
+    "text": "周りの全員が賛成していても、納得できなければ自分の意見をそのまま言うことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0065",
+    "text": "本当は気が進まないときでも、断ることができず相手の希望に合わせてしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0066",
+    "text": "誰かに謝るとき、まず謝るよりも先に理由やいきさつを詳しく説明してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0077",
+    "text": "友人が悲しんでいる話を聞くと、まるで自分のことのように苦しくなってしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0078",
+    "text": "親しみを込めて冗談を言ったつもりが、相手を傷つけてしまったと後で気づくことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0089",
+    "text": "ちょっとしたことで謝った後も、気になって何度も同じ謝罪を繰り返してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0090",
+    "text": "相手の様子が少し気になると、怒っていないか何度も確かめずにはいられないことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0101",
+    "text": "誰かをすごいと素直に褒めたい場面でも、うまく言葉が出てこずに黙ってしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0102",
+    "text": "目的がはっきりしない飲み会に誘われると、参加する意味が分からず気が進まないことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0126",
+    "text": "友達の誕生日に、お祝いの言葉を伝えるタイミングをうっかり逃してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0163",
+    "text": "その場限りの軽い言葉でも、本気の約束のように受け取ってそのまま信じてしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0187",
+    "text": "気に入っている相手には、自分の好意を加減せずまっすぐ強く伝えすぎてしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0188",
+    "text": "悩んでいる相手を励まそうとして、つい自分の似た体験を長々と話してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0207",
+    "text": "誰かが理不尽に責められているのを見ると、立場に関係なく口を出してしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0208",
+    "text": "相手に喜んでほしい一心で、自分が無理をしてでもつい手伝いすぎてしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0223",
+    "text": "誰かに親切にしてもらうと、すぐに同じくらいのお返しをしないと落ち着かないことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0231",
+    "text": "自分が疲れていても、人に頼まれると自分の予定を削ってでも引き受けてしまうことがある。",
+    "category": "kindness-misread",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0009",
+    "text": "周りの人には気にならない音や光なのに、自分だけ急につらくなってその場にいられなくなることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0019",
+    "text": "転んだりぶつけたりしてケガをしていても、しばらく経ってから気づくことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0020",
+    "text": "貧乏ゆすりのように体を動かしている方が、かえって話や作業に集中できることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0031",
+    "text": "食べられる食べ物の種類が限られていて、みんなで食事をする場面で困ることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0032",
+    "text": "にぎやかな店だと、周りの音に紛れて目の前の相手の声だけが聞き取れないことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0043",
+    "text": "蛍光灯やパソコンの画面のまぶしさで、目や頭が痛くなるほどつらく感じることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0044",
+    "text": "他の人は気にならないようなにおいで、頭痛や吐き気がするほどつらくなることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0055",
+    "text": "服のタグや縫い目がチクチクして、一日中そのことばかり気になってしまうことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0056",
+    "text": "周りの人は平気そうな部屋の温度でも、自分だけ暑さや寒さに耐えられないことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0067",
+    "text": "楽しく過ごした外出のあとで、どっと疲れが出て動けなくなってしまうことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0068",
+    "text": "近くの人の咀嚼音を聞くと、理屈ぬきに強い不快感や怒りがこみ上げてしまうことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0091",
+    "text": "軽くぶつけたりケガをしたりしただけでも、痛みが強く長く残ることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0092",
+    "text": "掲示物や物が多い場所にいるだけで、それだけで頭がひどく疲れてしまうことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0103",
+    "text": "肩を叩かれたり抱きつかれたりすると、思わず体が身を引いてしまうことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0104",
+    "text": "突然物音がしたり肩を叩かれたりすると、体が跳ねるほど大きく驚いてしまうことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0127",
+    "text": "相手の話す言葉は聞こえているのに、意味を理解するまでに少し時間がかかることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0137",
+    "text": "特定の食べ物の味やにおいが、口にする前から強く苦手だと感じてしまうことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0152",
+    "text": "お腹が空いたことやトイレに行きたいことに、かなり我慢したあとで気づくことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0161",
+    "text": "ぬめりやざらつきなど、特定の食べ物の舌触りだけがどうしても受けつけられないことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0174",
+    "text": "視界の中で何かが動いていると、そちらに目が引きつけられて集中できなくなることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0175",
+    "text": "音や光などいくつもの刺激が同時に重なると、頭が真っ白になって動けなくなることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0196",
+    "text": "大きな音や反響する音を、体が痛くなるほど苦しく感じてしまうことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0203",
+    "text": "重い毛布をかけたり強く抱きしめられたりすると、気持ちがすっと落ち着くことがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0204",
+    "text": "服のタグのようにずっと続いている刺激に、いつまでも慣れずに気になり続けることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0224",
+    "text": "手や服が濡れたりべたついたりすると、ぞっとして我慢できなくなることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0232",
+    "text": "散髪や爪切りのときの刺激が苦手で、じっと座っていられなくなることがある",
+    "category": "sensory",
+    "traits": [
+      "ASD",
+      "ADHD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0079",
+    "text": "新しい運動や、体を使う手順のある動作は、繰り返し練習しないと身につかないことが多い",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0080",
+    "text": "乗り物に乗るとすぐに酔ってしまい、少し移動しただけでぐったり疲れてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0112",
+    "text": "縄跳びや自転車のように、みんなが自然に覚えていく運動が、なかなかできるようにならないことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0113",
+    "text": "箸を使ったり物をつまんだりする、指先を使う細かい作業に時間がかかり、負担に感じることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0114",
+    "text": "字を書いていると手がすぐに疲れてしまい、長い時間書き続けるのがつらいことがある",
+    "category": "motor",
+    "traits": [
+      "LD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0115",
+    "text": "一度通ったことのある道でも迷ってしまい、なかなか道順を覚えられないことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0116",
+    "text": "ダンスや体操の授業で、新しい振り付けの順番をなかなか覚えられずに困ることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0119",
+    "text": "椅子にまっすぐ座った姿勢を保つのがつらく、すぐに疲れてもたれかかりたくなることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0120",
+    "text": "自転車の練習のように、両手足を同時に違う動きにする運動が、なかなか身につかないことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0135",
+    "text": "気をつけて歩いていても、よく物につまずいたりぶつかったりしてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0136",
+    "text": "新しい道具や機械の使い方を覚えるのに時間がかかることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0147",
+    "text": "話そうとする言葉がうまく発音できず、滑舌が悪いと人から言われることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0159",
+    "text": "みんなと同じタイミングに合わせて体を動かそうとすると、ワンテンポ遅れてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0160",
+    "text": "狙った場所に手を伸ばそうとしても、思ったところとずれてうまく届かないことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0168",
+    "text": "食べ物を噛んだり飲み込んだりする口の動きがうまくいかず、食事に時間がかかることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0169",
+    "text": "立ち続けたり歩き続けたりしていると、早く疲れてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0177",
+    "text": "文章を読んでいるとき、行を飛ばしてしまったり同じ行を読み返したりすることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0178",
+    "text": "慣れているはずの動作でも、一つ一つ意識して確認しないとうまくできないことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0189",
+    "text": "自然に歩いているつもりでも、歩き方がぎこちないと人から指摘されることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0190",
+    "text": "とっさに物をよけたり体を支えたりする場面で、動き出しが一拍遅れてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0191",
+    "text": "利き手でない方の手が極端に不器用で、両手を同時に使う作業がうまくいかないことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0201",
+    "text": "片足立ちをしたり狭い場所に立ったりすると、すぐにぐらついてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0202",
+    "text": "体の反対側にあるものを取るとき、手を伸ばさずに体ごと向きを変えてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0219",
+    "text": "ボタンを留めたり靴ひもを結んだりする着替えの動作に時間がかかり、負担に感じることがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0220",
+    "text": "手本を見せてもらっても、同じように体を動かして真似するのがうまくできないことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0235",
+    "text": "球技などで飛んでくるボールをうまく受け止められず、空振りしてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0237",
+    "text": "物を持つときの力の加減がうまく調節できず、強く握りすぎてしまうことがある",
+    "category": "motor",
+    "traits": [
+      "ASD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0107",
+    "text": "教科書などの文章を読むとき、一字ずつ目で追わないと読めず、時間がかかり、負担に感じることがある。",
+    "category": "learning",
+    "traits": [
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0108",
+    "text": "字を書こうとすると、頭には浮かんでいるのに形が思い出せず、手が止まることがある。",
+    "category": "learning",
+    "traits": [
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0109",
+    "text": "レジでお釣りの計算をしようとしても、とっさに頭の中でできず、時間がかかってしまうことがある。",
+    "category": "learning",
+    "traits": [
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0110",
+    "text": "文章を最後まで読み終えても、何が書いてあったのか内容が頭に入っていないことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0111",
+    "text": "言いたいことは頭にあるのに、どう書き始めればよいか分からず文章にできないことがある。",
+    "category": "learning",
+    "traits": [
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0117",
+    "text": "漢字を何度書いて練習しても、形がなかなか頭に残らず、テストで書けなくなることがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0118",
+    "text": "黒板の字を写しているうちに、どこまで写したか分からなくなり、書き終わらないことがある。",
+    "category": "learning",
+    "traits": [
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0132",
+    "text": "みんなの前で声に出して文章を読むと、つかえたり行を飛ばしたりしてしまうことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0133",
+    "text": "英語などの外国語になると、単語の綴りと発音がなかなかうまく結びつかなくなることがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0134",
+    "text": "年号や単語の羅列など、意味のつながらない暗記がどうしても覚えられないことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0144",
+    "text": "授業で話を聞きながらノートを取ろうとすると、どちらかがおろそかになることがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0145",
+    "text": "図形を頭の中で回したり組み立てたりする問題になると、急に分からなくなることがある。",
+    "category": "learning",
+    "traits": [
+      "LD",
+      "DCD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0146",
+    "text": "あと何分くらい残っているかという時間の感覚が、体感としてうまくつかめないことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0156",
+    "text": "計算はできるのに、文章題になるとどの数字をどう使えばよいか分からなくなることがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0157",
+    "text": "長い文章を読んでいると、途中で集中が切れてしまい、内容が頭に入らなくなることがある。",
+    "category": "learning",
+    "traits": [
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0158",
+    "text": "買い物のとき、だいたいの金額がいくらくらいか、とっさに見当がつかないことがある。",
+    "category": "learning",
+    "traits": [
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0170",
+    "text": "先生や誰かに口頭だけで説明を受けると、聞いている間に前半の内容を忘れてしまうことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0171",
+    "text": "教わったとおりの形の問題なら解けるのに、少し条件が変わると解けなくなることがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0179",
+    "text": "レポートなどの要点をまとめようとすると、全部大事に思えて絞り込めなくなることがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0180",
+    "text": "グラフや表を見せられても、どこを見れば答えが分かるのか、迷ってしまうことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0181",
+    "text": "自分の書いた文章を何度も見直しても、間違いになかなか気づけないままになることがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0198",
+    "text": "授業の内容をノートにまとめようとすると、何が大事か選べず丸写しになることがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0199",
+    "text": "楽譜の音符を見ても、すぐには音として変換できず、時間がかかってしまうことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0217",
+    "text": "言葉だけの抽象的な説明では意味がつかめず、具体的な例がないと理解できないことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0218",
+    "text": "家では言えていたのに、本番になると覚えたはずのことが急に思い出せなくなることがある。",
+    "category": "learning",
+    "traits": [
+      "ADHD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0234",
+    "text": "友達に道案内をするとき、とっさに左右を判断できず、言い間違えてしまうことがある。",
+    "category": "learning",
+    "traits": [
+      "ASD",
+      "LD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0034",
+    "text": "急に予定が変わったとき、頭の中が真っ白になり、うまく動けなくなってしまうことがある。",
+    "category": "restricted-repetitive",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0239",
+    "text": "誰かに何か聞かれたとき、答える前に相手の言葉をそのまま繰り返してしまうことがある。",
+    "category": "restricted-repetitive",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0240",
+    "text": "好きな分野の話になると、時間を忘れて細かいところまで夢中で調べてしまうことがある。",
+    "category": "restricted-repetitive",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0241",
+    "text": "いつもと同じ手順や順番で物事を進めないと、気持ちが落ち着かなくなることがある。",
+    "category": "restricted-repetitive",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0242",
+    "text": "机の上や部屋にある物の並び方がいつもと違うと、気になって直したくなることがある。",
+    "category": "restricted-repetitive",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0244",
+    "text": "全体の内容を把握するより先に、細かい違いや部分にまず目が向いてしまうことがある。",
+    "category": "restricted-repetitive",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0246",
+    "text": "いつも通っている道と違う道を通ることになると、落ち着かない気持ちになることがある。",
+    "category": "restricted-repetitive",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  },
+  {
+    "id": "ND-0248",
+    "text": "物事の中に規則やパターンを見つけたとき、すっきりした気持ちで安心することがある。",
+    "category": "restricted-repetitive",
+    "traits": [
+      "ASD"
+    ],
+    "grayZone": false
+  }
+]

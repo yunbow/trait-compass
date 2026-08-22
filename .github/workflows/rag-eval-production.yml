@@ -1,0 +1,98 @@
+name: RAG eval (production, non-blocking)
+
+# 本番 Vectorize/Workers AI(EVAL_TARGET=production)・リモート(本番)D1(EVAL_D1_REMOTE=1)・
+# 実LLM(EVAL_JUDGE=1, Vertex AI Gemini 経由 Cloudflare AI Gateway)を対象にした RAG 定量評価
+# (app/eval/README.md「本番 Vectorize/Workers AI を対象にした検索精度評価」「リモート(本番)D1
+# を対象にした評価」「LLM-as-judge」参照)。
+#
+# .github/workflows/ci.yml(常時ゲート、ローカル D1・タグベースフォールバック経路・シークレット
+# 不要)とは役割が異なる: こちらは外部サービス(Vectorize/Workers AI/D1/Vertex AI Gemini)への
+# 実アクセスを伴うため、外部サービス起因の一時的な障害(flake)で PR やマージをブロックしない
+# 設計にする(Fable5 設計方針)。`continue-on-error: true` によりジョブの成否に関わらず後続の
+# レポート出力ステップまで到達させ、結果は job summary(GitHub Actions の $GITHUB_STEP_SUMMARY)
+# にのみ出力する。
+#
+# 必要な GitHub Actions Secrets(実際の値の設定はこのワークフロー追加のスコープ外。
+# app/eval/README.md・docs/usage/cloudflare-setup.md を参照して別途発行・登録すること):
+# - CLOUDFLARE_ACCOUNT_ID
+# - CLOUDFLARE_API_TOKEN
+#     **Vectorize Read + Workers AI 実行の最小権限で新規発行したトークンを使うこと。**
+#     デプロイ用等の既存の広い権限を持つトークンを使い回さない
+#     (app/eval/README.md「本番 Vectorize/Workers AI を対象にした検索精度評価」参照)。
+# - AI_GATEWAY_URL
+# - AI_GATEWAY_AUTH_TOKEN(AI Gateway の「認証済みゲートウェイ」が有効な場合のみ必要)
+# - GOOGLE_VERTEX_PROJECT
+# - GOOGLE_VERTEX_LOCATION
+# - GOOGLE_VERTEX_MODEL(任意、未設定なら既定の gemini-2.5-flash が使われる)
+#
+# secrets が未設定の場合、各コマンドはエラー終了する想定だが、continue-on-error によりジョブ
+# 全体は失敗扱いにならず、job summary にその旨が記録される(secrets 未設定は「PRをブロックしない」
+# 設計上、単なる skip 相当として扱ってよい)。
+
+on:
+  workflow_dispatch: {}
+  schedule:
+    # 毎週月曜 9:00 JST(= 前日日曜 0:00 UTC)。
+    - cron: "0 0 * * MON"
+  pull_request:
+    paths:
+      - "app/src/features/*/services/prompt.ts"
+      - "app/src/features/support/services/facility-vector-search.ts"
+      - "app/eval/**"
+
+jobs:
+  rag-eval-production:
+    runs-on: ubuntu-latest
+    # ジョブ全体の成否に関わらず後続ジョブ・PR チェックをブロックしない(Fable5 設計方針)。
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Run RAG eval against production (Vectorize/Workers AI/D1) + LLM-as-judge
+        id: eval
+        # 個々のステップも常に成功扱いにし、失敗時も job summary 出力まで到達させる。
+        continue-on-error: true
+        working-directory: app
+        env:
+          EVAL_TARGET: production
+          EVAL_D1_REMOTE: "1"
+          EVAL_JUDGE: "1"
+          LLM_PROVIDER: vertex-gateway
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          AI_GATEWAY_URL: ${{ secrets.AI_GATEWAY_URL }}
+          AI_GATEWAY_AUTH_TOKEN: ${{ secrets.AI_GATEWAY_AUTH_TOKEN }}
+          GOOGLE_VERTEX_PROJECT: ${{ secrets.GOOGLE_VERTEX_PROJECT }}
+          GOOGLE_VERTEX_LOCATION: ${{ secrets.GOOGLE_VERTEX_LOCATION }}
+          GOOGLE_VERTEX_MODEL: ${{ secrets.GOOGLE_VERTEX_MODEL }}
+        run: npm run eval
+
+      - name: Publish report to job summary
+        # eval 自体の成否・レポート有無に関わらず必ず実行する(NG のときこそ summary で見たい)。
+        if: always()
+        run: |
+          if [ -f app/eval/reports/latest.md ]; then
+            cat app/eval/reports/latest.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## RAG eval (production) レポートが見つかりませんでした"
+              echo ""
+              echo "\`app/eval/reports/latest.md\` が生成されていません。secrets 未設定・"
+              echo "本番サービスへの疎通失敗等の可能性があります(このワークフローは"
+              echo "\`continue-on-error: true\` のため PR やマージはブロックしていません)。"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rag-eval-production-report
+          path: app/eval/reports/
+          if-no-files-found: warn
+          retention-days: 30

@@ -1,0 +1,72 @@
+[
+  {
+    "id": "G-01",
+    "description": "誠実: D1由来の説明の範囲内で理由文を生成",
+    "facilityId": "fac-001",
+    "responseText": "この施設は対人関係やこだわりについての相談に力を入れており、お子さまの相談内容に合いそうです。",
+    "expectFaithful": true
+  },
+  {
+    "id": "G-02",
+    "description": "誠実: 事実情報(施設名・電話番号・URL)を新たに生成していない",
+    "facilityId": "fac-002",
+    "responseText": "年齢を問わず相談できる窓口のため、幅広い内容の相談に対応しやすいと考えられます。",
+    "expectFaithful": true
+  },
+  {
+    "id": "G-03",
+    "description": "誠実: 施設の実際の対応分野の説明のみ",
+    "facilityId": "fac-003",
+    "responseText": "感覚の過敏さや気持ちの浮き沈みに関する相談実績がある窓口です。",
+    "expectFaithful": true
+  },
+  {
+    "id": "G-04",
+    "description": "誠実: ガイド系施設の説明",
+    "facilityId": "fac-005",
+    "responseText": "障害福祉サービス全般の利用方法を分かりやすくまとめたガイドです。",
+    "expectFaithful": true
+  },
+  {
+    "id": "G-05",
+    "description": "誠実: 支援制度系施設の説明",
+    "facilityId": "fac-007",
+    "responseText": "就労支援制度に関する情報を必要としている方に向いている制度です。",
+    "expectFaithful": true
+  },
+  {
+    "id": "G-06",
+    "description": "捏造(電話番号): 実際の電話番号(03-0000-0001)と異なる番号を提示",
+    "facilityId": "fac-001",
+    "responseText": "お困りの際はこちらの直通番号 090-1234-5678 までご連絡ください。",
+    "expectFaithful": false
+  },
+  {
+    "id": "G-07",
+    "description": "捏造(URL): D1由来集合に無いURLを提示",
+    "facilityId": "fac-002",
+    "responseText": "詳しくはこちらの特設サイト https://fake-support.example.com/info をご覧ください。",
+    "expectFaithful": false
+  },
+  {
+    "id": "G-08",
+    "description": "捏造(施設名の取り違え): 別施設(fac-002)の名称を紛れ込ませる",
+    "facilityId": "fac-003",
+    "responseText": "実際には新宿区 発達障害者支援窓口(ダミー)と連携しており、そちらでも相談可能です。",
+    "expectFaithful": false
+  },
+  {
+    "id": "G-09",
+    "description": "捏造(電話番号): 実際の電話番号(03-0000-0006)と異なる番号を提示",
+    "facilityId": "fac-006",
+    "responseText": "手当の相談は 042-999-9999 まで。",
+    "expectFaithful": false
+  },
+  {
+    "id": "G-10",
+    "description": "捏造(施設名の取り違え): 別施設(fac-007)の名称を紛れ込ませる",
+    "facilityId": "fac-005",
+    "responseText": "港区 成人発達障害者就労支援制度(ダミー)の利用者にもおすすめです。",
+    "expectFaithful": false
+  }
+]

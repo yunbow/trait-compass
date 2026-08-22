@@ -1,0 +1,28 @@
+{
+  "name": "trait-compass-batch",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "lint": "eslint",
+    "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "ingest:dev": "wrangler dev -c wrangler.ingest.toml",
+    "data:fetch-open": "node scripts/fetch-open-data.mjs",
+    "data:ingest-open": "node scripts/ingest-open-data.mjs",
+    "data:validate-manual": "node scripts/validate-manual.mjs",
+    "report:list": "node scripts/report-review.mjs list",
+    "report:done": "node scripts/report-review.mjs done",
+    "report:dismiss": "node scripts/report-review.mjs dismiss"
+  },
+  "dependencies": {
+    "@opennextjs/cloudflare": "1.20.1",
+    "jsdom": "^29.1.1",
+    "yaml": "^2.8.1"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260701.1",
+    "typescript": "^5",
+    "vitest": "^4.1.5",
+    "wrangler": "^4.86.0"
+  }
+}

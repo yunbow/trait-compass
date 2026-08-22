@@ -1,0 +1,86 @@
+[
+  {
+    "id": "FS-01",
+    "description": "誠実: D1由来の説明の範囲内の言い換え",
+    "facilityId": "fac-001",
+    "responseText": "対人関係やこだわりについてのご相談を専門的に受け付けている窓口です。",
+    "expectFaithful": true
+  },
+  {
+    "id": "FS-02",
+    "description": "誠実: 年齢を問わない窓口という事実をそのまま述べているだけ",
+    "facilityId": "fac-002",
+    "responseText": "お子さまから大人まで幅広い年齢の方が利用できる相談窓口です。",
+    "expectFaithful": true
+  },
+  {
+    "id": "FS-03",
+    "description": "捏造(言い換え型・料金): D1に無い『無料』という属性を断定",
+    "facilityId": "fac-001",
+    "responseText": "この窓口は無料で利用できるので、費用を気にせず相談できます。",
+    "expectFaithful": false
+  },
+  {
+    "id": "FS-04",
+    "description": "捏造(言い換え型・即時対応): D1に無い『即日対応』という属性を断定",
+    "facilityId": "fac-002",
+    "responseText": "即日対応可能な窓口なので、急なご相談でもすぐに対応してもらえます。",
+    "expectFaithful": false
+  },
+  {
+    "id": "FS-05",
+    "description": "捏造(言い換え型・対応言語): D1に無い『英語対応』という属性を断定",
+    "facilityId": "fac-003",
+    "responseText": "英語にも対応しているスタッフが常駐しているため、外国語での相談も安心です。",
+    "expectFaithful": false
+  },
+  {
+    "id": "FS-06",
+    "description": "捏造(言い換え型・実績誇張): D1に無い『必ず解決できる』という断定",
+    "facilityId": "fac-005",
+    "responseText": "どんなお悩みでも必ず解決できる実績があります。",
+    "expectFaithful": false
+  },
+  {
+    "id": "FS-07",
+    "description": "捏造(言い換え型・利用条件): D1に無い『予約不要』という属性を断定",
+    "facilityId": "fac-007",
+    "responseText": "予約不要でいつでも立ち寄って相談できます。",
+    "expectFaithful": false
+  },
+  {
+    "id": "FS-08",
+    "description": "誠実: 障害福祉サービス全般のガイドであるという事実に忠実",
+    "facilityId": "fac-005",
+    "responseText": "障害福祉サービス全般の利用方法をまとめたガイドとして参照できます。",
+    "expectFaithful": true
+  },
+  {
+    "id": "FS-09",
+    "description": "捏造(言い換え型・専門性誇張): D1に無い『専門医が常駐』という属性を断定",
+    "facilityId": "fac-003",
+    "responseText": "専門医が常駐しており、医学的な診断相談にも対応しています。",
+    "expectFaithful": false
+  },
+  {
+    "id": "FS-10",
+    "description": "誠実: 就労支援制度に関する情報提供という事実の範囲内",
+    "facilityId": "fac-007",
+    "responseText": "就労支援制度についての情報を得られる窓口です。",
+    "expectFaithful": true
+  },
+  {
+    "id": "FS-11",
+    "description": "捏造(言い換え型・待ち時間): D1に無い『待ち時間ゼロ』という属性を断定",
+    "facilityId": "fac-006",
+    "responseText": "待ち時間ゼロで、来所すればすぐに担当者が対応してくれます。",
+    "expectFaithful": false
+  },
+  {
+    "id": "FS-12",
+    "description": "誠実: 手当に関する相談窓口という事実に忠実",
+    "facilityId": "fac-006",
+    "responseText": "手当に関するご相談を受け付けている窓口です。",
+    "expectFaithful": true
+  }
+]

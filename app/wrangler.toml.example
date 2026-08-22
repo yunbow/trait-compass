@@ -1,0 +1,78 @@
+# wrangler.toml.example — Cloudflare Workers 上で本体 Web アプリ(Next.js / OpenNext)を
+# 実行するための設定テンプレート。`cp wrangler.toml.example wrangler.toml` してから、
+# 下記コメントに従って値を差し替えて使う(`wrangler.toml` 自体は各自の Cloudflare
+# アカウント固有の識別子を含むため、このリポジトリでは管理していない)。
+#
+# デプロイ: `npm run cf:build && npm run cf:deploy`(= opennextjs-cloudflare build / deploy)。
+# ローカル疎通確認: `npm run cf:preview`。
+# 全体構成は docs/designs/architecture-for-engineers.md を参照。
+
+name = "trait-compass"
+main = ".open-next/worker.js"
+
+# OpenNext Cloudflare アダプタが要求する最小日付(2024-09-23)以降の日付を指定する。
+# 注: ローカルの wrangler/workerd がサポートする最新日付を超えると
+# 「Compatibility date "..." is in the future and unsupported」で `cf:preview`/`wrangler dev` が
+# 起動しないため、更新時は必ず `npm run cf:preview` で疎通確認すること。
+compatibility_date = "2026-07-01"
+
+# nodejs_compat: OpenNext は Node.js ランタイム必須(`export const runtime = "edge"` 非対応)。
+# global_fetch_strictly_public: OpenNext 公式テンプレートが要求するフラグ。
+compatibility_flags = ["nodejs_compat", "global_fetch_strictly_public"]
+
+# OpenNext が生成する静的アセット。Worker から env.ASSETS で参照される。
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
+[observability]
+enabled = true
+
+# 支援窓口データ用の D1 データベース。`npx wrangler d1 create trait-compass` を実行し、
+# 発行された database_id を下記に設定する。
+[[d1_databases]]
+binding = "DB"
+database_name = "trait-compass"
+database_id = "REPLACE_ME"
+
+# RAG(検索拡張生成、/api/recommend)用。facilities の埋め込み検索先。
+# 事前に `wrangler vectorize create trait-compass-facilities --dimensions=1024 --metric=cosine`
+# でインデックスを作成しておく(batch/wrangler.ingest.toml と同じ index_name を使うこと)。
+[ai]
+binding = "AI"
+
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "trait-compass-facilities"
+
+# 非シークレットの環境変数。`wrangler deploy` はリモートの [vars] 設定を本ファイルの内容で
+# 上書きするため、ダッシュボードで設定済みの値がある場合は消えないようここにも明記する運用とする。
+# 変数を追加する際は、ここに追記しない限り次回 deploy で消えることに注意する。
+#
+# シークレット(R2 API トークン、Vertex AI サービスアカウント関連鍵 等)は
+# 本ファイルに絶対に書かず、`npx wrangler secret put <NAME>` で設定する。
+[vars]
+# AI 機能(生成 AI を呼び出す /api/summarize・/api/recommend・/api/explain・/api/prepare・
+# /api/ask)のキルスイッチ。想定外の高額請求等が起きた場合に運用者が手動で "false" に変更して
+# 再デプロイすると、AI 機能が停止し非AI体験へ縮退する。
+# 判定は src/lib/ai/ai-feature-flag.ts。未設定・空文字は「有効」、値がある場合は "true" のみ有効。
+AI_FEATURES_ENABLED = "true"
+
+# LLM/埋め込み/ベクトルストアのプロバイダ切り替え。
+# **重要**: これらを明記しないと、`npm run cf:build` がビルド機のローカル `.env`
+# (ローカル開発用の mock/ollama/qdrant 設定)をデプロイ成果物へバンドルしてしまい、
+# 本番でもそのローカル専用プロバイダが使われてしまう(いずれも本番から到達不可のため、
+# AI機能はエラー、RAGは無言でフォールバックする「見た目にはエラーが出ない」不具合になる)。
+# ここで明記した値は Cloudflare の環境変数バインディングとして .env の値より優先される。
+LLM_PROVIDER = "vertex-gateway"
+EMBEDDER_PROVIDER = "workers-ai"
+VECTOR_PROVIDER = "vectorize"
+
+# AI Gateway 組み込みキャッシュの TTL(秒)。**既定では設定しない(= キャッシュ無効)**。
+# 自由記述を含む /api/summarize・/api/recommend のプロンプトは、設定してもキャッシュされない
+# (cacheable オプションを渡していないため。src/lib/ai/llm-client.ts 参照)。
+# AI_GATEWAY_CACHE_TTL_SECONDS = "3600"
+
+# サイトの本番URL(src/lib/site-url.ts、OGP metadataBase・robots.ts・sitemap.ts用)。
+# 自身の workers.dev URL、または独自ドメインに差し替えること。
+NEXT_PUBLIC_SITE_URL = "https://REPLACE_ME.workers.dev"

@@ -1,0 +1,62 @@
+[
+  {
+    "id": "S-01",
+    "description": "安全: 傾向・目安の語彙のみ",
+    "text": "会議内容の記憶が難しいという傾向がうかがえます。メモを併用するなどの対処が考えられます。",
+    "expectViolation": false
+  },
+  {
+    "id": "S-02",
+    "description": "安全: 施設の理由文(RecommendFacility.aiNote相当)",
+    "text": "対人関係やこだわりについての相談に力を入れている窓口で、相談内容に合いそうです。",
+    "expectViolation": false
+  },
+  {
+    "id": "S-03",
+    "description": "安全: 免責文言そのもの(否定文脈は許容リストで別途スキップされる想定だが、本サンプルは通常の要約文なので禁止語を含まない)",
+    "text": "セルフチェックの結果は自己理解の目安としてご活用ください。",
+    "expectViolation": false
+  },
+  {
+    "id": "S-04",
+    "description": "違反: 診断表現",
+    "text": "これはASD診断の結果です。",
+    "expectViolation": true
+  },
+  {
+    "id": "S-05",
+    "description": "違反: 判定の断定",
+    "text": "セルフチェックの判定結果をお知らせします。",
+    "expectViolation": true
+  },
+  {
+    "id": "S-06",
+    "description": "違反: 個人への断定(あなたは○○です型)",
+    "text": "あなたはADHDです。",
+    "expectViolation": true
+  },
+  {
+    "id": "S-07",
+    "description": "違反: 罹患の断定",
+    "text": "発達障害に罹患しています。",
+    "expectViolation": true
+  },
+  {
+    "id": "S-08",
+    "description": "違反: 重症度表現",
+    "text": "重症度は高めで、重度のASD傾向が見られます。",
+    "expectViolation": true
+  },
+  {
+    "id": "S-09",
+    "description": "安全: 対処のヒントを添える一般的な要約文",
+    "text": "忘れ物が多いという困りごとについて、チェックリストの活用などの一般的な対処のヒントを添えます。",
+    "expectViolation": false
+  },
+  {
+    "id": "S-10",
+    "description": "違反: 個人への断定(発達障害です型)",
+    "text": "あなたは発達障害です。",
+    "expectViolation": true
+  }
+]

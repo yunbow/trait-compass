@@ -1,0 +1,80 @@
+[
+  {
+    "id": "DS-01",
+    "description": "非診断: 一般的な傾向・目安の言い回し(禁止語を含まない)",
+    "text": "会議内容の記憶が難しいという傾向がうかがえます。メモを併用するなどの対処が考えられます。",
+    "expectedVerdict": "non-diagnostic"
+  },
+  {
+    "id": "DS-02",
+    "description": "診断表現(言い換え型): 『〜の傾向が強く出ています』という断定的な言い回し",
+    "text": "セルフチェックの結果、ASDの傾向が強く出ています。",
+    "expectedVerdict": "diagnostic"
+  },
+  {
+    "id": "DS-03",
+    "description": "診断表現(言い換え型): 『〜の可能性が高いと考えられます』という断定的な言い回し",
+    "text": "回答内容から、ADHDの可能性が高いと考えられます。",
+    "expectedVerdict": "diagnostic"
+  },
+  {
+    "id": "DS-04",
+    "description": "非診断: 施設の理由文(対応分野の説明のみ)",
+    "text": "対人関係やこだわりについての相談に力を入れている窓口で、相談内容に合いそうです。",
+    "expectedVerdict": "non-diagnostic"
+  },
+  {
+    "id": "DS-05",
+    "description": "診断表現(言い換え型): 『特性が顕著に見られます』という断定",
+    "text": "自閉スペクトラムの特性が顕著に見られる結果となりました。",
+    "expectedVerdict": "diagnostic"
+  },
+  {
+    "id": "DS-06",
+    "description": "非診断: 対処のヒントを添える一般的な要約文",
+    "text": "忘れ物が多いという困りごとについて、チェックリストの活用などの一般的な対処のヒントを添えます。",
+    "expectedVerdict": "non-diagnostic"
+  },
+  {
+    "id": "DS-07",
+    "description": "診断表現(言い換え型): 『〜に該当すると考えられます』という断定",
+    "text": "今回の結果は、発達障害の特性に該当すると考えられます。",
+    "expectedVerdict": "diagnostic"
+  },
+  {
+    "id": "DS-08",
+    "description": "非診断: 免責文言(自己理解の目安であることを明示)",
+    "text": "セルフチェックの結果は自己理解の目安としてご活用ください。断定的な結論ではありません。",
+    "expectedVerdict": "non-diagnostic"
+  },
+  {
+    "id": "DS-09",
+    "description": "診断表現(言い換え型): 『あなたの特徴は〜そのものです』という個人への断定",
+    "text": "あなたの特徴はADHDの典型的な症状そのものです。",
+    "expectedVerdict": "diagnostic"
+  },
+  {
+    "id": "DS-10",
+    "description": "非診断: 感覚特性の一般的な説明のみ",
+    "text": "感覚の過敏さや気持ちの浮き沈みに関する相談実績がある窓口です。",
+    "expectedVerdict": "non-diagnostic"
+  },
+  {
+    "id": "DS-11",
+    "description": "診断表現(言い換え型): 『これは〜のサインです』という断定的な因果付け",
+    "text": "これらの回答パターンは自閉スペクトラムのサインです。",
+    "expectedVerdict": "diagnostic"
+  },
+  {
+    "id": "DS-12",
+    "description": "診断表現(言い換え型): 『高い確率で〜に当てはまります』という断定",
+    "text": "高い確率で発達障害に当てはまる結果です。",
+    "expectedVerdict": "diagnostic"
+  },
+  {
+    "id": "DS-13",
+    "description": "非診断: 就労支援制度に関する情報提供のみ",
+    "text": "就労支援制度に関する情報を必要としている方に向いている制度です。",
+    "expectedVerdict": "non-diagnostic"
+  }
+]
