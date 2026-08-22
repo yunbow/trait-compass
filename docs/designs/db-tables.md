@@ -316,8 +316,8 @@ AI 機能の原価防衛用固定ウィンドウ回数制限カウンタ(TICKET-
 | `corrected_value` | TEXT | NULL可 | - | - | 正しいと思われる内容(任意、最大200字) | migration 0024 |
 | `detail_text` | TEXT | NULL可 | - | - | 補足・情報源など自由記述(任意、最大500字) | migration 0024 |
 | `status` | TEXT | NOT NULL | `'new'` | CHECK (`new`,`done`,`dismissed`) | 運用トリアージ状態。開発者が wrangler CLI で更新する | migration 0024 |
-| `created_at` | TEXT | NOT NULL | `strftime('%Y-%m-%dT%H:%M:%fZ','now')` | - | 送信日時 | migration 0024 |
-| `status_updated_at` | TEXT | NULL可 | - | - | status が done/dismissed に更新された日時。自由記述の保持期限(90日、report-retention.ts)の起算点。status='new' の間は NULL | migration 0027 |
+| `created_at` | TEXT | NOT NULL | `strftime('%Y-%m-%dT%H:%M:%fZ','now')` | - | 送信日時。status='new' のまま1年(365日、report-retention.ts)を超えた行の絶対保持上限の起算点 | migration 0024 |
+| `status_updated_at` | TEXT | NULL可 | - | - | status が done/dismissed に更新された日時。トリアージ済み行の保持期限(90日、report-retention.ts)の起算点。status='new' の間は NULL | migration 0027 |
 
 インデックス: `idx_facility_reports_status`・`idx_facility_reports_created_at`(§21参照)。
 
@@ -351,8 +351,8 @@ AI 機能の原価防衛用固定ウィンドウ回数制限カウンタ(TICKET-
 | `corrected_value` | TEXT | NULL可 | - | - | 正しいと思われる内容(任意、最大200字) | migration 0025 |
 | `detail_text` | TEXT | NULL可 | - | - | 補足・情報源など自由記述(任意、最大500字) | migration 0025 |
 | `status` | TEXT | NOT NULL | `'new'` | CHECK (`new`,`done`,`dismissed`) | 運用トリアージ状態。開発者が wrangler CLI で更新する | migration 0025 |
-| `created_at` | TEXT | NOT NULL | `strftime('%Y-%m-%dT%H:%M:%fZ','now')` | - | 送信日時 | migration 0025 |
-| `status_updated_at` | TEXT | NULL可 | - | - | status が done/dismissed に更新された日時。自由記述の保持期限(90日、report-retention.ts)の起算点。status='new' の間は NULL | migration 0027 |
+| `created_at` | TEXT | NOT NULL | `strftime('%Y-%m-%dT%H:%M:%fZ','now')` | - | 送信日時。status='new' のまま1年(365日、report-retention.ts)を超えた行の絶対保持上限の起算点 | migration 0025 |
+| `status_updated_at` | TEXT | NULL可 | - | - | status が done/dismissed に更新された日時。トリアージ済み行の保持期限(90日、report-retention.ts)の起算点。status='new' の間は NULL | migration 0027 |
 
 インデックス: `idx_content_reports_status`・`idx_content_reports_created_at`(§21参照)。
 

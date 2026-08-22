@@ -7,8 +7,8 @@
 // - scheduled: 別のCron Trigger(1日1回)で、掲載情報の訂正・更新報告(facility_reports/
 //   content_reports)の未対応件数を集計し、1件以上あれば Slack へ件数のみ通知する
 //   (report-digest.ts参照。報告1件ごとの即時・自由記述全文送信は廃止した)。同じCronで、
-//   トリアージ済み(done/dismissed)から
-//   90日経過した報告の自由記述(corrected_value/detail_text)を削除する
+//   トリアージ済み(done/dismissed)から90日経過した報告、および未対応(new)のまま
+//   1年(365日)を超えた報告の自由記述(corrected_value/detail_text)を削除する
 //   (セキュリティレビュー指摘、report-retention.ts参照。専用のCron Triggerは追加しない)。
 //   さらに同じCronで、フィードバックコメント(feedback_comments、TICKET-0067)のうち
 //   公開許可済みでまだレビューされていない件数も同様に集計し、1件以上あれば Slack へ

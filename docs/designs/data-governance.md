@@ -81,11 +81,12 @@ flowchart TB
   d1[("D1: facility_reports /<br/>content_reports<br/>(status='new')")]
   digest["日次Cron: 未対応件数のみ通知<br/>(自由記述は含まない)"]
   review["開発者が wrangler CLI でレビュー<br/>(report-review.mjs、専用管理UIなし)"]
-  retention["トリアージ後90日で自由記述を削除<br/>(report-retention.ts)"]
+  retention["トリアージ後90日 または 未対応のまま1年経過で<br/>自由記述を削除(report-retention.ts)"]
 
   user --> api --> snapshot --> d1
   d1 --> digest --> review
   review -->|"status = done / dismissed"| retention
+  d1 -->|"status = new のまま1年経過"| retention
 ```
 
 設計上のポイントは次のとおりである。
@@ -97,7 +98,10 @@ flowchart TB
 - レート制限はIPアドレスを平文保存せず、SHA-256ハッシュ化したキーのみを短期保存する
   (`app/src/lib/reports/rate-limit.ts`)。
 - トリアージ済み(`done`/`dismissed`)の報告は90日経過後にCronで削除される
-  (`batch/ingest/report-retention.ts`)。未対応(`new`)の報告は削除しない。
+  (`batch/ingest/report-retention.ts`)。未対応(`new`)の報告への対応期限のSLAは
+  定めていないが([`./operations-policy.md`](./operations-policy.md)参照)、自由記述が
+  無期限に残り続けないよう、受付から1年(365日)を超えた未対応の報告も同じCronで削除する
+  (絶対保持上限)。
 
 ## 6. 自治体データ追加時の品質チェック
 

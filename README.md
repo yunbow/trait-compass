@@ -62,7 +62,7 @@ Cloudflare Web Analytics・Counterscale・Plausible 等の外部アナリティ�
 
 ## AI・RAGの品質評価
 
-「AIを使っている」だけでなく、**AIをどこまで信用してよいかを測るしくみ**を実装しています。検索精度(Precision@K / Recall@K / MRR)・生成品質(事実情報の捏造検知)・安全性(診断表現の排除・危機表現テストケースに対する見逃しゼロゲート)の3レイヤーを、ゴールデンデータとCIで継続評価し、任意でLLM-as-judge(第4レイヤー)も実行できます。詳細は[app/eval/README.md](./app/eval/README.md)を参照してください。
+「AIを使っている」だけでなく、**AIをどこまで信用してよいかを測るしくみ**を実装しています。検索精度(Precision@K / Recall@K / MRR)・生成品質(事実情報の捏造検知)・安全性(診断表現の排除・危機表現テストケースに対する見逃しゼロ判定)の3レイヤーを、ゴールデンデータとCIで継続評価し、任意でLLM-as-judge(第4レイヤー)も実行できます。詳細は[app/eval/README.md](./app/eval/README.md)を参照してください。
 
 ## 技術構成・フォルダ構成
 
