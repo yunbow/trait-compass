@@ -59,11 +59,12 @@ EVAL_JUDGE=1 npm run eval
 - 必要な環境変数は Vertex AI Gemini(Cloudflare AI Gateway 経由、BYOK 認証)を本番と同じ経路で
   呼び出すためのもので、`LLM_PROVIDER=vertex-gateway`・`AI_GATEWAY_URL`・
   `GOOGLE_VERTEX_PROJECT`・`GOOGLE_VERTEX_LOCATION` が必須(BYOK 設定済みなら
-  `GOOGLE_VERTEX_ACCESS_TOKEN` は不要)。設定手順は
-  [docs/usage/vertex-ai-gemini-setup.md](../../docs/usage/vertex-ai-gemini-setup.md)・
-  [docs/usage/cloudflare-setup.md](../../docs/usage/cloudflare-setup.md) §3 を参照。
+  `GOOGLE_VERTEX_ACCESS_TOKEN` は不要)。Vertex AI / AI Gateway 側の設定手順は各自の
+  Google Cloud・Cloudflare アカウント環境に依存するため、本リポジトリの範囲外とする
+  (プロバイダ切り替えのしくみは
+  [docs/designs/architecture-for-engineers.md](../../docs/designs/architecture-for-engineers.md) §4 を参照)。
 - 個別に実行したい場合: `EVAL_JUDGE=1 node --no-warnings --import ./eval/lib/register.mjs eval/judge.eval.ts`
-- **コスト試算**: Gemini 2.5 Flash(`docs/usage/vertex-ai-gemini-setup.md` §4 の料金表)、
+- **コスト試算**: Gemini 2.5 Flash(Google Cloud 公表の従量課金レート)、
   各ケースのプロンプト・レスポンスは数百トークン程度の短文。ケース数は現状 relevancy 14件 +
   Faithfulness 意味層 12件(単一 judge)+ 診断表現 13件×3回(多数決)= 約65回の judge 呼び出し。
   1回あたり入出力合計 1,000 トークン程度と見積もっても Standard ティア(入力 $0.30/1M、出力
@@ -122,7 +123,7 @@ EVAL_D1_REMOTE=1 npm run eval
 | 対象経路 | ローカル D1(`--local`)+ タグベース検索経路(ベクトル未構築環境へのグレースフルフォールバック) | 本番 Vectorize/Workers AI(`EVAL_TARGET=production`)+ リモート D1(`EVAL_D1_REMOTE=1`)+ 実 LLM-as-judge(`EVAL_JUDGE=1`、Vertex AI Gemini) |
 | シークレット | **不要**(`EVAL_TARGET`/`EVAL_JUDGE` は未設定のまま実行する) | 必要(下記) |
 | 外部課金 | ゼロ | あり(Vectorize/Workers AI の実行コスト、Gemini の judge 呼び出し。詳細は本 README「④ LLM-as-judge」の試算参照) |
-| PR ブロック | **する**(常時ゲート。`npm run eval` が非ゼロ終了すればジョブ失敗) | **しない**(`continue-on-error: true`。外部サービス起因の一時的な障害でPRやマージを止めない設計、Fable5 設計方針) |
+| PR ブロック | **しない**(`continue-on-error: true`。Qdrant/Ollama へ疎通できないタグベース検索経路では①手書きゴールデンの検索精度しきい値が構造的に達成できないため、毎回のPR・pushをブロックしないこの方針にしている) | **しない**(`continue-on-error: true`。外部サービス起因の一時的な障害でPRやマージを止めない設計) |
 | レポート出力先 | ジョブログ(`npm run eval` の標準出力) | GitHub Actions job summary(`$GITHUB_STEP_SUMMARY` に `eval/reports/latest.md` を出力)+ artifact(`eval/reports/` 一式) |
 
 `ci.yml` 側は `app` ワークスペースのジョブでのみ、`lint`/`type-check`/`test` の後に
@@ -139,8 +140,8 @@ EVAL_D1_REMOTE=1 npm run eval
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_API_TOKEN`: **Vectorize Read + Workers AI 実行の最小権限で新規発行したトークンを
   使うこと。** `cf:deploy` 等で使う既存の広い権限を持つトークンを使い回さない(上記「本番
-  Vectorize/Workers AI を対象にした検索精度評価」節と同じ注意)。トークンの発行手順は
-  [docs/usage/cloudflare-setup.md](../../docs/usage/cloudflare-setup.md) を参照。
+  Vectorize/Workers AI を対象にした検索精度評価」節と同じ注意)。トークンは Cloudflare
+  ダッシュボードの API Tokens 画面から上記の最小権限で発行する。
 - `AI_GATEWAY_URL` / `AI_GATEWAY_AUTH_TOKEN`(認証済みゲートウェイが有効な場合のみ)
 - `GOOGLE_VERTEX_PROJECT` / `GOOGLE_VERTEX_LOCATION` / `GOOGLE_VERTEX_MODEL`(任意)
 

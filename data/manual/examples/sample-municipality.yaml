@@ -1,0 +1,186 @@
+# =============================================================================
+# 【架空のサンプルデータ】ローカル環境構築の動作確認用フィクスチャ
+#
+# このファイルは、公開リポジトリでローカルセットアップ手順(docs/usage/local-setup.md)の
+# 動作確認を行うための架空サンプルである。学校名・施設名・住所・電話番号・URL・出典等の
+# 内容はすべて創作であり、実在の学校・窓口・データとは一切関係ない。実データとして
+# 扱ってはならない。
+#
+# 唯一の例外として municipalityCode / municipalityName(13106 / 台東区)のみ実在の値を
+# 使用している。アプリの区市町村選択(municipality picker)が実在62自治体の正本レジストリ
+# (app/src/features/support/constants/municipality-codes.ts)でコードを解決するため、
+# 架空コードでは画面上で確認できないという理由による。
+#
+# 実運用の区市町村別調査データは data/manual/municipalities/*.yaml(非公開)にあり、
+# 同じコマンドパターンで投入する。
+#
+# licenseAudit は投入ゲート(ingest-manual-survey.mjs)を通過できるよう、投入可能な
+# ステータス(ccby_replaced / not_applicable)を設定している。ライセンス表記も架空である。
+# =============================================================================
+
+municipalityCode: "13106"
+municipalityName: 台東区
+prefecture: 東京都
+surveyDate: "2026-08-22"
+licenseAudit:
+  auditedOn: "2026-08-22"
+  schoolClassData: ccby_replaced
+  consultationWindowData: ccby_replaced
+  zoningData: not_applicable
+  highSchoolData: not_applicable
+  note: "架空サンプル。投入ゲートを通過させるため公開可能ステータスを設定している(実際の許諾・ライセンス調査は行っていない)。"
+population: 100000
+households: 60000
+representativeStations:
+  - 見本町中央駅(架空)
+  - 見本町東駅(架空)
+
+elementarySchools:
+  - name: 見本町第一小学校(架空)
+    level: elementary
+    areaHint: 見本町一丁目(架空)
+    address: 東京都台東区見本町1-1-1(架空)
+    url: https://www.example.jp/mihoncho-dai1-es/
+    phone: "03-0000-0001"
+    fixedClasses:
+      - disabilityType: intellectual
+        className: たんぽぽ学級(架空)
+        status: confirmed
+        note: 架空サンプルの固定学級。
+    resourceRoom:
+      hasResourceRoom: true
+      isHubSchool: true
+      groupName: ひだまり教室(架空)
+    districtNote: "拠点校(架空)。巡回対象校: 見本町第二小学校(架空)"
+    sources:
+      - label: 見本町教育委員会 特別支援学級一覧(架空サンプル)
+        url: https://www.example.jp/mihoncho-board-of-education/special-classes/
+        license: CC BY 4.0(架空)
+        confirmedOn: "2026-08-22"
+
+  - name: 見本町第二小学校(架空)
+    level: elementary
+    areaHint: 見本町二丁目(架空)
+    address: 東京都台東区見本町2-2-2(架空)
+    url: https://www.example.jp/mihoncho-dai2-es/
+    phone: "03-0000-0002"
+    fixedClasses: []
+    resourceRoom:
+      hasResourceRoom: true
+      isHubSchool: false
+      hubSchoolName: 見本町第一小学校(架空)
+      groupName: ひだまり教室(架空)
+    sources:
+      - label: 見本町教育委員会 特別支援学級一覧(架空サンプル)
+        url: https://www.example.jp/mihoncho-board-of-education/special-classes/
+        license: CC BY 4.0(架空)
+        confirmedOn: "2026-08-22"
+
+juniorHighSchools:
+  - name: 見本町中学校(架空)
+    level: junior_high
+    areaHint: 見本町三丁目(架空)
+    address: 東京都台東区見本町3-3-3(架空)
+    url: https://www.example.jp/mihoncho-jhs/
+    phone: "03-0000-0003"
+    fixedClasses:
+      - disabilityType: autism_emotional
+        className: そら学級(架空)
+        status: confirmed
+        note: 架空サンプルの固定学級。
+    resourceRoom:
+      hasResourceRoom: true
+      isHubSchool: true
+      groupName: あおぞら教室(架空)
+    sources:
+      - label: 見本町教育委員会 特別支援学級一覧(架空サンプル)
+        url: https://www.example.jp/mihoncho-board-of-education/special-classes/
+        license: CC BY 4.0(架空)
+        confirmedOn: "2026-08-22"
+
+programs:
+  - name: 見本町就学相談窓口(架空)
+    category: school_consultation
+    description: >-
+      架空サンプルの就学相談・転学相談窓口。ローカル環境構築の動作確認用であり、
+      実在の窓口ではない。
+    contact: 見本町教育委員会学務課(架空) 03-0000-0004
+    address: 東京都台東区見本町4-4-4(架空)
+    status: confirmed
+    sources:
+      - label: 見本町 就学相談のご案内(架空サンプル)
+        url: https://www.example.jp/mihoncho/shugaku-sodan/
+        license: CC BY 4.0(架空)
+        confirmedOn: "2026-08-22"
+
+  - name: 見本町発達相談センター(架空)
+    category: counseling
+    description: >-
+      架空サンプルの発達相談窓口。0歳から相談可能という設定の創作データであり、
+      実在の施設ではない。
+    contact: "03-0000-0005"
+    address: 東京都台東区見本町5-5-5(架空)
+    status: confirmed
+    sources:
+      - label: 見本町発達相談センター 案内ページ(架空サンプル)
+        url: https://www.example.jp/mihoncho/hattatsu-sodan-center/
+        license: CC BY 4.0(架空)
+        confirmedOn: "2026-08-22"
+
+classOrganization:
+  - level: elementary
+    judgement: separate
+    rationale: "架空サンプル。知的固定級と情緒固定級が別学級という設定の創作データ。"
+    sources:
+      - label: 見本町教育委員会 特別支援学級一覧(架空サンプル)
+        url: https://www.example.jp/mihoncho-board-of-education/special-classes/
+        confirmedOn: "2026-08-22"
+
+highSchoolPathways:
+  - name: 見本町学園高等学校(架空)
+    pathwayType: correspondence_support_school
+    address: 東京都台東区見本町6-6-6(架空)
+    url: https://www.example.jp/mihoncho-gakuen-hs/
+    phone: "03-0000-0006"
+    nearestStation: 見本町中央駅(架空)徒歩5分
+    estimatedCommuteMinutes: 15
+    commuteRating: excellent
+    commuteNote: "架空サンプルの進学先。実在しない。"
+    sources:
+      - label: 見本町学園高等学校 公式サイト(架空サンプル)
+        url: https://www.example.jp/mihoncho-gakuen-hs/access/
+        confirmedOn: "2026-08-22"
+
+supportPathways:
+  - id: preschool-consult-development
+    lifestages: [preschool]
+    purposeId: consult-development
+    purposeLabel: まず発達について相談したい
+    status: confirmed
+    steps:
+      - order: 1
+        title: 見本町発達相談センター(架空)へ発達相談
+        actor: 見本町発達相談センター(架空)
+        contact: "03-0000-0005"
+        isConditional: false
+        note: 架空サンプルの想定ルート。実在の手続きではない。
+      - order: 2
+        title: 必要に応じて見本町就学相談窓口(架空)へ就学相談
+        actor: 見本町就学相談窓口(架空)
+        contact: 見本町教育委員会学務課(架空) 03-0000-0004
+        isConditional: true
+    sources:
+      - label: 見本町 発達相談の流れ(架空サンプル)
+        url: https://www.example.jp/mihoncho/hattatsu-sodan-flow/
+        confirmedOn: "2026-08-22"
+
+resultsGuideNotes:
+  - tab: 学校情報
+    body:
+      - このページに表示されている学校・窓口はローカル環境構築確認用の架空サンプルデータである。
+    sources:
+      - label: 架空サンプル(data/manual/examples/sample-municipality.yaml)
+        confirmedOn: "2026-08-22"
+
+limitations:
+  - "本ファイルは公開リポジトリでのローカル環境構築確認用の架空サンプルであり、municipalityCode/municipalityName 以外のすべての値(学校・窓口・住所・電話番号・URL・人口等)は創作である。"

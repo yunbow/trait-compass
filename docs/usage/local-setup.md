@@ -34,8 +34,8 @@ cd app
 npm run assets:upload      # トップ画面等で使う静的画像を MinIO(R2 代替)へ投入
 npm run db:migrate:local   # app/db/schema.sql をローカル D1 に投入
 npm run db:seed:local:manual  # app/db/seed/ 配下の手動シード(実在データ、後述)をローカル D1 に投入
-node ../batch/scripts/ingest-manual-survey.mjs ../data/manual/municipalities/13106-taito.yaml --local
-                           # data/manual/ 配下の手動調査データ(台東区、後述)をローカル D1 に投入
+node ../batch/scripts/ingest-manual-survey.mjs ../data/manual/examples/sample-municipality.yaml --local
+                           # 動作確認用の架空サンプルデータ(後述)をローカル D1 に投入
 npm run dev                # next dev を直接起動(Docker にも wrangler にも載せず、hot reload を維持する)
 ```
 
@@ -65,22 +65,29 @@ npm run dev                # next dev を直接起動(Docker にも wrangler に
   コード分岐はない。
 - **本番のシークレット(`R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` 等)はコードや `.env` に書かず、
   `npx wrangler secret put <NAME>` で設定する。** `.env.example` に記載されているのはローカル
-  MinIO 用の固定値のみ(本番の設定手順は [cloudflare-setup.md](./cloudflare-setup.md) 参照)。
+  MinIO 用の固定値のみ(本番環境の構築手順は各自の Cloudflare アカウント環境に依存するため、
+  本ドキュメントの範囲外とする)。
 - `app/db/seed/no-diagnosis-facilities.sql`・`app/db/seed/adult-benefit-cards.sql` は実在の公的機関
   情報を手動投入するシード(詳細は各ファイル冒頭コメント参照)。`DELETE` を行わない
   一度きりの `INSERT` のため、`npm run db:seed:local:manual` を2回連続で実行すると
   `UNIQUE constraint failed` になる(再実行したい場合は `npm run db:reset:local` で
   ローカル D1 ごと作り直すこと)。`db:reset:local` は上記2ファイルの投入まで含めて自動で行う。
-- `batch/scripts/ingest-manual-survey.mjs` は `data/manual/municipalities/*.yaml`(区市町村別の手動調査
-  データ、学校・固定学級・特別支援教室・高校進学先・学級編制・自治体調査メタ)を読み込み、`schools` 系
+- `data/manual/examples/sample-municipality.yaml` は公開リポジトリでの動作確認用の**架空データ**
+  である(学校名・窓口名・住所・電話番号等はすべて創作。区市町村コード/名称のみ、アプリの
+  区市町村選択が解決できるよう実在の値(13106/台東区)を使っている)。実運用では、区市町村別の
+  手動調査データ `data/manual/municipalities/*.yaml`(実在の連絡先を含むため公開リポジトリには
+  含まれない)を同じコマンドパターンで投入する。
+- `batch/scripts/ingest-manual-survey.mjs` は上記の調査データYAML(学校・固定学級・特別支援教室・
+  高校進学先・学級編制・自治体調査メタ)を読み込み、`schools` 系
   7テーブルへ、`programs`(就学相談・制度等)は `facilities` へ変換して投入する。ライセンス許諾状況
   (`licenseAudit`)による投入可否のゲートを含め、パイプライン全体の詳細は
   [docs/designs/data-pipelines-for-engineers.md](../designs/data-pipelines-for-engineers.md) を参照。
   対象自治体の既存行を `DELETE` してから `INSERT` するため、同一YAMLを何度実行しても冪等
-  (`app/db/seed/*.sql` と異なり `UNIQUE constraint failed` にはならない)。他自治体のYAMLが増えた場合も
-  `app/` から `node ../batch/scripts/ingest-manual-survey.mjs ../data/manual/municipalities/<YAMLファイル> --local`
+  (`app/db/seed/*.sql` と異なり `UNIQUE constraint failed` にはならない)。自治体YAMLは
+  `app/` から `node ../batch/scripts/ingest-manual-survey.mjs <YAMLファイルへのパス> --local`
   のパターンで投入できる(本番投入時は `--local` を `--remote` に置き換える。`wrangler` が
   `app/wrangler.toml` の D1 バインディングを解決するため、必ず `app/` ディレクトリから実行すること)。
+  サンプルと実データは同じ区市町村コードを共有するため、後から投入したYAMLの内容で上書きされる。
   **`npm run db:reset:local` にはこのステップは含まれていない**(`package.json` の `db:reset:local` は
   `db:migrate:local` → `db:seed:local:manual` のみで `ingest-manual-survey.mjs` を呼ばない)ため、
   ローカル D1 をリセットした場合は上記コマンドを都度手動で再実行すること。
@@ -119,8 +126,9 @@ npm run dev                # next dev を直接起動(Docker にも wrangler に
    `adult-benefit-cards.sql` の広域(municipality=東京都)成人向け制度カードが「支援制度」タブに
    表示される)
    `http://localhost:3000/support/results?age=adult&municipality=台東区`(§1 の
-   `ingest-manual-survey.mjs` 実行が前提。「学校情報」タブを選ぶと、小中学校の固定学級・特別支援教室、
-   高校進学先等の実データが表示される)
+   `ingest-manual-survey.mjs` 実行が前提。「学校情報」タブを選ぶと、サンプルYAML由来の架空の
+   小中学校(固定学級・特別支援教室・進学先を含む)が表示される。表示されるのは動作確認用の
+   創作データであり、実在の台東区の学校情報ではない)
 3. 必要なら D1 の中身を直接確認する。
 
    ```bash
