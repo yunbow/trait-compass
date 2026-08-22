@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // `/api/facility-report`(TICKET-0064)のリクエスト/レスポンス zod スキーマ。
 // client(FacilityReportForm)/server(app/api/facility-report/route.ts)で同一スキーマを使う
-// (validation.md「client/server 共通 Zod スキーマ」、prepare.ts/recommend.ts と同じ方針)。
+// (client/server 共通 Zod スキーマとして、prepare.ts/recommend.ts と同じ方針)。
 //
 // このアプリで初めて利用者投稿の自由記述内容を D1 に永続化する機能。他の AI 機能はリクエスト
 // 内容を一切ログ・保存しない設計のため、本スキーマは意図的な例外であることを踏まえ、

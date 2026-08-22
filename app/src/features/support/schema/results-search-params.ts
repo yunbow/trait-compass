@@ -9,8 +9,7 @@ import { MunicipalityEntrySchema } from "@/features/support/schema/municipality-
 //
 // age・municipality は「検索が成立するかどうか」を左右する必須条件であるため Zod で厳格に
 // 検証し、不正・欠損の場合は呼び出し側(app/support/results/page.tsx)が検索自体を行わず
-// /support への差し戻し導線を持つ空状態を表示する(security.md「全入力データに Zod 等での
-// 検証を要求する」)。
+// /support への差し戻し導線を持つ空状態を表示する(全入力データを Zod で検証する方針による)。
 //
 // tags は既存の parseSupportTagsParam(TICKET-0014, 未知の値を黙って除外する寛容な実装)を
 // そのまま再利用する。URL 改ざん等で未知のタグが1つ混入しただけで検索結果画面全体を

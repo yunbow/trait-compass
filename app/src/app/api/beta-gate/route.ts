@@ -22,12 +22,12 @@ const BetaGateFormSchema = z
   .strict();
 
 export async function POST(request: NextRequest): Promise<Response> {
-  // CSRF対策(security.md §2): 他ルートの isSameOriginRequest と同じ判定を再利用する。
+  // CSRF対策: 他ルートの isSameOriginRequest と同じ判定を再利用する。
   if (!isSameOriginRequest(request)) {
     return NextResponse.redirect(new URL("/beta-gate?error=1", request.url), { status: 303 });
   }
 
-  // パスワード総当たり対策(security.md §3.2)。ボディを読む前に IP 単位で消費する。
+  // パスワード総当たり対策。ボディを読む前に IP 単位で消費する。
   const rateLimit = await consumeBetaGateRateLimit(request);
   if (!rateLimit.allowed) {
     return NextResponse.redirect(new URL("/beta-gate?error=1", request.url), { status: 303 });

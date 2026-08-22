@@ -19,8 +19,8 @@ import type { SummarizeResponse } from "@/features/ai-summary/schema/summarize";
 
 // `/api/summarize`(TICKET-0022)。結果画面の「AI に相談内容を要約してもらう(任意)」
 // セクション(AiSummarySection)から、明示同意・送信内容プレビューを経たあとにのみ
-// 呼び出される想定(FR-041)。POST のみを受け付ける(security.md「状態変更 API は
-// POST/PUT/DELETE のみ許可」。本 API は生成 AI 呼び出しという副作用を持つため POST とする)。
+// 呼び出される想定(FR-041)。POST のみを受け付ける(状態変更 API は
+// POST/PUT/DELETE のみ許可、という方針に加え、本 API は生成 AI 呼び出しという副作用を持つため POST とする)。
 //
 // NFR-36(ログ非保存)に関する重要な注意: このファイル全体で自由記述テキスト・LLM 応答本文を
 // console.log 等に一切出力しない。zod 検証エラー時・LLM 呼び出し失敗時のエラーハンドリングも

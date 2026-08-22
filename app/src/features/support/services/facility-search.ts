@@ -6,8 +6,7 @@
 // 純関数として切り出す(NFR-72: 純関数を単体テストで担保する)。
 //
 // SQL はすべてバインドパラメータ(`?`)を通じて値を渡し、ユーザー入力(区市町村・年齢区分・
-// facility id)を文字列結合でクエリに埋め込まない(security.md 「全入力データに Zod 等での
-// 検証を要求する」/ Zero Trust の方針)。
+// facility id)を文字列結合でクエリに埋め込まない(Zero Trust の方針)。
 
 import type { D1Database } from "@cloudflare/workers-types";
 

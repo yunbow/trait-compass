@@ -18,7 +18,7 @@ import { LIFESTAGE_OPTIONS } from "@/features/support/services/lifestage-mapping
 
 // `/api/prepare`(TICKET-0046)。結果画面の「相談の準備をする」導線から、明示同意・送信内容
 // プレビューを経たあとにのみ呼び出される想定(FR-041、summarize/recommend route と同じ方針)。
-// POST のみを受け付ける(security.md「状態変更 API は POST/PUT/DELETE のみ許可」)。
+// POST のみを受け付ける(状態変更 API は POST/PUT/DELETE のみ許可、という方針による)。
 //
 // **入力は選択式のみ(AC-2、危機介入回避構造の維持)**: このルートには自由記述フィールドが
 // 一切存在しない(PrepareRequestSchema 参照)。

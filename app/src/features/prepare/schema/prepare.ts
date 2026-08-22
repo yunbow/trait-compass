@@ -18,7 +18,7 @@ import {
 
 // `/api/prepare`(TICKET-0046)のリクエスト/レスポンス zod スキーマ。
 // client(PreparePanel)/server(app/api/prepare/route.ts)で同一スキーマを使う
-// (validation.md「client/server 共通 Zod スキーマ」、summarize.ts/recommend.ts と同じ方針)。
+// (client/server 共通 Zod スキーマとして、summarize.ts/recommend.ts と同じ方針)。
 //
 // 自由記述フィールドは一切持たない(AC-2、既存の危機介入回避構造の維持)。すべて既存の
 // ホワイトリスト(CategoryKeySchema・SUPPORT_TAGS・AgeGroupSchema・自治体レジストリ)で検証する。

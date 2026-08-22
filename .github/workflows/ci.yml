@@ -89,7 +89,6 @@ jobs:
       # 残っている。wrangler 4.119.0(この時点のnpm最新版)側で未修正のため、当リポジトリ側の
       # 対応では解消できない(upstream待ち)。postcss(next経由)・sharp(wrangler経由)は
       # next 16.3.0 + wrangler更新で解消済み。upstream修正が出るまでPRをブロックしないよう
-      # continue-on-error とし、結果はログで可視化する(security.md §10 SLA: High は7日以内に
-      # 対応、状況を定期的に再確認する)。
+      # continue-on-error とし、結果はログで可視化して定期的に再確認する。
       - run: npm audit --audit-level=high
         continue-on-error: true

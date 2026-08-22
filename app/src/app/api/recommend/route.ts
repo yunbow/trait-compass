@@ -46,7 +46,7 @@ import { getUnhealthyDatasets } from "@/features/support/services/dataset-status
 // `/api/recommend`(TICKET-0023)。年齢区分・区市町村・相談分野タグ・相談したい内容の自由文から、
 // VectorStore(Vectorize/Qdrant)検索 → D1 JOIN で事実情報を取得 → LlmClient で「合いそうな理由」を
 // 短文生成する(FR-042)。状態変更を伴わないが、生成 AI 呼び出しという副作用を持つため
-// summarize route と同じく POST のみを受け付ける(security.md)。
+// summarize route と同じく POST のみを受け付ける。
 //
 // **事実情報の捏造防止(FR-042 AC-2、最重要)**: レスポンスの name/municipality/address/phone/url/
 // sourceCredit/sourceUrl はすべて D1(fetchFacilitiesByIds / searchFacilities)由来の値を

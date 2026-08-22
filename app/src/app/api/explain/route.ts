@@ -15,7 +15,7 @@ import { getAllQuestions } from "@/features/survey/services/questions";
 
 // `/api/explain`(TICKET-0023)。結果画面のレーダーチャート/ベン図の「上位カテゴリ解説」
 // セクションから、明示同意・送信内容プレビュー(カテゴリ名のみ)を経たあとにのみ呼び出される
-// 想定(FR-041, FR-043)。POST のみを受け付ける(security.md、summarize route と同じ方針)。
+// 想定(FR-041, FR-043)。POST のみを受け付ける(summarize route と同じ方針)。
 //
 // AC-3(FR-043): fact-checked 242件のうち対象カテゴリに属する質問文(抜粋)を根拠として
 // プロンプトに含め、LLM にはそれらを踏まえた一般的な傾向解説のみを生成させる

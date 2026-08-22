@@ -33,8 +33,8 @@ export const KNOWLEDGE_SOURCE_PRIORITY: readonly string[] = ["国立障害者リ
 /**
  * `KNOWLEDGE_SOURCE_PRIORITY` から SQL の `ORDER BY` に使う `CASE WHEN` 式を組み立てる純関数
  * (D1 アクセスを含まないためユニットテスト可能)。`?` プレースホルダーは呼び出し側が
- * `KNOWLEDGE_SOURCE_PRIORITY` の値をそのまま `bind()` する前提(値をSQL文字列へ直接埋め込まない、
- * security.md の方針)。優先リストが空の場合は常に同順位になる式を返す。
+ * `KNOWLEDGE_SOURCE_PRIORITY` の値をそのまま `bind()` する前提(値をSQL文字列へ直接埋め込まない
+ * 方針)。優先リストが空の場合は常に同順位になる式を返す。
  */
 export function buildSourcePriorityCaseSql(priority: readonly string[]): string {
   if (priority.length === 0) return "0";

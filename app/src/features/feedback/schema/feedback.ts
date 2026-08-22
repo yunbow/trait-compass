@@ -1,8 +1,8 @@
 import { z } from "zod";
 
 // `/api/feedback` のリクエスト zod スキーマ。client(feedback/components 側フォーム)/
-// server(app/api/feedback/route.ts)で同一スキーマを使う(validation.md「client/server 共通
-// Zod スキーマ」、facility-report.ts と同じ方針)。
+// server(app/api/feedback/route.ts)で同一スキーマを使う(client/server 共通
+// Zod スキーマとして、facility-report.ts と同じ方針)。
 //
 // 支援先一覧「このページで、次に何をすればよいか分かりましたか?」の3択評価+「まだ分からない」
 // 時の内訳+任意の一言コメント(公開許可付き)を送信する。プライバシー最小主義(NFR-31〜33)を

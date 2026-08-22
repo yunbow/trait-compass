@@ -4,7 +4,7 @@ import { CategoryKeySchema } from "@/features/survey/schema/question";
 
 // `/api/summarize`(TICKET-0022)のリクエスト/レスポンス zod スキーマ。
 // client(AiSummarySection)/server(app/api/summarize/route.ts)で同一スキーマを使う
-// (validation.md「client/server 共通 Zod スキーマ」)。
+// (client/server 共通 Zod スキーマ)。
 //
 // topCategories はカテゴリ key のホワイトリスト(CategoryKeySchema, 10種の enum)で検証する。
 // 自由文字列を許可すると任意の文字列がプロンプトへ混入するため、必ず enum を通す。

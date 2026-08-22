@@ -4,7 +4,7 @@ import { LIFESTAGE_VALUES } from "@/features/support/services/lifestage-mapping"
 
 // `/api/purpose-pickup`(目的選択画面「それ以外」の自由記述からの目的ピックアップ)の
 // リクエスト/レスポンス zod スキーマ。client/server で同一スキーマを使う
-// (validation.md「client/server 共通 Zod スキーマ」、recommend.ts と同じ方針)。
+// (client/server 共通 Zod スキーマとして、recommend.ts と同じ方針)。
 //
 // municipality は今回のマッチング処理(自由記述 → 目的ID)には使わないため、
 // リクエストスキーマに含めない(recommend.ts と異なる点)。

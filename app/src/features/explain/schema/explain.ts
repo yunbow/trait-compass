@@ -5,7 +5,7 @@ import { CategoryKeySchema } from "@/features/survey/schema/question";
 
 // `/api/explain`(TICKET-0023, FR-043)のリクエスト/レスポンス zod スキーマ。
 // client(CategoryExplainSection)/server(app/api/explain/route.ts)で同一スキーマを使う
-// (validation.md「client/server 共通 Zod スキーマ」、summarize.ts と同じ方針)。
+// (client/server 共通 Zod スキーマとして、summarize.ts と同じ方針)。
 //
 // 送信するのはカテゴリ key(ホワイトリスト)のみで、自由記述・回答値・スコアは一切含まない
 // (結果画面のプレビューでも「カテゴリ名のみ」と明示する)。

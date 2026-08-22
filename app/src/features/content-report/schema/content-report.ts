@@ -13,7 +13,7 @@ const RESULTS_TAB_VALUES = [...CATEGORY_TYPES, SCHOOL_INFO_TAB] as const;
 // `/api/content-report` のリクエスト/レスポンス zod スキーマ。
 // `facility-report/schema/facility-report.ts`(TICKET-0064)と同じ方針
 // (client(ContentReportForm)/server(app/api/content-report/route.ts)で同一スキーマを使う、
-// validation.md「client/server 共通 Zod スキーマ」)で、対象種別(想定ルート・学校情報・
+// client/server 共通 Zod スキーマ)で、対象種別(想定ルート・学校情報・
 // 結果の見方ガイド)ごとにカテゴリの許可リスト・必須項目が異なる点を discriminatedUnion で表現する。
 //
 // facility-report と同じく、このアプリで数少ない利用者投稿の自由記述内容を D1 に永続化する

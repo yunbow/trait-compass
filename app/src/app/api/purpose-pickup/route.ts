@@ -26,7 +26,7 @@ import { PURPOSE_OPTIONS_BY_LIFESTAGE } from "@/features/support/constants/purpo
 // 自由記述から、利用者のライフステージに応じた「目的」の選択肢リスト
 // (`PURPOSE_OPTIONS_BY_LIFESTAGE`)の中で最も近いものの id を LLM に選ばせる。
 // 状態変更を伴わないが、生成 AI 呼び出しという副作用を持つため recommend/summarize route と
-// 同じく POST のみを受け付ける(security.md)。
+// 同じく POST のみを受け付ける。
 //
 // ガードの順序は `/api/recommend` と同一の並びに揃える:
 // 1. 危機介入ガード(FR-044): containsCrisisSignal に該当する場合、LLM を一切呼ばず

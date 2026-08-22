@@ -8,7 +8,7 @@ import {
 
 // `/api/ask`(TICKET-0048)のリクエスト/レスポンス zod スキーマ。
 // client(AskAiPanel)/server(app/api/ask/route.ts)で同一スキーマを使う
-// (validation.md「client/server 共通 Zod スキーマ」、既存の summarize.ts/prepare.ts と同じ方針)。
+// (client/server 共通 Zod スキーマとして、既存の summarize.ts/prepare.ts と同じ方針)。
 //
 // 自由記述フィールドは一切持たない(AC-2)。`questionId` は定型質問マスタ
 // (services/preset-questions.ts)のホワイトリストで検証し、自由文字列を許可しない。

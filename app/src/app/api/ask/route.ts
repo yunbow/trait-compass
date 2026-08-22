@@ -21,7 +21,7 @@ import { findPresetQuestion } from "@/features/ask-ai/services/preset-questions"
 
 // `/api/ask`(TICKET-0048)。窓口カード(FacilityCard)の「AIに質問する」導線から、明示同意・
 // 送信内容プレビューを経たあとにのみ呼び出される想定(FR-041、summarize/prepare route と同じ
-// 方針)。POST のみを受け付ける(security.md「状態変更 API は POST/PUT/DELETE のみ許可」)。
+// 方針)。POST のみを受け付ける(状態変更 API は POST/PUT/DELETE のみ許可、という方針による)。
 //
 // **入力は選択式のみ(AC-2、危機介入回避構造の維持)**: このルートには自由記述フィールドが
 // 一切存在しない(AskRequestSchema 参照)。定型質問マスタ(services/preset-questions.ts)自体が

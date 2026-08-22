@@ -18,9 +18,11 @@
   [self-check-methodology.md](./self-check-methodology.md) §1/§5 のとおりです。
 - 「二次資料」は厚生労働省・国立障害者リハビリテーションセンター等が発信する解説ページ、
   「一次資料(学術論文)」は学会誌等に掲載された個別の研究論文を指します。
-- 掲載URLは2026-08時点でリンク疎通を確認しました。e-ヘルスネット(`e-healthnet.mhlw.go.jp`)
-  の3件はドメイン自体がDNS解決できなくなっており、掲載を維持しつつ「要再確認」と注記しています
-  (ファクトチェック時点の2026-05-30には有効だった参照です)。
+- 掲載URLは2026-08時点でリンク疎通を確認しました。ファクトチェック時点(2026-05-30)は
+  `e-healthnet.mhlw.go.jp` だった3件のうち、「不安症 / 不安障害」は2025年3月の移管先
+  (`kennet.mhlw.go.jp`)で同一記事を確認できたため新URLに差し替え、ASD/ADHDの解説記事2件は
+  移管先に相当ページが見当たらなかったため、同一カテゴリに残る `hattatsu.go.jp`(発達障害情報の
+  ポータルサイト)の資料と重複することもあり削除しました。
 
 ## 会話・伝え方 (`communication`)
 
@@ -32,7 +34,6 @@
 | 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】（高嶋由布子）- 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所）](https://hattatsu.go.jp/topics/topics-pragmatics1/) |
 | 二次資料 | [注意欠如多動症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-adhd-2/) |
 | 二次資料 | [傳田健三（2017）自閉スペクトラム症（ASD）の特性理解. 心身医学 57(1)](https://www.jstage.jst.go.jp/article/jjpm/57/1/57_19/_article/-char/ja/) |
-| 二次資料 | ADHD（注意欠如・多動症）の診断と治療 - e-ヘルスネット（厚生労働省、執筆 加賀佳美）(URL: https://www.e-healthnet.mhlw.go.jp/information/heart/k-04-003.html ※2026-08時点でDNS解決不可、要再確認) |
 | 一次資料(学術論文) | [安村明（2014）ADHDの診断プログラムの提案─実行機能障害の観点から─. 認知神経科学 16(2)](https://www.jstage.jst.go.jp/article/ninchishinkeikagaku/16/2/16_115/_article/-char/ja/) |
 
 ## 場の空気・人の気持ち (`social-reading`)
@@ -45,14 +46,13 @@
 | 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】（高嶋由布子）- 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所）](https://hattatsu.go.jp/topics/topics-pragmatics1/) |
 | 二次資料 | [傳田健三（2017）自閉スペクトラム症（ASD）の特性理解. 心身医学 57(1)](https://www.jstage.jst.go.jp/article/jjpm/57/1/57_19/_article/-char/ja/) |
 | 二次資料 | [義村さや香・十一元三（2018）自閉スペクトラム症を通じて見る情動の神経科学的研究. 神経心理学 34(4)](https://www.jstage.jst.go.jp/article/neuropsychology/34/4/34_17049/_article/-char/ja) |
-| 二次資料 | 不安症／不安障害 - e-ヘルスネット（厚生労働省）(URL: https://www.e-healthnet.mhlw.go.jp/information/dictionary/heart/yk-055.html ※2026-08時点でDNS解決不可、要再確認) |
+| 二次資料 | [不安症 / 不安障害 - 生活習慣病などの情報(e-ヘルスネット)（厚生労働省、2025年3月に`e-healthnet.mhlw.go.jp`から移管）](https://kennet.mhlw.go.jp/information/information/dictionary/heart/yk-055) |
 | 二次資料 | [片桐正敏（2019）適応機能としての自閉症スペクトラム障害の注意と感覚処理特性. 心理学評論 62(1)](https://www.jstage.jst.go.jp/article/sjpr/62/1/62_25/_article/-char/ja/) |
 | 一次資料(学術論文) | [久田信行・金原洋治・梶正義・角田圭子・青木路人（2016）場面緘黙（選択性緘黙）の多様性―その臨床と教育―. 不安症研究 8(1)](https://www.jstage.jst.go.jp/article/jsad/8/1/8_31/_article/-char/ja/) |
 | 二次資料 | [原著論文紹介2：ASDを持つ人は顔の表情から感情を読み取ることが難しい（Uljarevic & Hamilton 2013 のメタ分析紹介）- 神経発達症研究推進機構 OPNDR](https://opndr.jp/research/397/) |
 | 一次資料(学術論文) | [岡本康秀ほか（2022）「聞き取り困難」における聴覚特性と背景要因. 日本耳鼻咽喉科頭頸部外科学会会報 125(7)](https://www.jstage.jst.go.jp/article/jibiinkotokeibu/125/7/125_1092/_article/-char/ja/) |
 | 一次資料(学術論文) | [安村明（2014）ADHDの診断プログラムの提案─実行機能障害の観点から─. 認知神経科学 16(2)](https://www.jstage.jst.go.jp/article/ninchishinkeikagaku/16/2/16_115/_article/-char/ja/) |
 | 二次資料 | [視線行動と視線手がかりの利用 - 国立障害者リハビリテーションセンター研究所 発達障害研究室](https://www.rehab.go.jp/ri/departj/brainfunc/dds/paper/topic2/) |
-| 二次資料 | ASD（自閉スペクトラム症、アスペルガー症候群）について - e-ヘルスネット（厚生労働省）(URL: https://www.e-healthnet.mhlw.go.jp/information/heart/k-03-005.html ※2026-08時点でDNS解決不可、要再確認) |
 
 ## 感情の調整 (`emotion-regulation`)
 
@@ -66,7 +66,6 @@
 | 二次資料 | [自閉スペクトラム症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-asd-2/) |
 | 二次資料 | [片桐正敏（2019）適応機能としての自閉症スペクトラム障害の注意と感覚処理特性. 心理学評論 62(1)](https://www.jstage.jst.go.jp/article/sjpr/62/1/62_25/_article/-char/ja/) |
 | 二次資料 | [小林真（2015）発達障害のある青年への支援に関する諸問題. 教育心理学年報 54](https://www.jstage.jst.go.jp/article/arepj/54/0/54_102/_article/-char/ja) |
-| 二次資料 | ASD（自閉スペクトラム症、アスペルガー症候群）について - e-ヘルスネット（厚生労働省）(URL: https://www.e-healthnet.mhlw.go.jp/information/heart/k-03-005.html ※2026-08時点でDNS解決不可、要再確認) |
 | 一次資料(学術論文) | [安村明（2014）ADHDの診断プログラムの提案─実行機能障害の観点から─. 認知神経科学 16(2)](https://www.jstage.jst.go.jp/article/ninchishinkeikagaku/16/2/16_115/_article/-char/ja/) |
 | 一次資料(学術論文) | [相田直樹・礒部智加衣（2015）拒絶感受性が他者からの曖昧な拒絶後の選択的注意に及ぼす影響. 対人社会心理学研究 15](https://cir.nii.ac.jp/crid/1390290699782115072) |
 | 二次資料 | [注意欠如多動症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-adhd-2/) |
@@ -77,9 +76,7 @@
 | 種別 | 資料 |
 | --- | --- |
 | 二次資料 | [注意欠如多動症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-adhd-2/) |
-| 二次資料 | ADHD（注意欠如・多動症）の診断と治療 - e-ヘルスネット（厚生労働省、執筆 加賀佳美）(URL: https://www.e-healthnet.mhlw.go.jp/information/heart/k-04-003.html ※2026-08時点でDNS解決不可、要再確認) |
 | 一次資料(学術論文) | [安村明（2014）ADHDの診断プログラムの提案─実行機能障害の観点から─. 認知神経科学 16(2)](https://www.jstage.jst.go.jp/article/ninchishinkeikagaku/16/2/16_115/_article/-char/ja/) |
-| 一次資料(学術論文) | [池上将永ほか（2020）ADHD児とASD児における遅延割引率の測定. 小児の精神と神経 60(3)](https://www.jstage.jst.go.jp/article/jsppn/60/3/60_223/_article/-char/ja/) |
 | 二次資料 | [佐場野優一（2010）ADHDと情動調整. 音声言語医学 51(3)](https://www.jstage.jst.go.jp/article/jjlp/51/3/51_3_257/_article/-char/ja) |
 | 二次資料 | [堀内史枝・岡靖哲・河邉憲太郎・上野修一（2016）睡眠障害と発達障害―どのように診立てていくべきか―. 精神神経学雑誌 118(6)](https://journal.jspn.or.jp/Disp?mag=0&vol=118&style=abst&year=2016&number=6&start=410) |
 | 一次資料(学術論文) | [池上将永・荒木章子・増山裕太郎・空間美智子・佐伯大輔・奥村香澄・高橋雅治（2020）ADHD児とASD児における遅延割引率の測定. 小児の精神と神経 60(3)](https://www.jstage.jst.go.jp/article/jsppn/60/3/60_223/_article/-char/ja/) |
@@ -92,9 +89,7 @@
 | 一次資料(学術論文) | [安村明（2014）ADHDの診断プログラムの提案─実行機能障害の観点から─. 認知神経科学 16(2)](https://www.jstage.jst.go.jp/article/ninchishinkeikagaku/16/2/16_115/_article/-char/ja/) |
 | 二次資料 | [注意欠如多動症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-adhd-2/) |
 | 二次資料 | [自閉スペクトラム症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-asd-2/) |
-| 二次資料 | ADHD（注意欠如・多動症）の診断と治療 - e-ヘルスネット（厚生労働省、執筆 加賀佳美）(URL: https://www.e-healthnet.mhlw.go.jp/information/heart/k-04-003.html ※2026-08時点でDNS解決不可、要再確認) |
 | 二次資料 | [湯澤正通（2019）ワーキングメモリの発達と児童生徒の学習：読み書き・算数障害への支援. 発達心理学研究 30(4)](https://www.jstage.jst.go.jp/article/jjdp/30/4/30_188/_article/-char/ja) |
-| 二次資料 | ASD（自閉スペクトラム症、アスペルガー症候群）について - e-ヘルスネット（厚生労働省）(URL: https://www.e-healthnet.mhlw.go.jp/information/heart/k-03-005.html ※2026-08時点でDNS解決不可、要再確認) |
 | 一次資料(学術論文) | [福水道郎（2022）注意欠如・多動症（ADHD）と睡眠障害. 脳と発達 54(3)](https://www.jstage.jst.go.jp/article/ojjscn/54/3/54_170/_article/-char/ja/) |
 
 ## 善意が誤解される (`kindness-misread`)
@@ -104,9 +99,8 @@
 | 二次資料 | [自閉スペクトラム症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-asd-2/) |
 | 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】 - 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所、執筆 高嶋由布子）](https://hattatsu.go.jp/notice/topics-pragmatics1/) |
 | 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】（高嶋由布子）- 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所）](https://hattatsu.go.jp/topics/topics-pragmatics1/) |
-| 二次資料 | ASD（自閉スペクトラム症、アスペルガー症候群）について - e-ヘルスネット（厚生労働省）(URL: https://www.e-healthnet.mhlw.go.jp/information/heart/k-03-005.html ※2026-08時点でDNS解決不可、要再確認) |
 | 二次資料 | [傳田健三（2017）自閉スペクトラム症（ASD）の特性理解. 心身医学 57(1)](https://www.jstage.jst.go.jp/article/jjpm/57/1/57_19/_article/-char/ja/) |
-| 二次資料 | 不安症／不安障害 - e-ヘルスネット（厚生労働省）(URL: https://www.e-healthnet.mhlw.go.jp/information/dictionary/heart/yk-055.html ※2026-08時点でDNS解決不可、要再確認) |
+| 二次資料 | [不安症 / 不安障害 - 生活習慣病などの情報(e-ヘルスネット)（厚生労働省、2025年3月に`e-healthnet.mhlw.go.jp`から移管）](https://kennet.mhlw.go.jp/information/information/dictionary/heart/yk-055) |
 | 二次資料 | [注意欠如多動症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-adhd-2/) |
 | 一次資料(学術論文) | [鏡原崇史・難波修史・若松昭彦（2020）自閉スペクトラム症者における非言語コミュニケーション〜初対面者との会話時における表情とうなずき. 自閉症スペクトラム研究 17(2)](https://www.jstage.jst.go.jp/article/japanacademyofas/17/2/17_5/_article/-char/ja/) |
 | 二次資料 | [【51】二次障害の予防的対応を考えるために - 発達障害教育推進センター（国立特別支援教育総合研究所）](https://cpedd.nise.go.jp/research/3451b01935b0a659f88281736fbaff4a/) |
@@ -151,7 +145,6 @@
 | --- | --- |
 | 二次資料 | [松本英夫「ASD（自閉スペクトラム症）」を訊く - 公益社団法人 日本精神神経学会（診断基準B「同一性への固執、習慣への頑ななこだわり、儀式的行動様式」）](https://www.jspn.or.jp/modules/forpublic/index.php?content_id=55) |
 | 二次資料 | [自閉スペクトラム症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-asd-2/) |
-| 二次資料 | ASD（自閉スペクトラム症、アスペルガー症候群）について - e-ヘルスネット（厚生労働省）(URL: https://www.e-healthnet.mhlw.go.jp/information/heart/k-03-005.html ※2026-08時点でDNS解決不可、要再確認) |
 | 二次資料 | [藤岡徹「自閉スペクトラム症の認知機能」LD研究 26巻4号（2017）「情報を意味のある全体にまとめ上げようとする動因が低い結果として細部に過度に着目する弱い中枢性統合」](https://www.jstage.jst.go.jp/article/jald/26/4/26_474/_article/-char/ja) |
 | 二次資料 | [松本英夫「ASD（自閉スペクトラム症）」を訊く - 公益社団法人 日本精神神経学会（診断基準B「常同的・反復的な様式」）](https://www.jspn.or.jp/modules/forpublic/index.php?content_id=55) |
 | 二次資料 | [自閉スペクトラム症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）「自分のやり方へのこだわりが強く融通が利かない／予定を変更されることは好まない」](https://hattatsu.go.jp/supporter/healthcare_health/about-asd-2/) |

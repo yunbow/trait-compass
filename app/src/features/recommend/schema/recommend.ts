@@ -7,7 +7,7 @@ import { SUPPORT_TAGS } from "@/features/support/services/category-tag-mapping";
 import { LIFESTAGE_VALUES } from "@/features/support/services/lifestage-mapping";
 
 // `/api/recommend`(TICKET-0023)のリクエスト/レスポンス zod スキーマ。
-// client/server で同一スキーマを使う(validation.md「client/server 共通 Zod スキーマ」、
+// client/server で同一スキーマを使う(client/server 共通 Zod スキーマとして、
 // src/features/ai-summary/schema/summarize.ts と同じ方針)。
 //
 // municipality はレジストリでコードまたは旧名称から解決して検証する

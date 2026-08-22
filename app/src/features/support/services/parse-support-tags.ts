@@ -3,7 +3,7 @@
 // `/support?tags=a,b` の `tags` クエリ(ASCII ID、support-tag-url.ts 参照)を受け取り、
 // 既知の相談分野タグ(SUPPORT_TAGS)にだけ絞り込む純関数。結果画面(TICKET-0013
 // mapScoresToTags)が生成しないはずの値が URL 改ざん等で混入しても、そのまま次画面
-// (/support/results)へ転送しない(security.md「全入力データに Zod 等での検証を要求する」の方針を、
+// (/support/results)へ転送しない(全入力データを検証する方針を、
 // 区市町村と同様に定数リストとの突合で満たす)。
 // 旧仕様の日本語ラベルはハードカットオーバーにより互換維持せず、未知の値として除外される。
 

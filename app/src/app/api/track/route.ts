@@ -11,8 +11,7 @@ import { consumeTrackRateLimit } from "@/lib/track/rate-limit";
 // 画面到達数を日付×画面単位で集計するだけの、ファーストパーティの D1 UPSERT エンドポイント。
 // IP・User-Agent・日付単位より詳細なタイムスタンプ・screen 以外のペイロードは一切保存しない
 // (NFR-31〜33)。body は zod で `{ screen }` のみを strict 検証し、不正な body・未知の
-// プロパティを含む body・未知の screen 値はすべて 400 とする(security.md/validation.md:
-// 全入力データに Zod 等での検証を要求する)。
+// プロパティを含む body・未知の screen 値はすべて 400 とする。
 
 const TrackRequestSchema = z
   .object({
