@@ -97,8 +97,8 @@ facilities × 相談分野タグの中間テーブル(複合主キー `facility_
 
 ### municipality_survey_meta
 自治体調査の基準日・人口・ハザード情報等のメタ(自治体1件=1行、`municipality_code` が主キー)。
-手動調査系テーブル群と自治体コードで論理的に紐づき、ライセンス許諾監査の4ステータス
-(`license_audit_json`)を画面の注記表示用に保持する。
+手動調査系テーブル群と自治体コードで論理的に紐づき、ライセンス許諾監査の4データ区分
+(各区分の判定値は7状態、`license_audit_json`)を画面の注記表示用に保持する。
 
 ### support_pathways(+ support_pathway_steps)
 ライフステージ×目的別の「想定ルート」。`municipality_code` / `lifestage` / `purpose_id` で
