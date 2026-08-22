@@ -8,8 +8,9 @@
 //   content_reports)の未対応件数を集計し、1件以上あれば Slack へ件数のみ通知する
 //   (report-digest.ts参照。報告1件ごとの即時・自由記述全文送信は廃止した)。同じCronで、
 //   トリアージ済み(done/dismissed)から90日経過した報告、および未対応(new)のまま
-//   1年(365日)を超えた報告の自由記述(corrected_value/detail_text)を削除する
-//   (セキュリティレビュー指摘、report-retention.ts参照。専用のCron Triggerは追加しない)。
+//   1年(365日)を超えた報告を行ごと削除する(自由記述(corrected_value/detail_text)だけを
+//   空にするのではなくDELETEする。セキュリティレビュー指摘、report-retention.ts参照。
+//   専用のCron Triggerは追加しない)。
 //   さらに同じCronで、フィードバックコメント(feedback_comments、TICKET-0067)のうち
 //   公開許可済みでまだレビューされていない件数も同様に集計し、1件以上あれば Slack へ
 //   件数のみ通知する(feedback-digest.ts参照。専用のCron Triggerは追加しない)。

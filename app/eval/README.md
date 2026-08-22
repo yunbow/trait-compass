@@ -42,7 +42,7 @@ node --no-warnings --import ./eval/lib/register.mjs eval/generation.eval.ts
 node --no-warnings --import ./eval/lib/register.mjs eval/safety.eval.ts
 ```
 
-しきい値は `eval/thresholds.json` に集約している。CI のゲート条件を変える場合はこのファイルのみ変更すればよい。
+しきい値は `eval/thresholds.json` に集約している。`npm run eval` の合否判定基準を変える場合はこのファイルのみ変更すればよい(CI自体はこの結果でPRをブロックしない。後述「CI統合」参照)。
 
 ### LLM-as-judge を含めて実行する(`EVAL_JUDGE=1`)
 
@@ -180,7 +180,7 @@ TICKET-0024 の実装方針に基づき検討した結果、本チケットの�
 
 #### ゴールデンデータの2種類と役割分担
 
-`eval/retrieval.eval.ts` の `run()` は手書き(`runHandwritten`)・生成(`runGeneratedGolden`)の両方を実行し、1つの Markdown レポートに統合する。`passed`(CI ゲート判定)は**手書きゴールデンの結果のみ**で決まる(生成ゴールデンは非ゲート、後述)。
+`eval/retrieval.eval.ts` の `run()` は手書き(`runHandwritten`)・生成(`runGeneratedGolden`)の両方を実行し、1つの Markdown レポートに統合する。`passed`(`npm run eval` の合否判定、CIのPRブロックとは別)は**手書きゴールデンの結果のみ**で決まる(生成ゴールデンは合否判定の対象外、後述)。
 
 | | 手書き(`retrieval-golden.json`) | 生成(`retrieval-golden.generated.json`) |
 | --- | --- | --- |
@@ -188,7 +188,7 @@ TICKET-0024 の実装方針に基づき検討した結果、本チケットの�
 | 前提データ | 初期シードデータ(`fac-001` 等の少数施設) | 本番/ローカル D1 の実データ(現在23〜数十自治体分の施設) |
 | 正解の形 | 単一の `expectedFacilityIds` | 2層(`requiredFacilityIds`/`acceptableFacilityIds`、後述) |
 | 主目的 | **意味的ランキング検証**(自由文クエリと施設の意味的な対応が正しくランキングされているか) | **自治体網羅の構造的取りこぼし検証**(ある区市町村で検索結果が構造的に0件・薄くなっていないか) |
-| CI ゲート | あり(`eval/thresholds.json` の `retrieval`) | **なし**(`retrievalGenerated` は記録のみ、`passed` に影響しない) |
+| 合否判定への影響 | あり(`eval/thresholds.json` の `retrieval`) | **なし**(`retrievalGenerated` は記録のみ、`passed` に影響しない) |
 | 生成方法 | 手書き(レビュー・変更は都度手動) | `npm run eval:golden:generate` でスナップショット生成 → コミット |
 
 **なぜ2種類が必要か**(2026-08-20 発覚の問題が背景): 本番で「千代田区・障害があり就労移行支援を受けたい」を投げたところ、Vectorize 検索の top-10 に千代田区の施設が1件も入らず、新宿区・足立区等の施設ばかりが返っていた。原因は `queryFacilityIds`(`facility-vector-search.ts`)が区市町村によるメタデータフィルタを一切かけず、全施設からの意味的類似度だけで top-K を取っているため。手書きゴールデン(12件、少数自治体のみ)ではこの種の「特定の区市町村だけが構造的に取りこぼされる」問題を検出できない。生成ゴールデンは全区市町村 × 年齢区分を横断的に(層化抽出で)網羅することで、この種の回帰を検知できるようにする。

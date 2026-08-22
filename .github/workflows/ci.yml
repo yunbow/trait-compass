@@ -4,9 +4,10 @@ name: CI
 # npm workspaces(app/batch)のそれぞれに対して lint/type-check/test を実行する。
 #
 # 2026-08-21 追記(TICKET-0024 CI統合): app ワークスペースには追加で RAG 定量評価
-# (`npm run eval`, app/eval/README.md)をローカル D1(ゲート、シークレット不要・外部課金ゼロ)
-# として組み込んだ。本番 Vectorize/Workers AI・実LLM(Vertex AI Gemini)を使う評価は非ゲートの
-# 別ワークフロー(.github/workflows/rag-eval-production.yml)が担当する(役割分担の詳細は
+# (`npm run eval`, app/eval/README.md)をローカル D1(シークレット不要・外部課金ゼロ)で
+# 組み込んだ。下記のとおり continue-on-error のためPRをブロックしない(結果はログで可視化のみ)。
+# 本番 Vectorize/Workers AI・実LLM(Vertex AI Gemini)を使う評価は別ワークフロー
+# (.github/workflows/rag-eval-production.yml)が担当する(役割分担の詳細は
 # app/eval/README.md「CI統合」を参照)。
 # Node バージョンは 20→24 に更新した(app/eval/*.eval.ts が Node のネイティブ TypeScript 実行
 # (型ストリッピング、フラグ無しで安定動作するのは Node 24 以降)に依存するため、
@@ -69,8 +70,8 @@ jobs:
       # (レポート自身も「意味的なランキングを行わないため測れません」と自己申告する経路であり、
       # 非公開リポジトリ側でも同一条件で再現することを確認済み)。スコアリングロジック自体は
       # 変更せず、この既知の制約でPR・pushを毎回ブロックしないよう continue-on-error とする
-      # (下記 audit ジョブと同じ方針)。実LLM・本番Vectorize/Workers AIを使う非ゲート評価は
-      # 別ワークフロー(rag-eval-production.yml)が担う。
+      # (下記 audit ジョブと同じ方針)。実LLM・本番Vectorize/Workers AIを使う評価
+      # (同じくPR・マージをブロックしない設計)は別ワークフロー(rag-eval-production.yml)が担う。
       - name: Run RAG quantitative eval (npm run eval)
         if: matrix.workspace == 'app'
         run: npm run eval --workspace=app

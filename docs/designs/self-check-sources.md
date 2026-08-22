@@ -30,7 +30,6 @@
 | --- | --- |
 | 二次資料 | [自閉スペクトラム症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-asd-2/) |
 | 一次資料(学術論文) | [鏡原崇史・難波修史・若松昭彦（2020）自閉スペクトラム症者における非言語コミュニケーション〜初対面者との会話時における表情とうなずき. 自閉症スペクトラム研究 17(2)](https://www.jstage.jst.go.jp/article/japanacademyofas/17/2/17_5/_article/-char/ja/) |
-| 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】 - 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所、執筆 高嶋由布子）](https://hattatsu.go.jp/notice/topics-pragmatics1/) |
 | 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】（高嶋由布子）- 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所）](https://hattatsu.go.jp/topics/topics-pragmatics1/) |
 | 二次資料 | [注意欠如多動症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-adhd-2/) |
 | 二次資料 | [傳田健三（2017）自閉スペクトラム症（ASD）の特性理解. 心身医学 57(1)](https://www.jstage.jst.go.jp/article/jjpm/57/1/57_19/_article/-char/ja/) |
@@ -42,7 +41,6 @@
 | --- | --- |
 | 二次資料 | [自閉スペクトラム症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-asd-2/) |
 | 一次資料(学術論文) | [鏡原崇史・難波修史・若松昭彦（2020）自閉スペクトラム症者における非言語コミュニケーション〜初対面者との会話時における表情とうなずき. 自閉症スペクトラム研究 17(2)](https://www.jstage.jst.go.jp/article/japanacademyofas/17/2/17_5/_article/-char/ja/) |
-| 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】 - 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所、執筆 高嶋由布子）](https://hattatsu.go.jp/notice/topics-pragmatics1/) |
 | 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】（高嶋由布子）- 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所）](https://hattatsu.go.jp/topics/topics-pragmatics1/) |
 | 二次資料 | [傳田健三（2017）自閉スペクトラム症（ASD）の特性理解. 心身医学 57(1)](https://www.jstage.jst.go.jp/article/jjpm/57/1/57_19/_article/-char/ja/) |
 | 二次資料 | [義村さや香・十一元三（2018）自閉スペクトラム症を通じて見る情動の神経科学的研究. 神経心理学 34(4)](https://www.jstage.jst.go.jp/article/neuropsychology/34/4/34_17049/_article/-char/ja) |
@@ -97,7 +95,6 @@
 | 種別 | 資料 |
 | --- | --- |
 | 二次資料 | [自閉スペクトラム症 - 発達障害情報のポータルサイト（厚生労働省・国立障害者リハビリテーションセンター）](https://hattatsu.go.jp/supporter/healthcare_health/about-asd-2/) |
-| 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】 - 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所、執筆 高嶋由布子）](https://hattatsu.go.jp/notice/topics-pragmatics1/) |
 | 二次資料 | [聴覚障害と自閉スペクトラム症の関係ー語用論の視点からー【前編】（高嶋由布子）- 発達障害情報のポータルサイト（国立障害者リハビリテーションセンター研究所）](https://hattatsu.go.jp/topics/topics-pragmatics1/) |
 | 二次資料 | [傳田健三（2017）自閉スペクトラム症（ASD）の特性理解. 心身医学 57(1)](https://www.jstage.jst.go.jp/article/jjpm/57/1/57_19/_article/-char/ja/) |
 | 二次資料 | [不安症 / 不安障害 - 生活習慣病などの情報(e-ヘルスネット)（厚生労働省、2025年3月に`e-healthnet.mhlw.go.jp`から移管）](https://kennet.mhlw.go.jp/information/information/dictionary/heart/yk-055) |

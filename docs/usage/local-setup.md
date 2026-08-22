@@ -10,8 +10,11 @@
 
 ## 前提
 
-- **Node.js**: `package.json` の `devDependencies` が `@types/node` `^20` を前提としているため、
-  Node.js 20 以上を用意する。
+- **Node.js**: **24 以上を推奨**(`npm run eval` が Node のネイティブ TypeScript 実行に依存し、
+  フラグ無しで安定動作するのは Node 24 以降のため。CI(`.github/workflows/ci.yml`)も Node 24 で
+  全ジョブを実行している)。アプリ本体のみ動かす場合の型定義上の下限は `app/package.json` の
+  `devDependencies`(`@types/node` `^20`)だが、`npm run eval` を実行する予定があるなら
+  最初から 24 以上を用意すること。
 - **Docker Desktop**: R2 代替の MinIO(必須, P0)、および Qdrant/Ollama(任意, P1)を
   `docker compose` で起動するために必要。
 - **npm**: リポジトリは npm(`package-lock.json`)を前提とする。
@@ -143,7 +146,7 @@ npm run dev                # next dev を直接起動(Docker にも wrangler に
 | --- | --- | --- |
 | `npm run test` | Vitest(jsdom)によるユニットテスト | なし |
 | `npm run test:e2e` | Playwright(chromium)による E2E テスト | **事前に `npm run db:reset:local` を実行しておくこと**。D1 が未セットアップの場合は空状態のフォールバック表示のみ検証され、実データの検証はスキップされる |
-| `npm run eval` | RAG 定量評価パイプライン(検索精度・生成品質・安全性) | なし(既定の `mock` LLM 前提で完結する) |
+| `npm run eval` | RAG 定量評価パイプライン(検索精度・生成品質・安全性) | **事前に `npm run db:migrate:local && npm run db:seed:local:manual && npm run db:seed:local:eval` を実行しておくこと**(`db:seed:local:eval` は評価専用のゴールデンデータ投入で、`db:seed:local:manual` とは別。実行しないと検索精度・生成品質レイヤーが常に失敗する)。LLM自体は既定の `mock` 実装で完結し、外部APIキーは不要 |
 
 - `npm run test:e2e` は `playwright.config.ts` の `webServer` 設定により `npm run dev` を自動起動する
   (`reuseExistingServer: true` のため、既に `npm run dev` を起動済みならそれを使い回す)。

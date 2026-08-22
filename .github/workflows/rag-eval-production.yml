@@ -5,15 +5,16 @@ name: RAG eval (production, non-blocking)
 # (app/eval/README.md「本番 Vectorize/Workers AI を対象にした検索精度評価」「リモート(本番)D1
 # を対象にした評価」「LLM-as-judge」参照)。
 #
-# .github/workflows/ci.yml(常時ゲート、ローカル D1・タグベースフォールバック経路・シークレット
-# 不要)とは役割が異なる: こちらは外部サービス(Vectorize/Workers AI/D1/Vertex AI Gemini)への
-# 実アクセスを伴うため、外部サービス起因の一時的な障害(flake)で PR やマージをブロックしない
-# 設計にする(Fable5 設計方針)。`continue-on-error: true` によりジョブの成否に関わらず後続の
-# レポート出力ステップまで到達させ、結果は job summary(GitHub Actions の $GITHUB_STEP_SUMMARY)
-# にのみ出力する。
+# .github/workflows/ci.yml(ローカル D1・タグベースフォールバック経路・シークレット不要、
+# こちらも continue-on-error でPR・マージをブロックしない)とは役割が異なる: こちらは外部
+# サービス(Vectorize/Workers AI/D1/Vertex AI Gemini)への実アクセスを伴うため、外部サービス
+# 起因の一時的な障害(flake)でPRやマージをブロックしない設計にする。`continue-on-error: true`
+# によりジョブの成否に関わらず後続のレポート出力ステップまで到達させ、結果は job summary
+# (GitHub Actions の $GITHUB_STEP_SUMMARY)にのみ出力する。
 #
 # 必要な GitHub Actions Secrets(実際の値の設定はこのワークフロー追加のスコープ外。
-# app/eval/README.md・docs/usage/cloudflare-setup.md を参照して別途発行・登録すること):
+# app/eval/README.md を参照して別途発行・登録すること。取得手順は各自の Cloudflare/Google Cloud
+# アカウント環境に依存するため、本リポジトリの範囲外とする):
 # - CLOUDFLARE_ACCOUNT_ID
 # - CLOUDFLARE_API_TOKEN
 #     **Vectorize Read + Workers AI 実行の最小権限で新規発行したトークンを使うこと。**
@@ -43,7 +44,7 @@ on:
 jobs:
   rag-eval-production:
     runs-on: ubuntu-latest
-    # ジョブ全体の成否に関わらず後続ジョブ・PR チェックをブロックしない(Fable5 設計方針)。
+    # ジョブ全体の成否に関わらず後続ジョブ・PR チェックをブロックしない。
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
