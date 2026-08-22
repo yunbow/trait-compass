@@ -30,6 +30,14 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # next-env.d.ts(.png等の画像import・next/imageの型宣言を提供する)はNext.jsが
+      # next dev/build時に自動生成するファイルでgit管理しない(Next.js標準の運用)。
+      # tsc --noEmit をそれ単体で先に実行すると画像importが型解決できず失敗するため、
+      # app ワークスペースのみ next typegen(フルビルドせず型だけ生成)を先に走らせる。
+      - name: Generate Next.js type declarations
+        if: matrix.workspace == 'app'
+        run: npx next typegen
+        working-directory: app
       - run: npm run lint --workspace=${{ matrix.workspace }}
       - run: npm run type-check --workspace=${{ matrix.workspace }}
       - run: npm run test --workspace=${{ matrix.workspace }}
