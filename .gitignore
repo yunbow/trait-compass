@@ -30,6 +30,13 @@ dist/
 .open-next/
 .wrangler/
 
+# wrangler.toml / wrangler.ingest.toml は各自の Cloudflare アカウント固有の識別子
+# (D1 database_id 等)を含む個人設定のため、この公開リポジトリではコミットしない。
+# wrangler.toml.example / wrangler.ingest.toml.example をコピーして使う
+# (docs/usage/local-setup.md参照)。
+app/wrangler.toml
+batch/wrangler.ingest.toml
+
 # Test artifacts
 # 先頭の "/" でリポジトリ直下の vitest カバレッジ出力のみを対象にする(anchor しないと
 # src/app/coverage/・src/features/coverage/ 等の「coverage」という名のソースディレクトリも
