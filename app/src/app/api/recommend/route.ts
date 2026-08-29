@@ -37,7 +37,7 @@ import {
   fetchFacilitiesByIds,
   isMunicipalityDataMissing,
   MUNICIPALITY_DATA_MISSING_MESSAGE,
-  searchFacilities,
+  searchFacilitiesWithFreshnessPolicy,
 } from "@/features/support/services/facility-search";
 import { municipalityToCode } from "@/features/support/constants/municipality-codes";
 import type { FacilityRow } from "@/features/support/services/facility-search";
@@ -102,7 +102,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // 危機介入ガード(FR-044): 該当する場合は Embedder/VectorStore/LlmClient を一切呼び出さず、
   // タグベース検索結果(aiNote なし)+ 一般相談窓口案内のみを返す。
   if (containsCrisisSignal(query)) {
-    const searchResult = await searchFacilities(db, { ageGroup: age, municipality, tags, lifestage });
+    const searchResult = await searchFacilitiesWithFreshnessPolicy(db, { ageGroup: age, municipality, tags, lifestage });
     const facilities = buildFallbackFacilities(searchResult, RECOMMEND_TOP_K);
     return buildValidatedJsonResponse({
       facilities,
@@ -117,7 +117,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // タグベース検索結果(aiNote なし)+ 案内文のみを返す(AI キルスイッチ時と同じ非AI縮退)。
   // 危機介入とは別種の縮退のため isCrisisResponse は false のまま。
   if (containsPromptInjectionSignal(query)) {
-    const searchResult = await searchFacilities(db, { ageGroup: age, municipality, tags, lifestage });
+    const searchResult = await searchFacilitiesWithFreshnessPolicy(db, { ageGroup: age, municipality, tags, lifestage });
     return buildValidatedJsonResponse({
       facilities: buildFallbackFacilities(searchResult, RECOMMEND_TOP_K),
       isAiEnabled: false,
@@ -132,7 +132,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // AI 機能停止中は Embedder/VectorStore/LlmClient を一切呼ばず、タグベース検索(/support/results と
   // 同じロジック)による非AI体験へ縮退する(TICKET-0035 AC-3/AC-4)。
   if (!isAiFeatureEnabled()) {
-    const searchResult = await searchFacilities(db, { ageGroup: age, municipality, tags, lifestage });
+    const searchResult = await searchFacilitiesWithFreshnessPolicy(db, { ageGroup: age, municipality, tags, lifestage });
     return buildValidatedJsonResponse({
       facilities: buildFallbackFacilities(searchResult, RECOMMEND_TOP_K),
       isAiEnabled: false,
@@ -190,17 +190,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       usedRag = orderedRows.length > 0;
     }
 
-    // 手動調査データの有効期限365日超過(2026-08是正)。検索結果画面(/support/results)は
-    // 期限切れ手動データセット由来の施設を広域窓口のみへ縮退表示するため、本APIでも同じ
-    // 施設を返すと表示/非表示が食い違ってしまう。getUnhealthyDatasets の kind="manual-expired"
-    // 集合で除外する(orderedRows が空の場合は無駄なD1呼び出しを避けるため usedRag のときのみ実行)。
+    // 鮮度ポリシー(オープンデータ30日超過・手動調査データ365日超過)。検索結果画面
+    // (/support/results)はどちらの由来でも当該施設を広域窓口のみへ縮退表示するため、本APIでも
+    // 同じ施設を返すと表示/非表示が食い違ってしまう。以前は kind="manual-expired" のみ除外し、
+    // オープンデータ側(kind="open-data-unhealthy")は素通りしていた(2026-08是正、外部コード
+    // レビュー指摘)。getUnhealthyDatasets の両kindの集合で除外する(orderedRows が空の場合は
+    // 無駄なD1呼び出しを避けるため usedRag のときのみ実行)。
     if (usedRag) {
       const unhealthyDatasets = await getUnhealthyDatasets(db);
-      const expiredManualDatasetIds = new Set(
-        unhealthyDatasets.filter((dataset) => dataset.kind === "manual-expired").map((dataset) => dataset.id),
+      const unhealthyDatasetIds = new Set(
+        unhealthyDatasets
+          .filter((dataset) => dataset.kind === "manual-expired" || dataset.kind === "open-data-unhealthy")
+          .map((dataset) => dataset.id),
       );
-      if (expiredManualDatasetIds.size > 0) {
-        orderedRows = orderedRows.filter((row) => !expiredManualDatasetIds.has(row.datasetId));
+      if (unhealthyDatasetIds.size > 0) {
+        orderedRows = orderedRows.filter((row) => !unhealthyDatasetIds.has(row.datasetId));
         usedRag = orderedRows.length > 0;
       }
     }
@@ -211,7 +215,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   }
 
   if (!usedRag) {
-    const searchResult = await searchFacilities(db, { ageGroup: age, municipality, tags, lifestage });
+    const searchResult = await searchFacilitiesWithFreshnessPolicy(db, { ageGroup: age, municipality, tags, lifestage });
     const facilities = buildFallbackFacilities(searchResult, RECOMMEND_TOP_K);
     return buildValidatedJsonResponse({
       facilities,

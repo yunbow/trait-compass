@@ -11,8 +11,7 @@ import type { SchoolInfoSectionProps } from "@/features/support/components/Schoo
 import { SupportResultsFallback } from "@/features/support/components/SupportResultsFallback";
 import { parseResultsSearchParams } from "@/features/support/schema/results-search-params";
 import type { Municipality } from "@/features/support/constants/municipalities";
-import { getUnhealthyDatasets } from "@/features/support/services/dataset-status";
-import { degradeUnhealthyCategoriesToBroadArea, searchFacilities } from "@/features/support/services/facility-search";
+import { searchFacilitiesWithFreshnessPolicy } from "@/features/support/services/facility-search";
 import { toFacilityDisplayData } from "@/features/support/services/facility-display";
 import type { FacilityDisplayData } from "@/features/support/services/facility-display";
 import { applyPathwayPriority } from "@/features/support/services/facility-pathway-priority";
@@ -85,9 +84,13 @@ async function loadResultsData(
     pathwayPurposeId: string | null;
   },
 ): Promise<ResultsData> {
-  const [searchResult, unhealthyDatasets, schoolInfo, rawSupportPathway] = await Promise.all([
-    searchFacilities(db, { ageGroup: params.age, municipality: params.municipality, lifestage: params.lifestage, tags: params.tags }),
-    getUnhealthyDatasets(db),
+  const [searchResult, schoolInfo, rawSupportPathway] = await Promise.all([
+    searchFacilitiesWithFreshnessPolicy(db, {
+      ageGroup: params.age,
+      municipality: params.municipality,
+      lifestage: params.lifestage,
+      tags: params.tags,
+    }),
     fetchSchoolInfo(db, params.municipality)
       .catch((error: unknown) => {
         console.error("[support/results] 学校情報の取得に失敗しました。", safeErrorKind(error));
@@ -120,23 +123,12 @@ async function loadResultsData(
   const isMunicipalitySurveyExpired = schoolInfo.expiration?.isExpired ?? false;
   const supportPathway = isMunicipalitySurveyExpired ? null : rawSupportPathway;
 
-  // 2026-08是正(AC-2最優先): getUnhealthyDatasets の結果を「オープンデータstale」
-  // (kind: open-data-unhealthy)と「手動調査データの期限切れ」(kind: manual-expired)の
-  // 2集合に分け、degradeUnhealthyCategoriesToBroadArea を2回チェーン適用する。1回で
-  // まとめて扱うと、手動データの期限切れ由来の縮退にオープンデータ向けの文言
-  // (UNHEALTHY_DATASET_DEGRADE_MESSAGE)が誤って出てしまう(AC-3)。
-  const staleOpenDataIds = new Set(
-    unhealthyDatasets.filter((dataset) => dataset.kind === "open-data-unhealthy").map((dataset) => dataset.id),
-  );
-  const expiredManualIds = new Set(
-    unhealthyDatasets.filter((dataset) => dataset.kind === "manual-expired").map((dataset) => dataset.id),
-  );
-
-  const staleDegraded = degradeUnhealthyCategoriesToBroadArea(searchResult.facilitiesByCategory, staleOpenDataIds);
-  const expiredDegraded = degradeUnhealthyCategoriesToBroadArea(staleDegraded.facilitiesByCategory, expiredManualIds);
-
+  // 2026-08是正: 鮮度ポリシー(オープンデータ30日超過・手動調査データ365日超過の広域窓口縮退)は
+  // searchFacilitiesWithFreshnessPolicy 側で一本化済み(外部コードレビュー指摘、詳細は
+  // facility-search.ts 該当関数のコメント参照)。ここでは戻り値の degradedCategories/
+  // expiredCategories をそのまま使う。
   const facilitiesByCategory = Object.fromEntries(
-    CATEGORY_TYPES.map((type) => [type, expiredDegraded.facilitiesByCategory[type].map(toFacilityDisplayData)]),
+    CATEGORY_TYPES.map((type) => [type, searchResult.facilitiesByCategory[type].map(toFacilityDisplayData)]),
   ) as Record<CategoryType, FacilityDisplayData[]>;
 
   // 想定ルート(supportPathway)が取得できている場合、各カテゴリの一覧をステップの窓口名
@@ -153,15 +145,14 @@ async function loadResultsData(
     fallbackMessage: searchResult.fallbackMessage,
     // AC-2(最優先): 「確認が必要な状態」の汎用注記はオープンデータstaleのみで判定する。
     // 2026-08是正(外部コードレビュー指摘): getUnhealthyDatasets は全自治体・全分野の datasets を
-    // 横断的に見るため、`staleOpenDataIds.size > 0` だけで判定すると、無関係な自治体・分野の
-    // stale データが原因で、この検索結果には一切影響していない場合でもバナーが出てしまう
-    // (実質ほぼ常時表示になり得る)。`staleDegraded.degradedCategories` は
-    // degradeUnhealthyCategoriesToBroadArea が「このレスポンスの facilitiesByCategory に実際に
-    // 含まれていたデータセットが不健全だったか」で判定済みのため、これを使うことで今回の検索に
-    // 実際に影響があった場合のみ true にする。
-    hasUnhealthyDatasets: staleDegraded.degradedCategories.length > 0,
-    degradedCategories: staleDegraded.degradedCategories,
-    expiredCategories: expiredDegraded.degradedCategories,
+    // 横断的に見るため、単純な件数だけで判定すると、無関係な自治体・分野のstale データが
+    // 原因で、この検索結果には一切影響していない場合でもバナーが出てしまう(実質ほぼ常時
+    // 表示になり得る)。`degradedCategories` は degradeUnhealthyCategoriesToBroadArea が
+    // 「このレスポンスの facilitiesByCategory に実際に含まれていたデータセットが不健全だったか」
+    // で判定済みのため、これを使うことで今回の検索に実際に影響があった場合のみ true にする。
+    hasUnhealthyDatasets: searchResult.degradedCategories.length > 0,
+    degradedCategories: searchResult.degradedCategories,
+    expiredCategories: searchResult.expiredCategories,
     schoolInfo,
     supportPathway,
   };

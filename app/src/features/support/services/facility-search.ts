@@ -17,6 +17,7 @@ import { lifestageToOrdinal } from "@/features/support/services/lifestage-mappin
 import type { Lifestage } from "@/features/support/services/lifestage-mapping";
 import type { SupportTag } from "@/features/support/services/category-tag-mapping";
 import { BROAD_AREA_MUNICIPALITY_CODE, municipalityToCode } from "@/features/support/constants/municipality-codes";
+import { getUnhealthyDatasets } from "@/features/support/services/dataset-status";
 
 /** 広域(都全域)窓口の municipality 値。区市町村データ欠損時のフォールバック先(FR-022)。 */
 export const BROAD_AREA_MUNICIPALITY = "東京都";
@@ -442,6 +443,64 @@ export async function searchFacilities(db: D1Database, params: FacilitySearchPar
   const withTags = attachTagMatches(facilityRows, tagsByFacilityId, params.tags);
 
   return buildFacilitySearchResult(withTags, municipalityCode);
+}
+
+/** {@link searchFacilitiesWithFreshnessPolicy} の戻り値。 */
+export interface FacilitySearchWithFreshnessResult extends FacilitySearchResult {
+  /**
+   * オープンデータの30日超過(`kind: "open-data-unhealthy"`)により広域窓口のみの縮退表示に
+   * 切り替わった分類一覧(TICKET-0012 AC-3 積み残し分、TICKET-0033 AC-3)。
+   */
+  degradedCategories: CategoryType[];
+  /**
+   * 手動調査データの有効期限365日超過(`kind: "manual-expired"`)により広域窓口のみの縮退表示に
+   * 切り替わった分類一覧。`degradedCategories` とは別集合(縮退理由の文言を出し分けるため)。
+   */
+  expiredCategories: CategoryType[];
+}
+
+/**
+ * `searchFacilities` に鮮度ポリシー(オープンデータ30日超過・手動調査データ365日超過の
+ * 広域窓口縮退)まで適用した合成関数(2026-08是正、外部コードレビュー指摘)。
+ *
+ * 以前は `/support/results`(src/app/support/results/page.tsx)だけがこの2段階の縮退処理を
+ * 自前で行っており、`/api/prepare`・`/api/recommend` のフォールバック経路は `searchFacilities`
+ * の生の結果をそのまま使っていた。そのため、通常結果画面では消えている期限切れ・不健全データ
+ * 由来の施設が、相談メモ作成(prepare)やAI推薦停止時のフォールバック(recommend)では
+ * 表示され続けるという画面間の不整合があった。「鮮度を判定する基準」(dataset-status.ts の
+ * `evaluateDatasetStatus`)は既に共通化されていたが、「判定後に何を表示するか」を呼び出し側
+ * ごとに別々に実装していたことが原因のため、本関数へ一本化する。
+ *
+ * `searchFacilities` を経由する全経路(通常結果画面・prepare・recommend のタグベース
+ * フォールバック)はこちらを使うこと。RAG成功時(recommend)は個別施設の facility_id 配列を
+ * 起点にする都合上 `fetchFacilitiesByIds` を直接使うため対象外(呼び出し側で
+ * `getUnhealthyDatasets` の結果を同様に適用する。route.ts 参照)。
+ */
+export async function searchFacilitiesWithFreshnessPolicy(
+  db: D1Database,
+  params: FacilitySearchParams,
+): Promise<FacilitySearchWithFreshnessResult> {
+  const [searchResult, unhealthyDatasets] = await Promise.all([searchFacilities(db, params), getUnhealthyDatasets(db)]);
+
+  // 手動調査データの期限切れ由来の縮退にオープンデータ向けの縮退文言が誤って出ないよう、
+  // 2集合に分けて degradeUnhealthyCategoriesToBroadArea を2回チェーン適用する
+  // (元は src/app/support/results/page.tsx の loadResultsData 内にあったロジック)。
+  const staleOpenDataIds = new Set(
+    unhealthyDatasets.filter((dataset) => dataset.kind === "open-data-unhealthy").map((dataset) => dataset.id),
+  );
+  const expiredManualIds = new Set(
+    unhealthyDatasets.filter((dataset) => dataset.kind === "manual-expired").map((dataset) => dataset.id),
+  );
+
+  const staleDegraded = degradeUnhealthyCategoriesToBroadArea(searchResult.facilitiesByCategory, staleOpenDataIds);
+  const expiredDegraded = degradeUnhealthyCategoriesToBroadArea(staleDegraded.facilitiesByCategory, expiredManualIds);
+
+  return {
+    ...searchResult,
+    facilitiesByCategory: expiredDegraded.facilitiesByCategory,
+    degradedCategories: staleDegraded.degradedCategories,
+    expiredCategories: expiredDegraded.degradedCategories,
+  };
 }
 
 /**

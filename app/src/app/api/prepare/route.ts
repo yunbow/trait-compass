@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { getDbOrErrorResponse, parseJsonRequest, validatedJsonResponse } from "@/lib/api/route-helpers";
 
 import { CATEGORY_LABELS } from "@/features/survey/constants/category-labels";
-import { searchFacilities } from "@/features/support/services/facility-search";
+import { searchFacilitiesWithFreshnessPolicy } from "@/features/support/services/facility-search";
 
 import {
   PREPARE_CONSULT_PURPOSE_OPTIONS,
@@ -33,8 +33,15 @@ import { LIFESTAGE_OPTIONS } from "@/features/support/services/lifestage-mapping
 // `/api/summarize`)を選べる。
 //
 // **事実情報の捏造防止(fact-guard 方針)**: 窓口候補の name/municipality/address/phone/url/
-// sourceCredit/sourceUrl はすべて D1(searchFacilities)由来の値を services/facilities.ts の
-// `toPrepareFacility` でそのまま詰めるのみで、外部の入力から抽出・上書きする処理は一切行わない。
+// sourceCredit/sourceUrl はすべて D1(searchFacilitiesWithFreshnessPolicy)由来の値を
+// services/facilities.ts の `toPrepareFacility` でそのまま詰めるのみで、外部の入力から
+// 抽出・上書きする処理は一切行わない。
+//
+// **鮮度ポリシー(2026-08是正、外部コードレビュー指摘)**: 以前は searchFacilities の生の結果を
+// 使っており、通常結果画面(/support/results)で広域窓口のみへ縮退表示されているはずの
+// 不健全データセット由来の施設が、こちらでは候補として表示され続ける不整合があった。
+// searchFacilitiesWithFreshnessPolicy(facility-search.ts)を使うことで、オープンデータの
+// 30日超過・手動調査データの365日超過いずれも通常結果画面と同じ基準で縮退させる。
 //
 // NFR-36(ログ非保存)に関する注意: このファイル全体で選択タグ・上位カテゴリ・relationship・
 // lifestage(元の年齢選択、5区分ライフステージ)・相談メモ追加項目(situations/duration/
@@ -69,7 +76,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!dbResult.ok) return dbResult.response;
   const { db } = dbResult;
 
-  const searchResult = await searchFacilities(db, { ageGroup: age, municipality, tags, lifestage });
+  const searchResult = await searchFacilitiesWithFreshnessPolicy(db, { ageGroup: age, municipality, tags, lifestage });
   const facilities = selectPrepareFacilityRows(searchResult, PREPARE_FACILITY_LIMIT).map(toPrepareFacility);
 
   const topCategoryLabels = topCategories.map((key) => CATEGORY_LABELS[key]);

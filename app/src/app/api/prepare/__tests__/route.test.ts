@@ -98,6 +98,35 @@ function makeFacilityJoinRow(overrides: Record<string, unknown> = {}) {
 
 const VALID_BODY = { topCategories: ["executive-function"], tags: ["不注意・段取り"], age: "adult", municipality: "世田谷区" };
 
+/**
+ * SQL文字列の内容(FROM句)でどの問い合わせかを判定して応答を出し分けるフェイクD1
+ * (2026-08是正のテスト用: searchFacilitiesWithFreshnessPolicy は facilities/datasets/
+ * facility_tags の3種類のクエリを Promise.all で並行実行するため、実行順序に依存しない
+ * 判定が必要)。
+ */
+function createDispatchingDb(options: {
+  facilityRows: unknown[];
+  unhealthyDatasetRows?: unknown[];
+  tagRows?: unknown[];
+}) {
+  const { facilityRows, unhealthyDatasetRows = [], tagRows = [] } = options;
+  return {
+    prepare: vi.fn((sql: string) => {
+      const respond = async () => {
+        if (sql.includes("FROM datasets")) return { results: unhealthyDatasetRows };
+        if (sql.includes("FROM facility_tags")) return { results: tagRows };
+        return { results: facilityRows };
+      };
+      const statement = {
+        // getUnhealthyDatasets は bind() を挟まず prepare().all() を直接呼ぶ。
+        all: vi.fn(respond),
+        bind: vi.fn(() => ({ all: vi.fn(respond) })),
+      };
+      return statement;
+    }),
+  };
+}
+
 afterEach(() => {
   vi.clearAllMocks();
 });
@@ -318,5 +347,27 @@ describe("POST /api/prepare", () => {
 
     errorSpy.mockRestore();
     logSpy.mockRestore();
+  });
+
+  // 2026-08是正(外部コードレビュー指摘): 以前は searchFacilities の生の結果を使っており、
+  // 通常結果画面(/support/results)で不健全データセット判定により広域窓口のみへ縮退表示
+  // されているはずの施設が、prepare では候補として表示され続ける不整合があった。
+  // searchFacilitiesWithFreshnessPolicy への切り替えで、通常結果画面と同じ基準
+  // (is_alive=0 のオープンデータ)で除外されることの回帰ガード。
+  it("不健全データセット(is_alive=0)由来の施設は候補から除外される(通常結果画面と同じ鮮度ポリシー)", async () => {
+    getDbMock.mockReturnValue(
+      createDispatchingDb({
+        facilityRows: [makeFacilityJoinRow({ dataset_id: "ds-unhealthy" })],
+        unhealthyDatasetRows: [
+          { id: "ds-unhealthy", isAlive: 0, fetchedAt: "2020-01-01T00:00:00.000Z", license: "cc-by-4.0" },
+        ],
+      }),
+    );
+
+    const res = await POST(buildRequest(VALID_BODY));
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.facilities).toEqual([]);
   });
 });

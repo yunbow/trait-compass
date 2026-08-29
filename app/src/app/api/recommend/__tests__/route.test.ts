@@ -80,6 +80,33 @@ function createQueueDb(responses: unknown[][]) {
   return { db, prepareCalls, bindCalls };
 }
 
+/**
+ * SQL文字列の内容(FROM句)でどの問い合わせかを判定して応答を出し分けるフェイクD1
+ * (2026-08是正のテスト用: searchFacilitiesWithFreshnessPolicy・RAG成功時の期限切れ除外は
+ * 複数クエリを Promise.all で並行実行するため、実行順序に依存しない判定が必要。
+ * src/app/api/prepare/__tests__/route.test.ts の createDispatchingDb と同じ方針)。
+ */
+function createDispatchingDb(options: {
+  facilityRows: unknown[];
+  unhealthyDatasetRows?: unknown[];
+  tagRows?: unknown[];
+}) {
+  const { facilityRows, unhealthyDatasetRows = [], tagRows = [] } = options;
+  return {
+    prepare: vi.fn((sql: string) => {
+      const respond = async () => {
+        if (sql.includes("FROM datasets")) return { results: unhealthyDatasetRows };
+        if (sql.includes("FROM facility_tags")) return { results: tagRows };
+        return { results: facilityRows };
+      };
+      return {
+        all: vi.fn(respond),
+        bind: vi.fn(() => ({ all: vi.fn(respond) })),
+      };
+    }),
+  };
+}
+
 function makeFacilityJoinRow(overrides: Record<string, unknown> = {}) {
   return {
     id: "fac-001",
@@ -405,6 +432,52 @@ describe("POST /api/recommend", () => {
     expect(json.facilities).toHaveLength(1);
     expect(json.facilities[0].id).toBe("fac-fallback");
     expect(generateMock).not.toHaveBeenCalled();
+  });
+
+  // 2026-08是正(外部コードレビュー指摘): 以前は RAG成功時、期限切れ手動データセット
+  // (kind="manual-expired")のみを除外し、オープンデータの30日超過(kind="open-data-unhealthy")
+  // は素通りしていた。通常結果画面(/support/results)はどちらの由来でも縮退表示するため、
+  // 両kindとも除外されることの回帰ガード。
+  it("RAG成功時、オープンデータ30日超過(is_alive=0)由来の施設も除外する", async () => {
+    embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
+    vectorQueryMock.mockResolvedValue([{ id: "fac-stale", score: 0.95 }]);
+
+    const db = createDispatchingDb({
+      facilityRows: [makeFacilityJoinRow({ id: "fac-stale", dataset_id: "ds-stale-open-data" })],
+      unhealthyDatasetRows: [
+        { id: "ds-stale-open-data", isAlive: 0, fetchedAt: "2020-01-01T00:00:00.000Z", license: "cc-by-4.0" },
+      ],
+    });
+    getDbMock.mockReturnValue(db);
+
+    const res = await POST(buildRequest(VALID_BODY));
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    // 除外の結果、有効候補が0件になりタグベース検索へフォールバックする
+    // (createDispatchingDb は facilityRows をそのままタグベース検索にも返すため、
+    // フォールバック結果として fac-stale が再び出る場合、除外自体が効いていないバグを検知できる)。
+    expect(json.isAiEnabled).toBe(false);
+  });
+
+  // タグベース検索フォールバック経路(危機介入・注入検知・AI停止・RAG失敗)も通常結果画面と
+  // 同じ鮮度ポリシーを使うことの回帰ガード(searchFacilitiesWithFreshnessPolicy への切り替え)。
+  it("AI機能停止中のフォールバックでも、不健全データセット由来の施設を除外する(通常結果画面と同じ鮮度ポリシー)", async () => {
+    process.env.AI_FEATURES_ENABLED = "false";
+    const db = createDispatchingDb({
+      facilityRows: [makeFacilityJoinRow({ id: "fac-stale", dataset_id: "ds-stale-open-data" })],
+      unhealthyDatasetRows: [
+        { id: "ds-stale-open-data", isAlive: 0, fetchedAt: "2020-01-01T00:00:00.000Z", license: "cc-by-4.0" },
+      ],
+    });
+    getDbMock.mockReturnValue(db);
+
+    const res = await POST(buildRequest(VALID_BODY));
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.isAiEnabled).toBe(false);
+    expect(json.facilities).toEqual([]);
   });
 
   it("lifestage を指定すると、fetchFacilitiesByIds(RAG経路)のSQLにBETWEEN句・序数が反映される", async () => {
