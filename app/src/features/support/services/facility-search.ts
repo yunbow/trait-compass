@@ -54,7 +54,10 @@ export interface FacilitySearchParams {
   municipality: string;
   tags: SupportTag[];
   /** 任意。与えられた場合、age_range の粗い区分に加えて lifestage_min/max による細分絞り込みを適用する
-   *  (migration 0016)。未指定(null/undefined)なら従来どおり age_range のみで判定する。 */
+   *  (migration 0016)。未指定(null/undefined)の場合、lifestage_min/max が NULL の施設(細分
+   *  未設定)は従来どおり age_range のみで判定されるが、lifestage_min/max が設定済みの施設
+   *  (対象年齢帯が明示されている施設)は安全側で除外する(2026-08是正、`lifestageFilterClause`
+   *  参照)。 */
   lifestage?: Lifestage | null;
 }
 
@@ -281,12 +284,26 @@ export const FACILITY_BASE_WHERE = "f.is_medical = 0 AND f.is_out_of_scope = 0";
 
 /**
  * lifestage_min/max による細分絞り込み句(migration 0016)。
- * `null`(lifestage 未指定)なら空文字を返し、句自体を付けない。
+ *
+ * 2026-08是正(外部レビューP1): `lifestageOrdinal` が `null`(lifestage 未指定)の場合、
+ * 以前は句自体を付けず絞り込みを一切行わなかったが、それだと対象年齢帯が明示されている
+ * 施設(例: サポステ2施設、lifestage_min=2/lifestage_max=4、対象15〜49歳)が、旧形式の
+ * ブックマーク(`/support/results?age=child&municipality=...`、lifestage クエリ無し)や
+ * lifestage 省略の `/api/prepare`・`/api/recommend` からの未就学児・小学生向け検索結果にも
+ * 表示されてしまう問題があった。
+ *
+ * 採用した方針は「lifestage 未指定時は、対象年齢帯が明示されている施設(lifestage_min/max が
+ * 設定済み)を安全側で除外する」(原則: 対象年齢帯が明示されている施設は、利用者の年齢帯が
+ * 確認できた場合にのみ表示する)。API の lifestage 必須化はせず(旧URL自体は引き続き
+ * 表示される)、この共有関数1箇所の変更で searchFacilities / fetchFacilitiesByIds の
+ * 全経路に効かせる。lifestage_min/max は db/schema.sql のテーブルレベル CHECK により
+ * 「両方 NULL」か「両方非 NULL」のいずれかしか取り得ないため、`lifestage_min IS NULL`
+ * のみでも判定として十分だが、意図を明示するため両カラムを条件に含める。
  */
 export function lifestageFilterClause(lifestageOrdinal: number | null): string {
   return lifestageOrdinal != null
     ? "AND (f.lifestage_min IS NULL OR (? BETWEEN f.lifestage_min AND f.lifestage_max))"
-    : "";
+    : "AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL";
 }
 
 /** D1 `facilities JOIN datasets` の生の行(SQLite の列名は snake_case)。 */
@@ -444,8 +461,8 @@ export async function fetchFacilitiesByIds(
     ageGroup: AgeGroup;
     municipality: string;
     /** 任意。与えられた場合、age_range の粗い区分に加えて lifestage_min/max による細分絞り込みを適用する
-     *  (migration 0016、`searchFacilities` と同じ絞り込みパターン)。未指定(null/undefined)なら
-     *  従来どおり age_range のみで判定する。 */
+     *  (migration 0016、`searchFacilities` と同じ絞り込みパターン)。未指定(null/undefined)の場合の
+     *  挙動も `searchFacilities` と同じ(`lifestageFilterClause` 参照、2026-08是正の安全側除外)。 */
     lifestage?: Lifestage | null;
   },
 ): Promise<FacilityRow[]> {

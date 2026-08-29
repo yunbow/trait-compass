@@ -208,13 +208,14 @@ describe("POST /api/prepare", () => {
     expect(json.summary).toContain("高校生の本人として相談したいです。");
   });
 
-  it("lifestage を省略した場合、searchFacilities 用のSQLにBETWEEN句を含まず、要約にも年齢を含めない(後方互換性)", async () => {
+  it("lifestage を省略した場合、searchFacilities 用のSQLにBETWEEN句を含まず(lifestage_min/max設定済み施設を安全側で除外する句のみを含む、2026-08是正)、要約にも年齢を含めない(後方互換性)", async () => {
     const { db, prepareCalls } = createQueueDbWithCalls([[makeFacilityJoinRow()], []]);
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
 
-    expect(prepareCalls[0]).not.toContain("lifestage_min");
+    expect(prepareCalls[0]).not.toContain("BETWEEN f.lifestage_min AND f.lifestage_max");
+    expect(prepareCalls[0]).toContain("AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL");
     const json = await res.json();
     expect(json.summary).toBe("本人として相談したいです。\n「不注意・段取り」に関する困りごとがあります。");
   });

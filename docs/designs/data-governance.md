@@ -64,15 +64,16 @@ ingest-manual-survey.mjs`)はいずれも、対象施設の `facility_tags` を�
   不健全と判定されたデータセットに属する分野は、広域(都全域)窓口のみの縮退表示へ
   切り替える(`app/src/features/support/services/facility-search.ts`)。
 - **監視(取込 Worker の `GET /health`)**: `batch/ingest/index.ts`(集計本体は
-  `batch/ingest/health.ts`)が全 `datasets` 行の `is_alive`・`fetched_at`・`frozen`・
-  `ckan_package_id` を読み取り、経過日数・30日超過件数(`staleCount`)・
-  不達件数(`deadCount`)・意図的な監視対象外件数(`unmonitoredCount`)を JSON で返す。
-  `frozen = 1` または `ckan_package_id IS NULL` のデータセットは `is_alive = 0` でも
-  取得失敗ではないため `deadCount` に含めず、`fetched_at` の30日超過も `staleCount` に
-  含めない(frozen は `fetched_at` が二度と進まず恒久超過し、手動調査データの鮮度は
-  有効期限365日の別ルールで管理されるため。`dataset-status.ts` の
-  "frozen-or-unmonitored" 区分と同じ判定、2026-08是正)。UI側と同じ定数・純関数を
-  import しており、判定基準が画面と監視で分岐しない。
+  `batch/ingest/health.ts`)が全 `datasets` 行の `is_alive`・`fetched_at`・`license`・
+  `frozen`・`ckan_package_id` を、UIと同じ `evaluateDatasetStatus` に通して読み取り、
+  経過日数・不健全件数(`staleCount`)・不達件数(`deadCount`)・意図的な監視対象外件数
+  (`unmonitoredCount`)を JSON で返す。`frozen = 1` または(手動調査データ以外で)
+  `ckan_package_id IS NULL` のデータセットは `is_alive = 0` でも取得失敗ではないため
+  `deadCount` に含めない(`dataset-status.ts` の "frozen-or-unmonitored" 区分、2026-08是正)。
+  `staleCount` は、オープンデータの30日超過(`kind: "open-data-unhealthy"`)に加えて、
+  手動調査データの有効期限365日超過(`kind: "manual-expired"`)も合算する(外部コード
+  レビューP1是正、2026-08)。UI側と同じ定数・純関数を import しており、判定基準が画面と
+  監視で分岐しない。
 
 ## 4. ライセンス管理
 

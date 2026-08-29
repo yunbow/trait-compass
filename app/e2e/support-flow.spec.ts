@@ -102,7 +102,12 @@ test("シードに存在しない区市町村を選択すると、広域窓口�
 });
 
 test("タブを切り替えると category_type ごとの一覧に切り替わる", async ({ page }) => {
-  await page.goto("/support/results?age=adult&municipality=13112");
+  // 2026-08是正(外部レビューP1): lifestage 未指定だと、対象年齢帯が明示されている施設
+  // (サポステ、lifestage_min=2/max=4)は安全側で除外されるようになったため、本テストの
+  // 目的(タブ切替でサポステ・制度カードの両方が正しく出し分けられることの確認)を保つには
+  // lifestage を明示的に指定する必要がある(サポステの範囲[2,4]に重なる working-adult=4)。
+  // これは同時に「lifestage指定時にはサポステが表示される」ケースの回帰ガードも兼ねる。
+  await page.goto("/support/results?age=adult&municipality=13112&lifestage=working-adult");
 
   if (await isPreparingFallback(page)) {
     await expectPreparingFallback(page);
@@ -111,7 +116,7 @@ test("タブを切り替えると category_type ごとの一覧に切り替わ�
 
   // 既定タブは「相談窓口」(CATEGORY_TYPES の先頭)。
   // db/seed/no-diagnosis-facilities.sql: fac-manual-saposute-setagaya(世田谷区・相談窓口・
-  // age_range=both、実在データ)。
+  // age_range=both、lifestage_min=2/max=4、実在データ)。
   await expect(page.getByRole("link", { name: /^相談窓口/ })).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("せたがや若者サポートステーション")).toBeVisible();
   // 出典クレジット(FR-026, NFR-54)。施設カードが表示される本テストで担保する
@@ -130,6 +135,11 @@ test("タブを切り替えると category_type ごとの一覧に切り替わ�
 });
 
 test("旧形式の自治体名(municipality=世田谷区)でアクセスしても結果が描画される(後方互換)", async ({ page }) => {
+  // このURL(旧形式の自治体名・lifestage省略)は本テストが検証したい「自治体名の後方互換」とは
+  // 別に、2026-08是正(外部レビューP1)の対象そのものでもある: lifestage 未指定のため、対象
+  // 年齢帯が明示されている施設(サポステ、lifestage_min=2/max=4)は安全側で除外され、
+  // 「相談窓口」タブは0件になりタブ自体が表示されなくなる(既定タブは0件でない先頭タブ
+  // 「支援制度」へフォールバックする)。
   await page.goto("/support/results?age=adult&municipality=世田谷区");
 
   if (await isPreparingFallback(page)) {
@@ -137,7 +147,12 @@ test("旧形式の自治体名(municipality=世田谷区)でアクセスして�
     return;
   }
 
+  // 自治体名の解決自体は引き続き機能する(見出しに自治体名が出る)。
   await expect(page.getByRole("heading", { level: 1, name: /^世田谷区・18歳以上の支援情報/ })).toBeVisible();
-  await expect(page.getByRole("link", { name: /^相談窓口/ })).toHaveAttribute("aria-current", "page");
-  await expect(page.getByText("せたがや若者サポートステーション")).toBeVisible();
+  // lifestage 省略時の安全側除外により、サポステ(相談窓口)は表示されない。
+  await expect(page.getByRole("link", { name: /^相談窓口/ })).toHaveCount(0);
+  await expect(page.getByText("せたがや若者サポートステーション")).toHaveCount(0);
+  // 代わりに0件でない先頭タブ(支援制度、db/seed/adult-benefit-cards.sql)が既定表示される。
+  await expect(page.getByRole("link", { name: /^支援制度/ })).toHaveAttribute("aria-current", "page");
+  await expect(page.getByText("精神障害者保健福祉手帳")).toBeVisible();
 });

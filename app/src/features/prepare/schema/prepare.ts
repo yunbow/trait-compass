@@ -48,8 +48,12 @@ export const PrepareRequestSchema = z.object({
   /** 選択式の困りごとタグ(複数選択、既存の相談分野タグ語彙を再利用、AC-1)。 */
   tags: z.array(z.enum(SUPPORT_TAGS)).max(SUPPORT_TAGS.length),
   age: AgeGroupSchema,
-  /** 元の年齢選択(5区分ライフステージ)。任意(既存/古いクライアントとの後方互換性のため)で、
-   *  D1検索の絞り込みには使わず(age が引き続き使われる)、AIプロンプトへの文脈提供にのみ使う。 */
+  /** 元の年齢選択(5区分ライフステージ)。任意(既存/古いクライアントとの後方互換性のため)。
+   *  age(粗い年齢区分)による D1 検索の絞り込みは維持しつつ、指定時は facility-search.ts の
+   *  lifestageFilterClause により lifestage_min/max の細分絞り込みも適用される。未指定時は
+   *  対象年齢帯が明示されている施設(lifestage_min/max 設定済み)を安全側で除外する
+   *  (2026-08是正、旧URL・旧クライアント互換のため API 自体は必須化しない)。AIプロンプトへの
+   *  文脈提供にも使う。 */
   lifestage: z.enum(LIFESTAGE_VALUES).optional(),
   municipality: MunicipalityEntrySchema,
   /** 相談する立場(TICKET-0047)。未指定時は "self" にフォールバックする。 */

@@ -7,10 +7,14 @@ import { buildHealthReport, getHealthReport, type HealthDatasetRow } from "../he
 /** 判定基準日。fetchedAt との差分で staleDays を制御する。 */
 const NOW = new Date("2026-08-29T00:00:00.000Z");
 
+/** 手動調査データの license sentinel(app/src/lib/manual-data-expiration.ts と同値)。 */
+const MANUAL_SURVEY_LICENSE = "manual-fact-verified";
+
 function row(overrides: Partial<HealthDatasetRow> & { id: string }): HealthDatasetRow {
   return {
     isAlive: 1,
     fetchedAt: "2026-08-28T00:00:00.000Z",
+    license: "cc-by-4.0",
     frozen: 0,
     ckanPackageId: "pkg-default",
     ...overrides,
@@ -28,6 +32,7 @@ describe("buildHealthReport", () => {
         fetchedAt: "2026-08-28T00:00:00.000Z",
         staleDays: 1,
         unmonitored: false,
+        kind: "open-data-unhealthy",
       },
     ]);
     expect(report.staleCount).toBe(0);
@@ -50,7 +55,7 @@ describe("buildHealthReport", () => {
     expect(report.datasets[0].unmonitored).toBe(true);
   });
 
-  it("ckan_package_id IS NULL の is_alive=0 は deadCount に数えず unmonitoredCount に数える(2026-08是正)", () => {
+  it("license がオープンデータライセンスで ckan_package_id IS NULL の is_alive=0 は従来どおり deadCount に数えず unmonitoredCount に数える(2026-08是正)", () => {
     const report = buildHealthReport(
       [row({ id: "ds-manual", isAlive: 0, ckanPackageId: null })],
       NOW,
@@ -59,6 +64,7 @@ describe("buildHealthReport", () => {
     expect(report.deadCount).toBe(0);
     expect(report.unmonitoredCount).toBe(1);
     expect(report.datasets[0].unmonitored).toBe(true);
+    expect(report.datasets[0].kind).toBe("frozen-or-unmonitored");
   });
 
   it("本番相当の混在(常設の監視対象外2行 + 正常 + 本当の取得失敗)を正しく分離して数える", () => {
@@ -78,7 +84,14 @@ describe("buildHealthReport", () => {
 
   it("frozen/ckanPackageId が undefined の行は従来どおり監視対象として扱う(互換)", () => {
     const report = buildHealthReport(
-      [{ id: "ds-legacy", isAlive: 0, fetchedAt: "2026-08-28T00:00:00.000Z" }],
+      [
+        {
+          id: "ds-legacy",
+          isAlive: 0,
+          fetchedAt: "2026-08-28T00:00:00.000Z",
+          license: "cc-by-4.0",
+        },
+      ],
       NOW,
     );
 
@@ -116,10 +129,55 @@ describe("buildHealthReport", () => {
     // 行単位の staleDays は監視対象外でも従来どおり返す(参考情報)。
     expect(report.datasets.every((d) => d.staleDays > 30)).toBe(true);
   });
+
+  it("手動調査データ(license=manual-fact-verified)は fetched_at が366日超過で staleCount に数える(外部コードレビューP1是正)", () => {
+    const fetchedAt = new Date(NOW.getTime() - 366 * 24 * 60 * 60 * 1000).toISOString();
+    const report = buildHealthReport(
+      [row({ id: "ds-manual-expired", license: MANUAL_SURVEY_LICENSE, ckanPackageId: null, fetchedAt })],
+      NOW,
+    );
+
+    expect(report.staleCount).toBe(1);
+    expect(report.deadCount).toBe(0);
+    expect(report.unmonitoredCount).toBe(0);
+    expect(report.datasets[0]).toMatchObject({ unmonitored: false, kind: "manual-expired" });
+  });
+
+  it("手動調査データ(license=manual-fact-verified)は fetched_at が365日以内なら staleCount に数えない", () => {
+    const fetchedAt = new Date(NOW.getTime() - 365 * 24 * 60 * 60 * 1000).toISOString();
+    const report = buildHealthReport(
+      [row({ id: "ds-manual-fresh", license: MANUAL_SURVEY_LICENSE, ckanPackageId: null, fetchedAt })],
+      NOW,
+    );
+
+    expect(report.staleCount).toBe(0);
+    expect(report.deadCount).toBe(0);
+    expect(report.unmonitoredCount).toBe(0);
+    expect(report.datasets[0]).toMatchObject({ unmonitored: false, kind: "manual-expired" });
+  });
+
+  it("手動調査データは is_alive=0 でも deadCount に数えない(workflow.ts が意図的に書き込む値のため)", () => {
+    const fetchedAt = new Date(NOW.getTime() - 366 * 24 * 60 * 60 * 1000).toISOString();
+    const report = buildHealthReport(
+      [
+        row({
+          id: "ds-manual-expired-dead",
+          license: MANUAL_SURVEY_LICENSE,
+          ckanPackageId: null,
+          isAlive: 0,
+          fetchedAt,
+        }),
+      ],
+      NOW,
+    );
+
+    expect(report.deadCount).toBe(0);
+    expect(report.staleCount).toBe(1);
+  });
 });
 
 describe("getHealthReport", () => {
-  it("datasets から frozen・ckan_package_id を含めて読み取り、集計結果を返す", async () => {
+  it("datasets から license・frozen・ckan_package_id を含めて読み取り、集計結果を返す", async () => {
     const preparedSql: string[] = [];
     const db = {
       prepare: vi.fn((sql: string) => {
@@ -137,6 +195,7 @@ describe("getHealthReport", () => {
 
     const report = await getHealthReport(db, NOW);
 
+    expect(preparedSql[0]).toContain("license");
     expect(preparedSql[0]).toContain("frozen");
     expect(preparedSql[0]).toContain("ckan_package_id");
     expect(report.deadCount).toBe(1);

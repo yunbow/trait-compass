@@ -381,8 +381,10 @@ describe("searchFacilities", () => {
     const facilitySearchSql = prepareCalls[0];
 
     // 実際に prepare() へ渡された WHERE 句は、対象自治体コードと広域コードを同じ municipality_code 列で OR する。
+    // lifestage 未指定時は age_range 句と municipality_code 句の間に、lifestage_min/max が
+    // 設定済みの施設を除外する句(2026-08是正、安全側デフォルト)が挟まる。
     expect(facilitySearchSql).toMatch(
-      /WHERE f\.is_medical = 0\s+AND f\.is_out_of_scope = 0\s+AND \(f\.age_range = 'both' OR f\.age_range = \?\)\s+AND \(f\.municipality_code = \? OR f\.municipality_code = \?\)/,
+      /WHERE f\.is_medical = 0\s+AND f\.is_out_of_scope = 0\s+AND \(f\.age_range = 'both' OR f\.age_range = \?\)\s+AND f\.lifestage_min IS NULL AND f\.lifestage_max IS NULL\s+AND \(f\.municipality_code = \? OR f\.municipality_code = \?\)/,
     );
     expect(bindCalls[0]).toEqual(["child", "", BROAD_AREA_MUNICIPALITY_CODE]);
   });
@@ -529,9 +531,10 @@ describe("searchFacilities", () => {
 });
 
 // --- searchFacilities の lifestage 絞り込み(migration 0016)---
-// age_range(child/adult/both)の粗い区分に加え、lifestage が指定された場合のみ
-// lifestage_min/max による細分絞り込みを追加する。lifestage 未指定時は従来どおり
-// age_range のみで判定し、SQL・bind 引数とも変化しないこと(後方互換性)を確認する。
+// age_range(child/adult/both)の粗い区分に加え、lifestage が指定された場合は
+// lifestage_min/max による細分絞り込み(BETWEEN)を追加する。
+// 2026-08是正(外部レビューP1): lifestage 未指定時も、lifestage_min/max が設定済みの施設を
+// 安全側で除外する句が付くようになった(bind 引数は変化しない、後方互換)。
 
 describe("searchFacilities (lifestage, migration 0016)", () => {
   it("lifestage 指定時は BETWEEN 句を含み、bind 配列に序数が [age, ordinal, municipality, 東京都] の順で挿入される", async () => {
@@ -549,7 +552,7 @@ describe("searchFacilities (lifestage, migration 0016)", () => {
     expect(bindCalls[0]).toEqual(["child", 1, "13106", BROAD_AREA_MUNICIPALITY_CODE]);
   });
 
-  it("lifestage が undefined の場合は従来どおり bind 配列は [age, municipality, 東京都] のままで、BETWEEN 句を含まない(後方互換性)", async () => {
+  it("lifestage が undefined の場合、bind 配列は従来どおり [age, municipality, 東京都] のままだが、lifestage_min/max が設定済みの施設を除外する句を含む(2026-08是正、安全側デフォルト)", async () => {
     const { db, prepareCalls, bindCalls } = createFakeDb([]);
 
     await searchFacilities(db as unknown as Parameters<typeof searchFacilities>[0], {
@@ -558,11 +561,12 @@ describe("searchFacilities (lifestage, migration 0016)", () => {
       tags: [],
     });
 
-    expect(prepareCalls[0]).not.toContain("lifestage_min");
+    expect(prepareCalls[0]).toContain("AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL");
+    expect(prepareCalls[0]).not.toContain("BETWEEN f.lifestage_min AND f.lifestage_max");
     expect(bindCalls[0]).toEqual(["child", "13106", BROAD_AREA_MUNICIPALITY_CODE]);
   });
 
-  it("lifestage が null の場合も未指定時と同じ扱いになる(後方互換性)", async () => {
+  it("lifestage が null の場合も未指定時と同じ扱いになる(lifestage_min/max 設定済み施設を除外する句を含む)", async () => {
     const { db, prepareCalls, bindCalls } = createFakeDb([]);
 
     await searchFacilities(db as unknown as Parameters<typeof searchFacilities>[0], {
@@ -572,8 +576,43 @@ describe("searchFacilities (lifestage, migration 0016)", () => {
       lifestage: null,
     });
 
-    expect(prepareCalls[0]).not.toContain("lifestage_min");
+    expect(prepareCalls[0]).toContain("AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL");
+    expect(prepareCalls[0]).not.toContain("BETWEEN f.lifestage_min AND f.lifestage_max");
     expect(bindCalls[0]).toEqual(["adult", "13106", BROAD_AREA_MUNICIPALITY_CODE]);
+  });
+
+  it("lifestage 未指定時、lifestage_min/max が設定済みの施設(サポステ相当)は除外される想定(SQL文字列・bind値で確認、2026-08是正の回帰ガード)", async () => {
+    const { db, prepareCalls, bindCalls } = createFakeDb([
+      { ...makeJoinRow("fac-saposute"), age_range: "both", municipality: "台東区" },
+    ]);
+
+    await searchFacilities(db as unknown as Parameters<typeof searchFacilities>[0], {
+      ageGroup: "adult",
+      municipality: "台東区",
+      tags: [],
+    });
+
+    // 実 D1 上では `f.lifestage_min IS NULL AND f.lifestage_max IS NULL` により、
+    // lifestage_min=2/max=4 のような施設は WHERE 句で弾かれる想定(fake DB は WHERE 句を
+    // 実評価しないため、SQL文字列で絞り込み条件が付与されていることを確認する)。
+    expect(prepareCalls[0]).toContain("AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL");
+    expect(bindCalls[0]).toEqual(["adult", "13106", BROAD_AREA_MUNICIPALITY_CODE]);
+  });
+
+  it("lifestage 未指定でも、lifestage_min/max が NULL の施設は従来どおり表示される想定(SQL文字列で確認)", async () => {
+    const { db, prepareCalls } = createFakeDb([
+      { ...makeJoinRow("fac-no-lifestage-limit"), age_range: "both", municipality: "台東区" },
+    ]);
+
+    await searchFacilities(db as unknown as Parameters<typeof searchFacilities>[0], {
+      ageGroup: "adult",
+      municipality: "台東区",
+      tags: [],
+    });
+
+    // `f.lifestage_min IS NULL AND f.lifestage_max IS NULL` は、両カラムが NULL の施設(細分
+    // 未設定)を通す(除外しない)条件であるため、この種の施設は引き続き表示される。
+    expect(prepareCalls[0]).toContain("AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL");
   });
 
   // --- 回帰確認: 保育園限定施設が elementary-junior-high 検索で除外され、
@@ -730,7 +769,7 @@ describe("fetchFacilitiesByIds", () => {
       ]);
     });
 
-    it("lifestage が undefined の場合は従来どおり bind 配列は [...ids, age, municipality, 東京都] のままで、BETWEEN 句を含まない(後方互換性)", async () => {
+    it("lifestage が undefined の場合、bind 配列は従来どおり [...ids, age, municipality, 東京都] のままだが、lifestage_min/max が設定済みの施設を除外する句を含む(2026-08是正、安全側デフォルト)", async () => {
       const { db, prepareCalls, bindCalls } = createFakeDb([]);
 
       await fetchFacilitiesByIds(db as unknown as Parameters<typeof fetchFacilitiesByIds>[0], ["fac-001"], {
@@ -738,11 +777,12 @@ describe("fetchFacilitiesByIds", () => {
         municipality: "台東区",
       });
 
-      expect(prepareCalls[0]).not.toContain("lifestage_min");
+      expect(prepareCalls[0]).toContain("AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL");
+      expect(prepareCalls[0]).not.toContain("BETWEEN f.lifestage_min AND f.lifestage_max");
       expect(bindCalls[0]).toEqual(["fac-001", "child", "13106", BROAD_AREA_MUNICIPALITY_CODE]);
     });
 
-    it("lifestage が null の場合も未指定時と同じ扱いになる(後方互換性)", async () => {
+    it("lifestage が null の場合も未指定時と同じ扱いになる(lifestage_min/max 設定済み施設を除外する句を含む)", async () => {
       const { db, prepareCalls, bindCalls } = createFakeDb([]);
 
       await fetchFacilitiesByIds(db as unknown as Parameters<typeof fetchFacilitiesByIds>[0], ["fac-001"], {
@@ -751,7 +791,8 @@ describe("fetchFacilitiesByIds", () => {
         lifestage: null,
       });
 
-      expect(prepareCalls[0]).not.toContain("lifestage_min");
+      expect(prepareCalls[0]).toContain("AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL");
+      expect(prepareCalls[0]).not.toContain("BETWEEN f.lifestage_min AND f.lifestage_max");
       expect(bindCalls[0]).toEqual(["fac-001", "adult", "13106", BROAD_AREA_MUNICIPALITY_CODE]);
     });
   });
@@ -884,8 +925,16 @@ describe("FACILITY_BASE_WHERE", () => {
 });
 
 describe("lifestageFilterClause", () => {
-  it("lifestageOrdinal が null の場合は空文字列を返す(句自体を付けない、未指定時の後方互換)", () => {
-    expect(lifestageFilterClause(null)).toBe("");
+  // 2026-08是正(外部レビューP1): lifestage 未指定時に句自体を付けない旧仕様だと、
+  // 対象年齢帯が明示されている施設(サポステ2施設、lifestage_min=2/max=4)が未就学児・
+  // 小学生向け検索にも表示されてしまっていた。lifestage 未指定時は「lifestage_min/max が
+  // 設定済みの施設を安全側で除外する」句を返す仕様へ変更した(句自体は必ず付く)。
+  it("lifestageOrdinal が null の場合、lifestage_min/max が設定済みの施設を除外する句を返す(安全側デフォルト)", () => {
+    expect(lifestageFilterClause(null)).toBe("AND f.lifestage_min IS NULL AND f.lifestage_max IS NULL");
+  });
+
+  it("lifestageOrdinal が null の場合の句にプレースホルダー(?)は含まれない(bind 引数を追加しない)", () => {
+    expect(lifestageFilterClause(null)).not.toContain("?");
   });
 
   it.each([0, 1, 2, 3, 4])("lifestageOrdinal=%i の場合、lifestage_min/max の BETWEEN 句を返す", (ordinal) => {

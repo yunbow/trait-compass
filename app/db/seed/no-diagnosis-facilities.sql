@@ -45,7 +45,13 @@
 -- 区分とは異なる自由記述の区分コード "manual-fact-verified" を用いる(db/schema.sql
 -- コメント「自由記述の区分コード」を参照)。事実情報(住所・電話番号)の転記であり、
 -- risk_level は low(全文表示可)とする。
-INSERT INTO datasets (
+--
+-- べき等性(2026-08-29是正: 既存環境で再実行すると datasets.id の UNIQUE 制約違反で
+-- 失敗していた): INSERT OR IGNORE とすることで、既に投入済みの環境に対して再実行しても
+-- エラーにならない(consultation-desk-tags.sql と同じ方針)。本行は fetched_at 等の
+-- メタ情報であり、facilities 側の実データ(下記)のように再実行のたびに最新値へ揃える
+-- 必要はないため、ON CONFLICT DO UPDATE ではなく OR IGNORE を選んでいる。
+INSERT OR IGNORE INTO datasets (
   id, ckan_package_id, title, source_org, license, risk_level,
   source_url, fetched_at, freshness_note, is_alive, frozen
 ) VALUES (
@@ -67,8 +73,12 @@ INSERT INTO datasets (
 
 -- 2026-08-11追記: 過去に投入済みの環境(db:reset:localを経ずに本ファイルだけ再実行した場合)
 -- に残っている旧ダミー行を確実に除去するため、明示的に削除する(通常の初回投入では0件ヒットで無害)。
-DELETE FROM facilities WHERE id IN ('fac-manual-mhwc-taito', 'fac-manual-mhwc-chubu', 'fac-manual-mhwc-tama');
+-- 2026-08-29是正: 削除順序を子(facility_tags)→親(facilities)に入れ替えた。schema.sql は
+-- PRAGMA foreign_keys = ON で、facility_tags.facility_id は facilities(id) への外部キー
+-- (ON DELETE 指定なし=デフォルトの制約あり)のため、親を先に消すとタグが残っている環境では
+-- FK 制約違反になる(batch/ingest/db.ts の deleteStaleFacilities と同じ「子→親」の順序に揃える)。
 DELETE FROM facility_tags WHERE facility_id IN ('fac-manual-mhwc-taito', 'fac-manual-mhwc-chubu', 'fac-manual-mhwc-tama');
+DELETE FROM facilities WHERE id IN ('fac-manual-mhwc-taito', 'fac-manual-mhwc-chubu', 'fac-manual-mhwc-tama');
 
 -- ============================================================
 -- facilities: 地域若者サポートステーション(2施設)
@@ -88,16 +98,29 @@ DELETE FROM facility_tags WHERE facility_id IN ('fac-manual-mhwc-taito', 'fac-ma
 -- (序数は src/features/support/services/lifestage-mapping.ts の LIFESTAGE_ORDINAL、
 -- migration 0016)。通常のUI導線(/support → /support/purpose → /support/results)は常に
 -- age と lifestage を対で付与するため、この符号化で未就学児〜小中学生の検索には表示されない。
--- 残余: lifestage クエリ未指定の直接アクセス・API呼び出しでは age_range フィルタのみが適用
--- されるため、age=child 単独指定では引き続き表示されうる(facility-search.ts の
--- lifestageFilterClause は lifestage 未指定時に句自体を付けない仕様)。
--- 既投入済み環境(本番D1等)は本ファイルの再実行が datasets の主キー衝突で失敗するため、
--- 以下の UPDATE を単独で実行して反映すること:
---   UPDATE facilities SET lifestage_min = 2, lifestage_max = 4
---     WHERE id IN ('fac-manual-saposute-shinjuku', 'fac-manual-saposute-setagaya');
+-- 残余バグの是正(2026-08是正、外部レビューP1): 旧ブックマーク等の lifestage クエリ未指定の
+-- 直接アクセス・API呼び出し(lifestage 省略の /api/prepare・/api/recommend)では age_range
+-- フィルタのみが適用され、age=child 単独指定でも本2施設が表示されてしまっていた。
+-- facility-search.ts の lifestageFilterClause を「lifestage 未指定時は lifestage_min/max が
+-- 設定済みの施設(本2施設を含む)を安全側で除外する」仕様へ変更したことでこの残余は解消済み。
+-- 既投入済み環境(本番D1等)への反映は migrations/0033-fix-saposute-lifestage.sql として
+-- 正式化した(本番D1へは2026-08-29に手動UPDATEで先行適用済み。0033は記録の正式化と
+-- 他環境での再現用であり、下記の冪等化により今後は本ファイルの再実行だけで追従できる)。
+--
+-- べき等性(2026-08-29是正: 既存環境で再実行すると素の INSERT が facilities.id の UNIQUE
+-- 制約違反で失敗し、lifestage_min/max のような後からの修正が「単独UPDATEを別途本番へ流す」
+-- 運用に頼らざるを得なくなっていた): INSERT ... ON CONFLICT(id) DO UPDATE を用いる。
+-- INSERT OR IGNORE ではなく DO UPDATE を選んだ理由は、本セクションが「診断がなくても相談
+-- できる」という性質情報に限らず、住所・電話番号・lifestage 等の事実情報を保持しており、
+-- 将来これらを更新する際に本ファイルの再実行だけで既存環境にも反映されるようにするため
+-- (OR IGNORE だと既存行が投入時点の古い値のまま残り、今回のような手動UPDATE依存を温存して
+-- しまう)。また、facility_tags(子テーブル)を経由しない単純な列更新のため、DELETE→INSERT
+-- で作り直す方式(FK 制約により facility_tags を先に消す必要が生じる)より安全に選べる。
+-- dataset_id は本シード内で固定のため更新対象に含めない
+-- (batch/ingest/db.ts の upsertFacilities の ON CONFLICT DO UPDATE と同じ方針)。
 INSERT INTO facilities (
   id, dataset_id, name, category_type, municipality, municipality_code, address, phone, url,
-  age_range, is_medical, description, no_diagnosis_ok, lifestage_min, lifestage_max
+  age_range, is_medical, description, no_diagnosis_ok, lifestage_min, lifestage_max, updated_at
 ) VALUES
   (
     'fac-manual-saposute-shinjuku', 'ds-manual-no-diagnosis-facilities',
@@ -106,7 +129,7 @@ INSERT INTO facilities (
     'https://syss.roukyou.gr.jp/',
     'both', 0,
     '働くことに悩む15〜49歳の方を対象に、相談から就職・定着までを無料で支援する公的な就労支援機関です。',
-    1, 2, 4
+    1, 2, 4, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
   ),
   (
     'fac-manual-saposute-setagaya', 'ds-manual-no-diagnosis-facilities',
@@ -115,5 +138,20 @@ INSERT INTO facilities (
     'https://www.setagaya-saposute.com/',
     'both', 0,
     '働くことに悩む15〜49歳の方を対象に、相談から就職・定着までを無料で支援する公的な就労支援機関です。',
-    1, 2, 4
-  );
+    1, 2, 4, strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+  )
+ON CONFLICT(id) DO UPDATE SET
+  name = excluded.name,
+  category_type = excluded.category_type,
+  municipality = excluded.municipality,
+  municipality_code = excluded.municipality_code,
+  address = excluded.address,
+  phone = excluded.phone,
+  url = excluded.url,
+  age_range = excluded.age_range,
+  is_medical = excluded.is_medical,
+  description = excluded.description,
+  no_diagnosis_ok = excluded.no_diagnosis_ok,
+  lifestage_min = excluded.lifestage_min,
+  lifestage_max = excluded.lifestage_max,
+  updated_at = excluded.updated_at;
