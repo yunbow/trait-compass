@@ -375,7 +375,16 @@ export function buildSqlForSource(source, rows, fetchedAt) {
   const datasetId = source.dataset_id ?? `ds-${source.id}`;
   const license = classifyLocalLicense(source.license);
   const metadataOnly = !license.allowed || source.ingest_target === "none";
+  // 2026-08是正(外部コードレビュー指摘、相談タグ再取込ずれ対応): facility_tags は
+  // consultation-desk-tags*.sql による手動キュレーションのみが投入経路であり、本スクリプトは
+  // 一切関知しない(data-governance.md参照)。削除前にステージングテーブルへ退避し、
+  // 再投入後に同じ id で復活した施設へのみ復元する(ingest-manual-survey.mjs と同じ方針)。
+  // D1 は CREATE TEMP TABLE を許可しない(実機確認済み、SQLITE_AUTH)ため、通常の
+  // CREATE TABLE ... AS SELECT + 末尾 DROP TABLE を使う(自己修復のため冒頭に
+  // DROP TABLE IF EXISTS も置く)。
   const statements = [
+    `DROP TABLE IF EXISTS _facility_tags_backup;`,
+    `CREATE TABLE _facility_tags_backup AS SELECT facility_id, tag FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
     `DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
     `DELETE FROM facilities WHERE dataset_id = ${value(datasetId)};`,
   ];
@@ -428,6 +437,14 @@ export function buildSqlForSource(source, rows, fetchedAt) {
       ]));
     }
   }
+
+  // facility_tags の復元(上記の退避と対応): 削除前と同じ id で再投入された施設のみ対象
+  // (WHERE で facilities に現存する id に絞る)。id が変わった・施設自体が投入対象外になった
+  // (metadataOnly・license-hold等)分の退避行は復元されずそのまま破棄される(意図的)。
+  statements.push(
+    `INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM _facility_tags_backup WHERE facility_id IN (SELECT id FROM facilities);`,
+    `DROP TABLE _facility_tags_backup;`,
+  );
 
   return statements;
 }

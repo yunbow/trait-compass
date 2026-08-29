@@ -465,6 +465,33 @@ describe("buildSqlForSource", () => {
     ]);
   });
 
+  // 2026-08是正(外部コードレビュー指摘): facility_tags は本スクリプトが一切関知しない
+  // 手動キュレーションデータ(consultation-desk-tags*.sql投入)のため、削除前に退避し、
+  // 同じidで再投入された施設にのみ復元する(ingest-manual-survey.mjs と同じ方針)。
+  // D1 は CREATE TEMP TABLE を許可しない(実機確認済み)ため、通常の CREATE TABLE ... AS SELECT
+  // + 末尾 DROP TABLE を使う。
+  it("再取込時、facility_tagsを削除前にステージングテーブルへ退避し、facilities再投入後に復元する", () => {
+    const statements = buildSqlForSource(facilitiesSource, [facilityRow], "2026-07-20T00:00:00.000Z");
+
+    const dropIfExistsIndex = statements.indexOf("DROP TABLE IF EXISTS _facility_tags_backup;");
+    const backupIndex = statements.indexOf(
+      "CREATE TABLE _facility_tags_backup AS SELECT facility_id, tag FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-wam-net-disability-services');",
+    );
+    const deleteTagsIndex = statements.findIndex((statement) => statement.startsWith("DELETE FROM facility_tags"));
+    const lastFacilityInsertIndex = statements.map((s) => s.startsWith("INSERT INTO facilities")).lastIndexOf(true);
+    const restoreIndex = statements.indexOf(
+      "INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM _facility_tags_backup WHERE facility_id IN (SELECT id FROM facilities);",
+    );
+    const dropIndex = statements.indexOf("DROP TABLE _facility_tags_backup;");
+
+    // 自己修復DROP → 退避 → 削除 → (facilities再投入) → 復元 → ステージングテーブル破棄、の順序。
+    expect(dropIfExistsIndex).toBeGreaterThanOrEqual(0);
+    expect(backupIndex).toBeGreaterThan(dropIfExistsIndex);
+    expect(deleteTagsIndex).toBeGreaterThan(backupIndex);
+    expect(restoreIndex).toBeGreaterThan(lastFacilityInsertIndex);
+    expect(dropIndex).toBe(restoreIndex + 1);
+  });
+
   it("SQL文字列中のシングルクォートはエスケープされる", () => {
     const statements = buildSqlForSource(
       facilitiesSource,

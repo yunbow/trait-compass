@@ -33,13 +33,23 @@ DELETE→INSERT で冪等に行われ、他系統の行を上書きしない(`bu
 手動キュレーションのみが投入経路である。ローカルオープンデータ取込
 (`batch/scripts/ingest-open-data.mjs`)・個別許諾データ再投入(`batch/scripts/
 ingest-manual-survey.mjs`)はいずれも、対象施設の `facility_tags` を削除してから
-`facilities` を再投入するが、タグの再投入は行わない(2026-08是正で両スクリプトとも
-`facility_tags` の削除漏れ自体は修正し、外部キー制約違反で再投入そのものが失敗する不具合は
-解消したが、削除したタグの自動復元機能は無い)。該当データセット
-(現状 `ds-wam-net-disability-services`、および facility_tags が投入された任意の
-`ds-<自治体コード>-manual-survey-programs`)を再取込・再投入した場合は、
-`npm run db:seed:local:tags-open-data`(本番は `db:seed:remote:tags-open-data`)を再実行して
-タグを復元する必要がある(自動化はされていない、手動運用)。
+`facilities` を再投入する(外部キー制約対策で facility_tags を先に削除する必要があるため)。
+
+2026-08是正の追補(外部コードレビュー指摘、相談タグ再取込ずれ対応): 両スクリプトとも、
+削除前に該当施設の `facility_tags` をステージングテーブル(`_facility_tags_backup`)へ退避し、
+再投入後に**同じ id で復活した施設のみ**へ自動復元するようにした。プログラム・施設の内容
+(名称・分類・住所等)が変わらなければ id は安定している(`idFor()` の内容ハッシュ設計)ため、
+通常の再取込ではタグは失われない。id が変わった・施設自体が投入対象外になった
+(license-hold等)分の退避行は復元されずそのまま破棄される(内容が変わった以上、タグの
+対応関係も再検証が必要なため意図的に自動復元しない)。D1 は `CREATE TEMP TABLE` を許可しない
+(実機確認済み、`SQLITE_AUTH`)ため、通常の `CREATE TABLE ... AS SELECT` を使い、前回実行が
+途中で失敗してステージングテーブルが残っている場合に備えて冒頭に `DROP TABLE IF EXISTS` を
+置いて自己修復する。
+
+なお、この自動復元は「id が変わらない再取込」のみをカバーする。データセット自体を
+まるごと入れ替える・タグ語彙を新規追加する等の場合は、引き続き
+`npm run db:seed:local:tags-open-data`(本番は `db:seed:remote:tags-open-data`)を手動で
+再実行する運用のままである。
 
 ## 3. 鮮度の管理
 

@@ -10,6 +10,26 @@ import { z } from "zod";
 export const ConfirmationStatusSchema = z.enum(["confirmed", "unconfirmed", "phone_required"]);
 export type ConfirmationStatus = z.infer<typeof ConfirmationStatusSchema>;
 
+/** facilities.age_range(app/db/schema.sql)に対応する対象年齢の粗い区分。 */
+export const ProgramAgeRangeSchema = z.enum(["child", "adult", "both"]);
+export type ProgramAgeRange = z.infer<typeof ProgramAgeRangeSchema>;
+
+/**
+ * facilities.lifestage_min/max(migration 0016)に対応する対象ライフステージ値。
+ * 語彙は app/src/features/support/services/lifestage-mapping.ts の LIFESTAGE_VALUES と
+ * 同じ(data/manual/schema は app/src に依存しない設計のため、ここで値を再定義して同期させる。
+ * 並び順・値の一致は batch/scripts/__tests__/ingest-manual-survey.test.ts のパリティテストで
+ * 担保する)。
+ */
+export const ProgramLifestageSchema = z.enum([
+  "preschool",
+  "elementary-junior-high",
+  "high-school",
+  "university-vocational",
+  "working-adult",
+]);
+export type ProgramLifestage = z.infer<typeof ProgramLifestageSchema>;
+
 /**
  * 許諾・ライセンス状態(2026-08-10 事務局新方針対応)。
  * - ccby_replaced: CC BY等の代替公式データへ差し替え完了(値・sourcesとも)。投入・公開可
@@ -193,6 +213,23 @@ export const ProgramSchema = z
     lat: z.number().min(-90).max(90).optional(),
     lng: z.number().min(-180).max(180).optional(),
     status: ConfirmationStatusSchema.default("confirmed"),
+    /**
+     * 対象年齢の粗い区分(facilities.age_range)。2026-08是正(外部コードレビュー指摘:
+     * スキーマ・投入処理の土台のみ)、任意項目。未指定時は ingest-manual-survey.mjs が
+     * 従来どおり 'both' を既定値として投入するため、既存YAMLはすべて未設定のままで挙動は
+     * 変わらない。一次資料で対象年齢が確認できたプログラムにのみ、新規・更新時に設定すること
+     * (事実の捏造禁止の方針上、確認できていない値を推測で埋めない)。
+     */
+    ageRange: ProgramAgeRangeSchema.optional(),
+    /**
+     * 対象ライフステージの範囲(facilities.lifestage_min/max、migration 0016)。
+     * lifestageMin/Max は両方指定または両方未指定のいずれかであること(片方だけの指定は
+     * validate-manual.mjs でエラーとする)。ageRange と同じく任意項目・推測禁止。
+     */
+    lifestageMin: ProgramLifestageSchema.optional(),
+    lifestageMax: ProgramLifestageSchema.optional(),
+    /** 確認日(YYYY-MM-DD、任意)。status の確認状態がいつ時点のものかを示す。 */
+    confirmedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "confirmedOn must be YYYY-MM-DD").optional(),
   })
   .merge(withSources);
 

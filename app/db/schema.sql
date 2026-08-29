@@ -114,6 +114,16 @@ CREATE TABLE IF NOT EXISTS facilities (
   -- 値が空の場合は NULL とし、「連絡手段なし」と誤読させる表示はしない(表示側は NULL を
   -- 非表示として扱う)。
   contact_methods TEXT,
+  -- 確認状態(migration 0034、外部コードレビュー指摘: スキーマ・投入処理の土台のみ)。手動調査
+  -- プログラム(data/manual/schema/municipality.schema.ts の ProgramSchema.status)の一次情報
+  -- 確認状況を保持する。NULL = 本フラグの対象外(CKAN/オープンデータ由来など、確認状態という
+  -- 概念を持たない取込元)。ingest-manual-survey.mjs のみが非NULL値を投入する。表示側での
+  -- 出し分け(unconfirmedの非表示・phone_requiredの注記等)は本フィールド追加時点では未実装で、
+  -- 別途対応が必要(既存49自治体分のYAMLはstatusが未確認/要電話でも実際の値をここに反映する
+  -- ingest側の対応まで含めて是正が必要、詳細はdocs/designs/data-governance.md参照)。
+  confirmation_status TEXT CHECK (confirmation_status IS NULL OR confirmation_status IN ('confirmed', 'unconfirmed', 'phone_required')),
+  -- 確認日(YYYY-MM-DD、任意)。ProgramSchema.confirmedOn 対応、migration 0034。
+  confirmed_on TEXT,
   -- 取込元(CKAN リソース/XLSX 行 等)の生データを保持し、再取込・デバッグ時に参照する。
   raw_json TEXT,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),

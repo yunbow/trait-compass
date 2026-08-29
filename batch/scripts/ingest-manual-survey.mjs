@@ -40,6 +40,19 @@ const value = (input) => {
   return `'${String(input).replaceAll("'", "''")}'`;
 };
 const json = (input) => JSON.stringify(input ?? []);
+
+// facilities.lifestage_min/max(migration 0016)の序数対応表。
+// app/src/features/support/services/lifestage-mapping.ts の LIFESTAGE_ORDINAL と同じ値・
+// 並び順(値・並び順の一致は __tests__/ingest-manual-survey.test.ts のパリティテストで担保する。
+// このファイルは Node が .ts を直接 import できないため、値をここで再定義して同期させる方針は
+// CATEGORY_TYPES 等の既存パターンと同じ)。
+export const LIFESTAGE_ORDINAL = {
+  preschool: 0,
+  "elementary-junior-high": 1,
+  "high-school": 2,
+  "university-vocational": 3,
+  "working-adult": 4,
+};
 export const idFor = (...parts) => `${parts[0]}-${createHash("sha256").update(parts.join("\u001f")).digest("hex").slice(0, 16)}`;
 const bool = (input) => (input ? 1 : 0);
 
@@ -126,6 +139,19 @@ export function buildSql(survey, options = {}) {
     // 1件でも投入されていると PRAGMA foreign_keys = ON(このファイル冒頭)により再投入自体が
     // 外部キー制約違反で失敗していた。ingest-open-data.mjs の DELETE→INSERT パターンと同じく、
     // facilities より先に facility_tags を削除する。
+    //
+    // 2026-08是正(外部コードレビュー指摘、相談タグ再取込ずれ対応): facility_tags は
+    // consultation-desk-tags*.sql による手動キュレーションのみが投入経路であり、本スクリプトは
+    // 一切関知しない(data-governance.md参照)。そのため上記の削除を素通りさせると、
+    // プログラム内容が変わっていない(=id が変わらない)場合でもタグが失われたままになる。
+    // 削除前にステージングテーブルへ退避し、再投入後に同じ id で復活したプログラムへのみ
+    // 復元する(id が変わった・削除されたプログラムのタグは復元されず、これは正しい:
+    // 内容が変わった以上、タグの対応関係も再検証が必要なため自動復元しない)。
+    // D1 は `CREATE TEMP TABLE` を許可しない(`SQLITE_AUTH`、実機確認済み)ため、通常の
+    // `CREATE TABLE ... AS SELECT` を使い、末尾で明示的に DROP する。前回実行が途中で
+    // 失敗してテーブルが残っている場合に備え、作成前に `DROP TABLE IF EXISTS` で自己修復する。
+    `DROP TABLE IF EXISTS _facility_tags_backup;`,
+    `CREATE TABLE _facility_tags_backup AS SELECT facility_id, tag FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
     `DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
     `DELETE FROM facilities WHERE dataset_id = ${value(datasetId)};`,
     `DELETE FROM datasets WHERE id = ${value(datasetId)};`,
@@ -204,8 +230,22 @@ export function buildSql(survey, options = {}) {
     // プログラムが2件ある場合のみ衝突するが、それは実質的に重複データであり、他の投入経路
     // (idFor(datasetId, name, address) を使う ingest-open-data.mjs 等)と同じ設計判断)。
     const programId = idFor(survey.municipalityCode, "program", program.category, program.name, program.address ?? "");
-    lines.push(insert("facilities", ["id", "dataset_id", "name", "category_type", "municipality", "municipality_code", "address", "phone", "age_range", "is_medical", "description", "contact_methods", "raw_json", "lat", "lng"], [programId, datasetId, program.name, CATEGORY_TYPES[program.category] ?? CATEGORY_TYPES.other, municipality, municipalityCode, program.address ?? null, phone, "both", 0, program.description, contactMethods, json(program), program.lat ?? null, program.lng ?? null]));
+    // 2026-08是正(外部コードレビュー指摘: スキーマ・投入処理の土台のみ)。program.ageRange/
+    // lifestageMin/lifestageMax/status/confirmedOn が未指定の既存YAMLは、従来どおり
+    // age_range='both'・lifestage_min/max=NULL・confirmation_status='confirmed' で投入され、
+    // 挙動は変わらない(validate-manual.mjsでlifestageMin/Maxは両方指定/両方省略のみ許可)。
+    const lifestageMinOrdinal = program.lifestageMin !== undefined ? LIFESTAGE_ORDINAL[program.lifestageMin] : null;
+    const lifestageMaxOrdinal = program.lifestageMax !== undefined ? LIFESTAGE_ORDINAL[program.lifestageMax] : null;
+    lines.push(insert("facilities", ["id", "dataset_id", "name", "category_type", "municipality", "municipality_code", "address", "phone", "age_range", "lifestage_min", "lifestage_max", "is_medical", "description", "contact_methods", "confirmation_status", "confirmed_on", "raw_json", "lat", "lng"], [programId, datasetId, program.name, CATEGORY_TYPES[program.category] ?? CATEGORY_TYPES.other, municipality, municipalityCode, program.address ?? null, phone, program.ageRange ?? "both", lifestageMinOrdinal, lifestageMaxOrdinal, 0, program.description, contactMethods, program.status ?? "confirmed", program.confirmedOn ?? null, json(program), program.lat ?? null, program.lng ?? null]));
   }
+
+  // facility_tags の復元(上記の退避と対応): 削除前と同じ id で再投入されたプログラムのみ
+  // 対象(WHERE で facilities に現存する id に絞る)。id が変わった・プログラム自体が
+  // 無くなった分のタグ退避行は復元されずそのまま temp table ごと破棄される(意図的)。
+  lines.push(
+    `INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM _facility_tags_backup WHERE facility_id IN (SELECT id FROM facilities);`,
+    `DROP TABLE _facility_tags_backup;`,
+  );
 
   if (!includeSchoolClassData) {
     const schools = [...(survey.elementarySchools ?? []), ...(survey.juniorHighSchools ?? [])];

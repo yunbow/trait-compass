@@ -114,6 +114,87 @@ describe("validateMunicipalitySurvey", () => {
     expect(violations.some((message) => message.includes("programs[0].category"))).toBe(true);
   });
 
+  // 2026-08是正(外部コードレビュー指摘: 手動調査プログラムの対象年齢・確認状態が検索へ
+  // 反映されない、スキーマ・投入処理の土台のみ)。
+  it("programs[].ageRange/lifestageMin/lifestageMax/confirmedOn を未指定のままPASSする(既存YAML互換)", () => {
+    const violations = validateMunicipalitySurvey({
+      ...baseSurvey,
+      licenseAudit: { ...baseSurvey.licenseAudit, consultationWindowData: "permission_pending" },
+      programs: [{ name: "テスト制度", category: "counseling", sources: [{ label: "テスト出典", confirmedOn: "2026-07-13" }] }],
+    });
+    expect(violations).toEqual([]);
+  });
+
+  it("programs[].ageRange/lifestageMin/lifestageMax/confirmedOn を正しく指定するとPASSする", () => {
+    const violations = validateMunicipalitySurvey({
+      ...baseSurvey,
+      licenseAudit: { ...baseSurvey.licenseAudit, consultationWindowData: "permission_pending" },
+      programs: [
+        {
+          name: "テスト制度",
+          category: "counseling",
+          ageRange: "adult",
+          lifestageMin: "high-school",
+          lifestageMax: "working-adult",
+          confirmedOn: "2026-08-29",
+          sources: [{ label: "テスト出典", confirmedOn: "2026-07-13" }],
+        },
+      ],
+    });
+    expect(violations).toEqual([]);
+  });
+
+  it("不正なenum値(programsのageRange)はFAILする", () => {
+    const violations = validateMunicipalitySurvey({
+      ...baseSurvey,
+      programs: [
+        { name: "テスト制度", category: "counseling", ageRange: "senior", sources: [{ label: "テスト出典", confirmedOn: "2026-07-13" }] },
+      ],
+    });
+    expect(violations.some((message) => message.includes("programs[0].ageRange"))).toBe(true);
+  });
+
+  it("lifestageMinのみ指定しlifestageMaxを省略した場合はFAILする(両方指定または両方省略のみ許可)", () => {
+    const violations = validateMunicipalitySurvey({
+      ...baseSurvey,
+      programs: [
+        {
+          name: "テスト制度",
+          category: "counseling",
+          lifestageMin: "high-school",
+          sources: [{ label: "テスト出典", confirmedOn: "2026-07-13" }],
+        },
+      ],
+    });
+    expect(violations.some((message) => message.includes("programs[0].lifestageMin/lifestageMax"))).toBe(true);
+  });
+
+  it("lifestageMin が lifestageMax より大きい場合はFAILする", () => {
+    const violations = validateMunicipalitySurvey({
+      ...baseSurvey,
+      programs: [
+        {
+          name: "テスト制度",
+          category: "counseling",
+          lifestageMin: "working-adult",
+          lifestageMax: "preschool",
+          sources: [{ label: "テスト出典", confirmedOn: "2026-07-13" }],
+        },
+      ],
+    });
+    expect(violations.some((message) => message.includes("programs[0].lifestageMin/lifestageMax"))).toBe(true);
+  });
+
+  it("programsのconfirmedOn が YYYY-MM-DD形式でない場合はFAILする", () => {
+    const violations = validateMunicipalitySurvey({
+      ...baseSurvey,
+      programs: [
+        { name: "テスト制度", category: "counseling", confirmedOn: "2026/08/29", sources: [{ label: "テスト出典", confirmedOn: "2026-07-13" }] },
+      ],
+    });
+    expect(violations.some((message) => message.includes("programs[0].confirmedOn"))).toBe(true);
+  });
+
   it("School(withSources、sources必須)がsourcesを持たない場合はFAILする", () => {
     const violations = validateMunicipalitySurvey({
       ...baseSurvey,

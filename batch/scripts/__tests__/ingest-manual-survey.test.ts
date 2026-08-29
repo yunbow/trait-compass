@@ -9,8 +9,9 @@ import { join } from "node:path";
 
 import { describe, expect, it, vi } from "vitest";
 
-import { assertSurvey, buildSql, CATEGORY_TYPES, geocodeSurvey, idFor, isPhoneNumber, main, parseCliArgs } from "../ingest-manual-survey.mjs";
+import { assertSurvey, buildSql, CATEGORY_TYPES, geocodeSurvey, idFor, isPhoneNumber, LIFESTAGE_ORDINAL, main, parseCliArgs } from "../ingest-manual-survey.mjs";
 import { CATEGORY_TYPES as APP_CATEGORY_TYPES } from "../../../app/src/features/support/constants/category-types";
+import { LIFESTAGE_ORDINAL as APP_LIFESTAGE_ORDINAL } from "../../../app/src/features/support/services/lifestage-mapping";
 
 describe("CATEGORY_TYPES(programカテゴリ → facilities.category_typeのマッピング)", () => {
   it("9つのprogramカテゴリすべてが定義されている", () => {
@@ -51,6 +52,16 @@ describe("CATEGORY_TYPES(programカテゴリ → facilities.category_typeのマ�
     expect(CATEGORY_TYPES.ict_environment).toBe("福祉ガイド");
     expect(CATEGORY_TYPES.special_needs_school_zoning).toBe("福祉ガイド");
     expect(CATEGORY_TYPES.other).toBe("福祉ガイド");
+  });
+});
+
+// 2026-08是正(外部コードレビュー指摘): ingest-manual-survey.mjs は Node が .ts を直接
+// import できないため LIFESTAGE_ORDINAL を再定義している(CATEGORY_TYPES と同じ事情)。
+// 値・並び順が app/src 側の正本とずれるとfacilities.lifestage_min/maxの検索結果が壊れるため、
+// パリティテストで一致を担保する。
+describe("LIFESTAGE_ORDINAL(app/src/features/support/services/lifestage-mapping.ts とのパリティ)", () => {
+  it("app/src 側の LIFESTAGE_ORDINAL と完全に一致する", () => {
+    expect(LIFESTAGE_ORDINAL).toEqual(APP_LIFESTAGE_ORDINAL);
   });
 });
 
@@ -233,6 +244,36 @@ describe("buildSql", () => {
     ]);
   });
 
+  // 2026-08是正(外部コードレビュー指摘): facility_tags は本スクリプトが一切関知しない
+  // 手動キュレーションデータ(consultation-desk-tags*.sql投入)のため、削除前に退避し、
+  // 同じidで再投入されたプログラムにのみ復元する。data-governance.mdの「削除したタグの
+  // 自動復元機能は無い」という既知の制約を、少なくとも本スクリプト経由の再取込については解消する。
+  // D1 は CREATE TEMP TABLE を許可しない(実機確認済み、SQLITE_AUTH)ため、通常の
+  // CREATE TABLE ... AS SELECT + 末尾 DROP TABLE を使う(自己修復のため冒頭に
+  // DROP TABLE IF EXISTS も置く)。
+  it("再取込時、facility_tagsを削除前にステージングテーブルへ退避し、facilities再投入後に復元する", () => {
+    const sql = buildSql(baseSurvey);
+    const lines = sql.split("\n").filter((line) => line.length > 0);
+
+    const dropIfExistsIndex = lines.indexOf("DROP TABLE IF EXISTS _facility_tags_backup;");
+    const backupIndex = lines.indexOf(
+      "CREATE TABLE _facility_tags_backup AS SELECT facility_id, tag FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-13106-manual-survey-programs');",
+    );
+    const deleteTagsIndex = lines.findIndex((line) => line.startsWith("DELETE FROM facility_tags"));
+    const lastFacilityInsertIndex = lines.map((line) => line.startsWith("INSERT INTO facilities")).lastIndexOf(true);
+    const restoreIndex = lines.indexOf(
+      "INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM _facility_tags_backup WHERE facility_id IN (SELECT id FROM facilities);",
+    );
+    const dropIndex = lines.indexOf("DROP TABLE _facility_tags_backup;");
+
+    // 自己修復DROP → 退避 → 削除 → (facilities再投入) → 復元 → ステージングテーブル破棄、の順序。
+    expect(dropIfExistsIndex).toBeGreaterThanOrEqual(0);
+    expect(backupIndex).toBeGreaterThan(dropIfExistsIndex);
+    expect(deleteTagsIndex).toBeGreaterThan(backupIndex);
+    expect(restoreIndex).toBeGreaterThan(lastFacilityInsertIndex);
+    expect(dropIndex).toBe(restoreIndex + 1);
+  });
+
   it("学校1件につき schools への INSERT を1件生成する", () => {
     const sql = buildSql(baseSurvey);
     expect(sql).toContain("INSERT INTO schools");
@@ -370,6 +411,70 @@ describe("buildSql", () => {
     // datasets 行自体は programs の有無に関わらず(将来 programs が追加された際の
     // dataset_id 参照整合性のため)常に1件INSERTされる。
     expect(sql).toContain("INSERT INTO datasets");
+  });
+});
+
+/** `INSERT INTO facilities (col1, col2, ...) VALUES (v1, v2, ...);` を列名→値(文字列のまま)の
+ *  Mapへ変換する(no-diagnosis-facilities-seed.test.ts と同じ方針、値にカンマ・カッコを
+ *  含まないテストフィクスチャ限定の簡易パーサ)。 */
+function parseFacilitiesInsertLine(line) {
+  const match = line.match(/^INSERT INTO facilities \(([^)]+)\) VALUES \((.+)\);$/);
+  if (!match) throw new Error(`facilities INSERT文の形式が想定と異なります: ${line}`);
+  const columns = match[1].split(", ");
+  const values = match[2].split(", ");
+  return new Map(columns.map((column, index) => [column, values[index]]));
+}
+
+// 2026-08是正(外部コードレビュー指摘: 手動調査プログラムの対象年齢・確認状態が検索へ
+// 反映されない、スキーマ・投入処理の土台のみ)。
+describe("buildSql: program.ageRange/lifestageMin/lifestageMax/status/confirmedOn", () => {
+  const surveyBase = {
+    municipalityCode: "13101",
+    municipalityName: "千代田区",
+    surveyDate: "2026-07-13",
+    elementarySchools: [],
+    juniorHighSchools: [],
+  };
+
+  it("未指定の場合、従来どおり age_range='both'・lifestage_min/max=NULL・confirmation_status='confirmed'・confirmed_on=NULL で投入される(既存YAML互換)", () => {
+    const sql = buildSql({
+      ...surveyBase,
+      programs: [{ name: "テスト窓口", category: "counseling", description: "説明" }],
+    });
+    const line = sql.split("\n").find((l) => l.startsWith("INSERT INTO facilities"));
+    const row = parseFacilitiesInsertLine(line);
+
+    expect(row.get("age_range")).toBe("'both'");
+    expect(row.get("lifestage_min")).toBe("NULL");
+    expect(row.get("lifestage_max")).toBe("NULL");
+    expect(row.get("confirmation_status")).toBe("'confirmed'");
+    expect(row.get("confirmed_on")).toBe("NULL");
+  });
+
+  it("指定した場合、ageRange・lifestageMin/Maxの序数・status・confirmedOnがそのまま投入される", () => {
+    const sql = buildSql({
+      ...surveyBase,
+      programs: [
+        {
+          name: "テスト窓口2",
+          category: "counseling",
+          description: "説明",
+          ageRange: "adult",
+          lifestageMin: "high-school",
+          lifestageMax: "working-adult",
+          status: "unconfirmed",
+          confirmedOn: "2026-08-29",
+        },
+      ],
+    });
+    const line = sql.split("\n").find((l) => l.startsWith("INSERT INTO facilities"));
+    const row = parseFacilitiesInsertLine(line);
+
+    expect(row.get("age_range")).toBe("'adult'");
+    expect(row.get("lifestage_min")).toBe(String(LIFESTAGE_ORDINAL["high-school"]));
+    expect(row.get("lifestage_max")).toBe(String(LIFESTAGE_ORDINAL["working-adult"]));
+    expect(row.get("confirmation_status")).toBe("'unconfirmed'");
+    expect(row.get("confirmed_on")).toBe("'2026-08-29'");
   });
 });
 

@@ -51,6 +51,8 @@
 | `lng` | REAL | NULL可 | - | - | 経度。`lat`と同じ経路・既定値 | migration 0002 |
 | `no_diagnosis_ok` | INTEGER | NOT NULL | `0` | CHECK (`0`,`1`) | 「診断がなくても相談できる」フラグ。自動取込では判定不可な性質情報のため既定0、手動シードでのみ1を投入。risk_levelによる表示出し分け(FR-027)の対象外 | migration 0003 |
 | `contact_methods` | TEXT | NULL可 | - | - | 電話以外の連絡手段(メール・フォーム・来所予約等)の自由記述テキスト。値が空の場合はNULL(「連絡手段なし」と誤読させない) | migration 0004 |
+| `confirmation_status` | TEXT | NULL可 | - | CHECK (`confirmed`,`unconfirmed`,`phone_required`またはNULL) | 手動調査プログラム(`ProgramSchema.status`)の一次情報確認状況。NULLはこのフラグの対象外(CKAN/オープンデータ由来等)。`ingest-manual-survey.mjs`のみが非NULL値を投入。既存49自治体分のYAMLは値未設定のためNULLのまま(スキーマ・投入処理の土台のみで、表示側の出し分けは別途対応) | migration 0034 |
+| `confirmed_on` | TEXT | NULL可 | - | - | 確認日(YYYY-MM-DD)。`ProgramSchema.confirmedOn`対応 | migration 0034 |
 | `raw_json` | TEXT | NULL可 | - | - | 取込元(CKANリソース/XLSX行等)の生データ。再取込・デバッグ用 | 初期schema |
 | `created_at` | TEXT | NOT NULL | `strftime('%Y-%m-%dT%H:%M:%fZ','now')` | - | 作成日時 | 初期schema |
 | `updated_at` | TEXT | NOT NULL | `strftime('%Y-%m-%dT%H:%M:%fZ','now')` | - | 更新日時 | 初期schema |

@@ -24,6 +24,12 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const YEAR_RE = /^\d{4}$/;
 
 const CONFIRMATION_STATUS = ["confirmed", "unconfirmed", "phone_required"];
+// ProgramSchema.ageRange/lifestageMin/lifestageMax(municipality.schema.ts、2026-08是正)。
+// lifestage語彙は app/src/features/support/services/lifestage-mapping.ts の LIFESTAGE_VALUES と
+// 同じ(値・並び順の一致は batch/scripts/__tests__/ingest-manual-survey.test.ts のパリティ
+// テストで担保する)。
+const PROGRAM_AGE_RANGES = ["child", "adult", "both"];
+const PROGRAM_LIFESTAGES = ["preschool", "elementary-junior-high", "high-school", "university-vocational", "working-adult"];
 const DISABILITY_TYPES = ["intellectual", "autism_emotional", "hearing", "language", "visual", "health_impairment", "physical", "other"];
 const SCHOOL_LEVELS = ["elementary", "junior_high"];
 const OPERATION_MODES = ["itinerant_teacher", "student_travels_to_hub"];
@@ -287,6 +293,24 @@ function checkProgram(program, path, errors) {
   checkNumberRange(program.lng, `${path}.lng`, errors, { min: -180, max: 180 });
   checkEnum(program.status, `${path}.status`, errors, CONFIRMATION_STATUS, { optional: true });
   checkSources(program.sources, `${path}.sources`, errors, { required: true });
+  // 2026-08是正(外部コードレビュー指摘: スキーマ・投入処理の土台のみ)。
+  checkEnum(program.ageRange, `${path}.ageRange`, errors, PROGRAM_AGE_RANGES, { optional: true });
+  checkEnum(program.lifestageMin, `${path}.lifestageMin`, errors, PROGRAM_LIFESTAGES, { optional: true });
+  checkEnum(program.lifestageMax, `${path}.lifestageMax`, errors, PROGRAM_LIFESTAGES, { optional: true });
+  if ((program.lifestageMin === undefined) !== (program.lifestageMax === undefined)) {
+    errors.add(`${path}.lifestageMin/lifestageMax`, "lifestageMin と lifestageMax は両方指定するか、両方とも省略してください。");
+  } else if (program.lifestageMin !== undefined && program.lifestageMax !== undefined) {
+    const minIndex = PROGRAM_LIFESTAGES.indexOf(program.lifestageMin);
+    const maxIndex = PROGRAM_LIFESTAGES.indexOf(program.lifestageMax);
+    if (minIndex >= 0 && maxIndex >= 0 && minIndex > maxIndex) {
+      errors.add(`${path}.lifestageMin/lifestageMax`, "lifestageMin は lifestageMax 以下である必要があります。");
+    }
+  }
+  checkString(program.confirmedOn, `${path}.confirmedOn`, errors, {
+    optional: true,
+    regex: DATE_RE,
+    regexMessage: "confirmedOn は YYYY-MM-DD形式である必要があります。",
+  });
 }
 
 function checkClassOrganization(organization, path, errors) {
