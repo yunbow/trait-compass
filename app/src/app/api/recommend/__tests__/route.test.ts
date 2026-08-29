@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { CRISIS_GUIDANCE_TEXT } from "@/features/ai-summary/services/prompt";
 import { INJECTION_GUARD_FALLBACK_MESSAGE } from "@/features/recommend/services/prompt";
+import { RECOMMEND_TOP_K } from "@/features/recommend/schema/recommend";
 
 // route.ts は createEmbedder/createVectorStore/createLlmClient/getDb を通じて外部依存を呼び出す。
 // summarize route のテスト(src/app/api/summarize/__tests__/route.test.ts)と同じ方針で、
@@ -429,6 +430,57 @@ describe("POST /api/recommend", () => {
     expect(res.status).toBe(200);
     expect(prepareCalls[0]).toContain("BETWEEN f.lifestage_min AND f.lifestage_max");
     expect(bindCalls[0]).toContain(0); // LIFESTAGE_ORDINAL["preschool"]
+  });
+
+  // 2026-08是正(外部コードレビュー指摘): 全施設インデックスから無条件に topK 件を取得すると、
+  // 選択自治体の施設が1件も入らずD1側の絞り込みで全滅する問題があった。municipality フィルタ
+  // ごとに VectorStore へ問い合わせるようになったことの回帰ガード。
+  it("選択自治体フィルタでは0件でも、広域(東京都)フィルタの結果を拾って返す", async () => {
+    embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
+    vectorQueryMock.mockImplementation(async (_vector: number[], _topK: number, filter?: { municipality?: string }) => {
+      if (filter?.municipality === "東京都") return [{ id: "fac-broad", score: 0.85 }];
+      return []; // 世田谷区フィルタは0件。
+    });
+    generateMock.mockResolvedValue({ text: "広域の窓口ですが、悩みに合いそうです。" });
+
+    const { db } = createQueueDb([[makeFacilityJoinRow({ id: "fac-broad", municipality: "東京都" })]]);
+    getDbMock.mockReturnValue(db);
+
+    const res = await POST(buildRequest(VALID_BODY));
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.isAiEnabled).toBe(true);
+    expect(json.facilities.map((f: { id: string }) => f.id)).toEqual(["fac-broad"]);
+    // 選択自治体・広域の2フィルタで問い合わせている(1回だけの無条件クエリに戻っていないことの確認)。
+    expect(vectorQueryMock).toHaveBeenCalledWith(expect.anything(), RECOMMEND_TOP_K, { municipality: "世田谷区" });
+    expect(vectorQueryMock).toHaveBeenCalledWith(expect.anything(), RECOMMEND_TOP_K, { municipality: "東京都" });
+  });
+
+  // 2026-08是正(外部コードレビュー指摘): D1側の絞り込み後にRECOMMEND_TOP_K未満しか残らない場合、
+  // 以前は補充されずそのまま少数の結果を返していた。1回だけの追加クエリで補充されることの回帰ガード。
+  it("D1側の絞り込み後にRECOMMEND_TOP_K未満しか残らない場合、追加クエリで補充する", async () => {
+    embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
+    vectorQueryMock.mockImplementation(async (_vector: number[], topK: number) => {
+      // 初回(topK=RECOMMEND_TOP_K)は1件のみ、追加クエリ(topKを広げた回)でもう1件ヒットする。
+      if (topK === RECOMMEND_TOP_K) return [{ id: "fac-first", score: 0.9 }];
+      return [
+        { id: "fac-first", score: 0.9 },
+        { id: "fac-second", score: 0.7 },
+      ];
+    });
+    generateMock.mockResolvedValue({ text: "合いそうな理由です。" });
+
+    // 0回目: fetchFacilitiesByIds(初回、fac-first のみ)。1回目: fetchFacilitiesByIds(追加分、fac-second)。
+    const { db } = createQueueDb([[makeFacilityJoinRow({ id: "fac-first" })], [makeFacilityJoinRow({ id: "fac-second" })]]);
+    getDbMock.mockReturnValue(db);
+
+    const res = await POST(buildRequest(VALID_BODY));
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.isAiEnabled).toBe(true);
+    expect(json.facilities.map((f: { id: string }) => f.id)).toEqual(["fac-first", "fac-second"]);
   });
 });
 

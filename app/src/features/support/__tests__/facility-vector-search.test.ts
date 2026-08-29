@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { queryFacilityIds } from "@/features/support/services/facility-vector-search";
+import { queryFacilityIds, queryFacilityIdsAcrossFilters } from "@/features/support/services/facility-vector-search";
 import type { Embedder } from "@/lib/ai/embedder";
-import type { VectorStore, VectorStoreQueryResult } from "@/lib/ai/vector-store";
+import type { VectorStore, VectorStoreFilter, VectorStoreQueryResult } from "@/lib/ai/vector-store";
 
 function makeEmbedder(vector: number[] | null = [0.1, 0.2, 0.3]): Embedder {
   return {
@@ -78,5 +78,90 @@ describe("queryFacilityIds", () => {
     const ids = await queryFacilityIds({ text: "存在しない支援", topK: 5 }, { embedder, vectorStore });
 
     expect(ids).toEqual([]);
+  });
+});
+
+/** filter.municipality の値ごとに異なる結果を返す VectorStore(自治体別・広域クエリの分岐検証用)。 */
+function makeVectorStoreByFilter(resultsByMunicipality: Record<string, VectorStoreQueryResult[]>): VectorStore {
+  return {
+    upsert: vi.fn(async () => {}),
+    query: vi.fn(async (_vector: number[], _topK: number, filter?: VectorStoreFilter) => {
+      const municipality = filter?.municipality as string | undefined;
+      return municipality !== undefined ? (resultsByMunicipality[municipality] ?? []) : [];
+    }),
+  };
+}
+
+describe("queryFacilityIdsAcrossFilters", () => {
+  it("2026-08是正(外部コードレビュー指摘): 選択自治体で0件でも、広域(東京都)フィルタの結果を拾う", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const vectorStore = makeVectorStoreByFilter({
+      台東区: [],
+      東京都: [{ id: "fac-broad", score: 0.8 }],
+    });
+
+    const ids = await queryFacilityIdsAcrossFilters(
+      { text: "台東区 小中学生 感覚過敏", topK: 10, filters: [{ municipality: "台東区" }, { municipality: "東京都" }] },
+      { embedder, vectorStore },
+    );
+
+    expect(ids).toEqual(["fac-broad"]);
+  });
+
+  it("両フィルタの結果をスコア降順でマージする", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const vectorStore = makeVectorStoreByFilter({
+      台東区: [{ id: "fac-local", score: 0.7 }],
+      東京都: [{ id: "fac-broad", score: 0.9 }],
+    });
+
+    const ids = await queryFacilityIdsAcrossFilters(
+      { text: "感覚過敏", topK: 10, filters: [{ municipality: "台東区" }, { municipality: "東京都" }] },
+      { embedder, vectorStore },
+    );
+
+    expect(ids).toEqual(["fac-broad", "fac-local"]);
+  });
+
+  it("同一idが複数フィルタにヒットした場合は最良スコアを採用し重複させない", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const vectorStore = makeVectorStoreByFilter({
+      台東区: [{ id: "fac-both", score: 0.6 }],
+      東京都: [{ id: "fac-both", score: 0.95 }],
+    });
+
+    const ids = await queryFacilityIdsAcrossFilters(
+      { text: "感覚過敏", topK: 10, filters: [{ municipality: "台東区" }, { municipality: "東京都" }] },
+      { embedder, vectorStore },
+    );
+
+    expect(ids).toEqual(["fac-both"]);
+    expect(vectorStore.query).toHaveBeenCalledTimes(2);
+  });
+
+  it("embed はクエリテキストにつき1回のみ行う(フィルタ数だけ埋め込み課金が増えるのを避ける)", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const vectorStore = makeVectorStoreByFilter({ 台東区: [], 東京都: [] });
+
+    await queryFacilityIdsAcrossFilters(
+      { text: "感覚過敏", topK: 10, filters: [{ municipality: "台東区" }, { municipality: "東京都" }] },
+      { embedder, vectorStore },
+    );
+
+    expect(embedder.embed).toHaveBeenCalledTimes(1);
+    expect(embedder.embed).toHaveBeenCalledWith(["感覚過敏"]);
+  });
+
+  it("embed がベクトルを返さない場合は空配列を返し、query を呼ばない", async () => {
+    const embedder = makeEmbedder(null);
+    const vectorStore = makeVectorStoreByFilter({ 台東区: [{ id: "fac-1", score: 1 }] });
+
+    const ids = await queryFacilityIdsAcrossFilters(
+      { text: "", topK: 5, filters: [{ municipality: "台東区" }] },
+      { embedder, vectorStore },
+    );
+
+    expect(ids).toEqual([]);
+    expect(vectorStore.query).not.toHaveBeenCalled();
   });
 });

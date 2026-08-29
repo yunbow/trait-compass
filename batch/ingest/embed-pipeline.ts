@@ -20,6 +20,7 @@
 
 import type { Embedder } from "../../app/src/lib/ai/embedder";
 import type { VectorStore, VectorStoreItem } from "../../app/src/lib/ai/vector-store";
+import { FACILITY_BASE_WHERE } from "../../app/src/features/support/services/facility-search";
 
 /** 埋め込み対象の facility 行(facilities × datasets(risk_level) × facility_tags の JOIN 結果)。 */
 export interface EmbeddableFacilityRow {
@@ -120,6 +121,11 @@ export async function embedAndUpsertFacilities(
  * 埋め込み対象行を取得する(D1 への実アクセスを伴うため vitest ではテストしない。
  * workers/ingest/db.ts の方針・src/features/support/services/dataset-status.ts の
  * `getUnhealthyDatasets` と同じ扱い)。
+ *
+ * 2026-08是正(外部コードレビュー指摘): `FACILITY_BASE_WHERE`(facility-search.ts、
+ * `f.is_medical = 0 AND f.is_out_of_scope = 0`)を通常のD1検索と共有する。以前は
+ * risk_level のみで絞っており、医療機関・対象外施設もベクトル埋め込み対象になっていた
+ * (通常のD1検索では常に除外される行が、RAG検索の topK 候補枠を無駄に消費していた)。
  */
 export async function fetchEmbeddableFacilities(db: D1Database): Promise<EmbeddableFacilityRow[]> {
   const { results } = await db
@@ -129,7 +135,7 @@ export async function fetchEmbeddableFacilities(db: D1Database): Promise<Embedda
        FROM facilities f
        JOIN datasets d ON d.id = f.dataset_id
        LEFT JOIN facility_tags ft ON ft.facility_id = f.id
-       WHERE d.risk_level = 'low'
+       WHERE d.risk_level = 'low' AND ${FACILITY_BASE_WHERE}
        GROUP BY f.id`,
     )
     .all<EmbeddableFacilityRow>();

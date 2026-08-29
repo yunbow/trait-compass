@@ -33,6 +33,7 @@ import {
 import { buildEmbeddingQueryText } from "@/features/recommend/services/query-text";
 
 import {
+  BROAD_AREA_MUNICIPALITY,
   fetchFacilitiesByIds,
   isMunicipalityDataMissing,
   MUNICIPALITY_DATA_MISSING_MESSAGE,
@@ -40,7 +41,7 @@ import {
 } from "@/features/support/services/facility-search";
 import { municipalityToCode } from "@/features/support/constants/municipality-codes";
 import type { FacilityRow } from "@/features/support/services/facility-search";
-import { queryFacilityIds } from "@/features/support/services/facility-vector-search";
+import { queryFacilityIdsAcrossFilters } from "@/features/support/services/facility-vector-search";
 import { getUnhealthyDatasets } from "@/features/support/services/dataset-status";
 
 // `/api/recommend`(TICKET-0023)。年齢区分・区市町村・相談分野タグ・相談したい内容の自由文から、
@@ -68,6 +69,13 @@ import { getUnhealthyDatasets } from "@/features/support/services/dataset-status
 //
 // TICKET-0035: 1 リクエストあたり最大 RECOMMEND_TOP_K 件の LLM 呼び出しが発生するため、
 // 原価防衛レート制限の主対象とする。
+
+/**
+ * D1側の絞り込み後に RECOMMEND_TOP_K 未満しか残らなかった場合の、追加クエリでの topK 拡大率
+ * (2026-08是正)。無制限リトライ・単純な topK 底上げ(全施設インデックスに対して行うと
+ * 施設数増加で再発する)は避け、自治体・広域フィルタ済みの母集団に対して1回だけ広く取り直す。
+ */
+const RAG_RETRY_TOP_K_MULTIPLIER = 3;
 
 /**
  * レスポンスを zod で検証してから返す。検証に失敗した場合(実装バグ等で想定外の形になった
@@ -137,17 +145,48 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   if (!rateLimit.allowed) return aiRateLimitedResponse(rateLimit.retryAfterSeconds);
 
   // RAG 経路: Embedder → VectorStore → D1 JOIN(facility_id 群からの事実情報再取得)。
+  //
+  // 2026-08是正(外部コードレビュー指摘): 以前は自治体・年齢のフィルタを一切かけずに
+  // 全施設インデックスから topK 件だけ取得していたため、選択自治体に属する施設が
+  // 上位 topK に1件も入らないケースが普通にあり(全施設インデックスの母数に対して
+  // 特定自治体の割合は小さい)、D1側の絞り込み(自治体・age/lifestage)で全滅→
+  // タグベース検索へ丸ごとフォールバック、または一部だけ生き残っても補充されず
+  // 少数のまま返る、という問題があった。
+  //
+  // 対策: VectorStore への問い合わせを「選択自治体」「広域(東京都)」の2フィルタに分け、
+  // スコア順にマージする(queryFacilityIdsAcrossFilters)。それでも D1 側の絞り込み後に
+  // RECOMMEND_TOP_K 未満しか残らない場合は、既取得分を除いて topK を広げた1回だけの
+  // 追加クエリで補充する(無制限リトライはコスト増大につながるため避け、上限1回に固定)。
   let orderedRows: FacilityRow[] = [];
   let usedRag = false;
   try {
     const embedder = createEmbedder();
     const vectorStore = createVectorStore();
     const queryText = buildEmbeddingQueryText(query, tags);
-    const facilityIds = await queryFacilityIds({ text: queryText, topK: RECOMMEND_TOP_K }, { embedder, vectorStore });
+    const filters = [{ municipality }, { municipality: BROAD_AREA_MUNICIPALITY }];
+
+    const facilityIds = await queryFacilityIdsAcrossFilters(
+      { text: queryText, topK: RECOMMEND_TOP_K, filters },
+      { embedder, vectorStore },
+    );
 
     if (facilityIds.length > 0) {
       const rows = await fetchFacilitiesByIds(db, facilityIds, { ageGroup: age, municipality, lifestage });
       orderedRows = reorderFacilitiesByIds(rows, facilityIds);
+
+      if (orderedRows.length < RECOMMEND_TOP_K) {
+        const expandedIds = await queryFacilityIdsAcrossFilters(
+          { text: queryText, topK: RECOMMEND_TOP_K * RAG_RETRY_TOP_K_MULTIPLIER, filters },
+          { embedder, vectorStore },
+        );
+        const additionalIds = expandedIds.filter((id) => !facilityIds.includes(id));
+        if (additionalIds.length > 0) {
+          const additionalRows = await fetchFacilitiesByIds(db, additionalIds, { ageGroup: age, municipality, lifestage });
+          const combinedIds = [...facilityIds, ...additionalIds];
+          orderedRows = reorderFacilitiesByIds([...rows, ...additionalRows], combinedIds).slice(0, RECOMMEND_TOP_K);
+        }
+      }
+
       usedRag = orderedRows.length > 0;
     }
 

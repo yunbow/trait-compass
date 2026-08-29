@@ -49,3 +49,48 @@ export async function queryFacilityIds(
   const results = await vectorStore.query(vector, topK, filter);
   return results.map((result) => result.id);
 }
+
+export interface FacilityVectorSearchMultiQuery {
+  /** 検索クエリテキスト(自由記述・カテゴリタグ等を組み合わせた文字列)。 */
+  text: string;
+  /** フィルタごとに取得する件数。 */
+  topK: number;
+  /** VectorStore 側でのメタデータ絞り込み条件を複数渡す(例: 選択自治体・広域)。 */
+  filters: VectorStoreFilter[];
+}
+
+/**
+ * `queryFacilityIds` の複数フィルタ版(2026-08是正、外部コードレビュー指摘)。
+ *
+ * 単一の無条件クエリで topK 件だけ取得すると、それらが D1 側の絞り込み(自治体・年齢)で
+ * 全滅・大半除外されうる(全施設インデックスの中からは、選択自治体に属する施設が上位 topK に
+ * 一件も入らないことが普通にある)。本関数は `filters` の要素ごとに個別クエリし、
+ * facility_id をスコア(降順、同一 id は最良スコアを採用)でマージして返す
+ * ことで、呼び出し側(route.ts)が「選択自治体」「広域(東京都)」を別々に確保できるようにする。
+ *
+ * embed はクエリテキストにつき1回のみ行う(フィルタ数だけ埋め込み課金が増えることを避ける)。
+ */
+export async function queryFacilityIdsAcrossFilters(
+  query: FacilityVectorSearchMultiQuery,
+  deps: FacilityVectorSearchDeps,
+): Promise<string[]> {
+  const { text, topK, filters } = query;
+  const { embedder, vectorStore } = deps;
+
+  const [vector] = await embedder.embed([text]);
+  if (!vector) return [];
+
+  const resultsPerFilter = await Promise.all(filters.map((filter) => vectorStore.query(vector, topK, filter)));
+
+  const bestScoreById = new Map<string, number>();
+  for (const results of resultsPerFilter) {
+    for (const result of results) {
+      const currentBest = bestScoreById.get(result.id);
+      if (currentBest === undefined || result.score > currentBest) {
+        bestScoreById.set(result.id, result.score);
+      }
+    }
+  }
+
+  return [...bestScoreById.entries()].sort(([, a], [, b]) => b - a).map(([id]) => id);
+}
