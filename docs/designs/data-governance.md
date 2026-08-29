@@ -28,6 +28,15 @@ DELETE→INSERT で冪等に行われ、他系統の行を上書きしない(`bu
 文部科学省の学校コード一覧から住所を追記するが、これは**住所が未設定の学校のみ**が
 対象で、手動調査で確認済みの値は変更しない。
 
+**既知の制約(2026-08是正)**: `facility_tags`(相談分野タグ)は取込パイプラインのスコープ外
+(意図的、上記いずれの経路も扱わない)のため、`app/db/seed/consultation-desk-tags*.sql` による
+手動キュレーションのみが投入経路である。ローカルオープンデータ取込
+(`batch/scripts/ingest-open-data.mjs`)は対象データセットの `facility_tags` を削除してから
+`facilities` を再投入するが、タグの再投入は行わない。該当データセット
+(現状 `ds-wam-net-disability-services`)を再取込した場合は、
+`npm run db:seed:local:tags-open-data`(本番は `db:seed:remote:tags-open-data`)を再実行して
+タグを復元する必要がある(自動化はされていない、手動運用)。
+
 ## 3. 鮮度の管理
 
 鮮度は `datasets.fetched_at`(取得日時)と `datasets.is_alive`(死活監視結果)を

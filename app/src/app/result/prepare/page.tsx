@@ -4,7 +4,7 @@ import { PageReachTracker } from "@/components/common/PageReachTracker";
 import { PreparePage } from "@/features/prepare/components/PreparePage";
 import { parseResultsSearchParams } from "@/features/support/schema/results-search-params";
 import { parseLifestagePrefillParam } from "@/features/support/services/parse-lifestage-prefill";
-import { parseSupportTagsParam } from "@/features/support/services/parse-support-tags";
+import { hasExplicitSupportTagsParam, parseSupportTagsParam } from "@/features/support/services/parse-support-tags";
 import { getP0Questions } from "@/features/survey/services/questions";
 
 export const metadata: Metadata = {
@@ -58,7 +58,7 @@ export default async function ResultPreparePage({ searchParams }: ResultPrepareP
         initialAgeGroup={parsedAgeMunicipality.success ? parsedAgeMunicipality.data.age : null}
         initialMunicipality={parsedAgeMunicipality.success ? parsedAgeMunicipality.data.municipality.name : null}
         initialMunicipalityCode={parsedAgeMunicipality.success ? parsedAgeMunicipality.data.municipality.code : null}
-        prefillTags={prefillTags.length > 0 ? prefillTags : null}
+        prefillTags={hasExplicitSupportTagsParam(raw.tags) ? prefillTags : null}
         initialLifestage={lifestage}
         initialMode={parseInitialMode(raw.mode)}
       />

@@ -66,9 +66,9 @@ function emptyByCategory<T>(): Record<CategoryType, T[]> {
 }
 
 describe("matchesSelectedTags", () => {
-  it("選択タグが空(全般)の場合は常に true", () => {
-    expect(matchesSelectedTags([], [])).toBe(true);
-    expect(matchesSelectedTags(["こだわり"], [])).toBe(true);
+  it("選択タグが空(全般)の場合は常に false(2026-08是正: 「全般」はタグ一致ではない)", () => {
+    expect(matchesSelectedTags([], [])).toBe(false);
+    expect(matchesSelectedTags(["こだわり"], [])).toBe(false);
   });
 
   it("facility のタグと選択タグが1つでも重なれば true", () => {
@@ -79,7 +79,7 @@ describe("matchesSelectedTags", () => {
     expect(matchesSelectedTags(["こだわり"], ["感覚"])).toBe(false);
   });
 
-  it("facility にタグが無い場合は false(選択タグが空でない限り)", () => {
+  it("facility にタグが無い場合は false", () => {
     expect(matchesSelectedTags([], ["感覚"])).toBe(false);
   });
 });
@@ -162,11 +162,11 @@ describe("groupByCategoryType", () => {
 });
 
 describe("attachTagMatches", () => {
-  it("Map に無い facility は tags=[] かつ matchesTags は選択タグの有無に従う", () => {
+  it("Map に無い facility は tags=[] で、matchesTags は選択タグが空でも非空でも false", () => {
     const rows: FacilityRow[] = [makeFacility({ id: "fac-untagged" })];
     const result = attachTagMatches(rows, new Map(), []);
     expect(result[0].tags).toEqual([]);
-    expect(result[0].matchesTags).toBe(true);
+    expect(result[0].matchesTags).toBe(false);
 
     const resultWithTagFilter = attachTagMatches(rows, new Map(), ["感覚"]);
     expect(resultWithTagFilter[0].matchesTags).toBe(false);

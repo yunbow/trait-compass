@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { SUPPORT_TAGS } from "@/features/support/services/category-tag-mapping";
-import { parseSupportTagsParam } from "@/features/support/services/parse-support-tags";
-import { SUPPORT_TAG_URL_IDS } from "@/features/support/services/support-tag-url";
+import { hasExplicitSupportTagsParam, parseSupportTagsParam } from "@/features/support/services/parse-support-tags";
+import { NO_TAGS_EXPLICIT_VALUE, SUPPORT_TAG_URL_IDS } from "@/features/support/services/support-tag-url";
 
 describe("parseSupportTagsParam", () => {
   it("undefined の場合は空配列を返す(タグ無し=全般)", () => {
@@ -46,5 +46,28 @@ describe("parseSupportTagsParam", () => {
     for (const tag of SUPPORT_TAGS) {
       expect(parseSupportTagsParam(SUPPORT_TAG_URL_IDS[tag])).toEqual([tag]);
     }
+  });
+
+  it("NO_TAGS_EXPLICIT_VALUE(明示的な全般)は既知タグを1件も含まないため空配列になる", () => {
+    expect(parseSupportTagsParam(NO_TAGS_EXPLICIT_VALUE)).toEqual([]);
+  });
+});
+
+describe("hasExplicitSupportTagsParam", () => {
+  it("undefined(クエリ自体が無い)の場合は false", () => {
+    expect(hasExplicitSupportTagsParam(undefined)).toBe(false);
+  });
+
+  it("空文字(?tags= のように付いてはいる)の場合は true", () => {
+    expect(hasExplicitSupportTagsParam("")).toBe(true);
+  });
+
+  it("NO_TAGS_EXPLICIT_VALUE(明示的な全般)の場合は true", () => {
+    expect(hasExplicitSupportTagsParam(NO_TAGS_EXPLICIT_VALUE)).toBe(true);
+  });
+
+  it("実際のタグ値が入っている場合は true", () => {
+    expect(hasExplicitSupportTagsParam("sensory")).toBe(true);
+    expect(hasExplicitSupportTagsParam(["sensory", "emotion"])).toBe(true);
   });
 });

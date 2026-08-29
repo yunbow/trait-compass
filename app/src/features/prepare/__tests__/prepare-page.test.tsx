@@ -183,6 +183,26 @@ describe("PreparePage", () => {
     expect(screen.getByRole("button", { name: "対人・コミュニケーション" }).getAttribute("aria-pressed")).toBe("true");
   });
 
+  it("prefillTags=[](/support/results で明示的に「全般」を選んだ場合)は、端末に残る自己チェック結果由来のタグへフォールバックしない(2026-08是正)", async () => {
+    // 「communication」カテゴリの回答があるため、フォールバックすれば「対人・コミュニケーション」が
+    // 選択されてしまう。prefillTags=[] を優先すればどのタグも選択されないはずである。
+    answerSomeQuestions();
+
+    render(
+      <PreparePage
+        questions={QUESTIONS}
+        initialAgeGroup="adult"
+        initialMunicipality="台東区"
+        initialMunicipalityCode="13106"
+        prefillTags={[]}
+        initialMode="select"
+      />,
+    );
+
+    expect(await screen.findByText("相談時に渡すメモを作る")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "対人・コミュニケーション" }).getAttribute("aria-pressed")).toBe("false");
+  });
+
   it("検索結果画面から遷移した場合、戻りリンク(/support/results)は age・municipality に加えて lifestage も引き継ぐ", async () => {
     render(
       <PreparePage

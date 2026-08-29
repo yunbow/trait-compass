@@ -243,7 +243,7 @@ export function SupportInputForm({
               <div className="mt-3">
                 <SupportTagToggleGroup
                   legend="この結果から提案された相談分野"
-                  description="必要に応じて変更できます。選んだ分野で相談先を絞り込みます。"
+                  description="必要に応じて変更できます。選んだ分野に関連する相談先を優先して表示します(候補が除外されることはありません)。"
                   selectedTags={selectedTags}
                   onToggle={handleToggleTag}
                 />

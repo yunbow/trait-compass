@@ -9,7 +9,7 @@ import type { ResultsTab } from "@/features/support/constants/results-tabs";
 import type { AgeGroup } from "@/features/support/schema/age-group";
 import type { SupportTag } from "@/features/support/services/category-tag-mapping";
 import type { Lifestage } from "@/features/support/services/lifestage-mapping";
-import { setSupportTagsParam } from "@/features/support/services/support-tag-url";
+import { setSupportTagsParam, setSupportTagsParamExplicit } from "@/features/support/services/support-tag-url";
 
 interface SupportQueryParams {
   age?: AgeGroup;
@@ -18,6 +18,14 @@ interface SupportQueryParams {
   lifestage?: Lifestage | null;
   tags: readonly SupportTag[];
   purposeId?: string | null;
+  /**
+   * true の場合、tags が空でも `setSupportTagsParamExplicit` で「明示的に全般」を表す値を
+   * クエリへ残す(既定 false = 従来どおり空なら tags クエリ自体を省略する)。`/result/prepare`・
+   * `/result/recommend` は端末の自己チェック結果由来タグへフォールバックする経路を持つため、
+   * 「/support/results 発の明示的な全般」と「クエリという概念が無い直接遷移」を区別する必要が
+   * あり(support-tag-url.ts の NO_TAGS_EXPLICIT_VALUE 参照)、この2つの遷移先だけ true にする。
+   */
+  explicitTags?: boolean;
 }
 
 /**
@@ -38,7 +46,11 @@ function createSupportQuery(params: SupportQueryParams): URLSearchParams {
   if (params.age != null) query.set("age", params.age);
   query.set("municipality", params.municipalityCode);
   if (params.lifestage != null) query.set("lifestage", params.lifestage);
-  setSupportTagsParam(query, params.tags);
+  if (params.explicitTags) {
+    setSupportTagsParamExplicit(query, params.tags);
+  } else {
+    setSupportTagsParam(query, params.tags);
+  }
   if (params.purposeId != null) query.set("purpose", params.purposeId);
   return query;
 }
@@ -111,8 +123,9 @@ export interface BuildPrepareHrefParams {
 /**
  * `/support/results` から `/result/prepare`(相談メモを作る)への遷移先 URL を組み立てる純関数。
  * 年齢・区市町村・相談分野タグ・元の年齢選択(ライフステージ)をクエリで引き継ぎ、`PreparePanel` 側で
- * 年齢・区市町村の再入力を省略できるようにする(`tags` が空の場合はクエリ自体を付けない。他の
- * build*Href と同じ方針)。
+ * 年齢・区市町村の再入力を省略できるようにする。`tags` が空(=「全般」)でもクエリ自体は省略せず
+ * `NO_TAGS_EXPLICIT_VALUE` を明示的に残す(2026-08是正: 省略すると PreparePage 側で「クエリが
+ * 無い直接遷移」と区別できず、端末に残る自己チェック結果由来タグへ誤ってフォールバックするため)。
  */
 export function buildPrepareHref(params: BuildPrepareHrefParams): string {
   const query = createSupportQuery({
@@ -120,6 +133,7 @@ export function buildPrepareHref(params: BuildPrepareHrefParams): string {
     municipalityCode: params.municipalityCode,
     lifestage: params.lifestage,
     tags: params.tags,
+    explicitTags: true,
   });
   return `/result/prepare?${query.toString()}`;
 }
@@ -139,7 +153,8 @@ export interface BuildRecommendHrefParams {
  * `/support/results` から `/result/recommend`(相談先のヒントを見る)への遷移先 URL を組み立てる
  * 純関数。年齢・区市町村・相談分野タグをクエリで引き継ぎ、`RecommendHintSection` 側で年齢・区市町村の
  * 再入力を省略できるようにする(相談内容の自由記述だけは引き継げないため、そこだけは引き続き入力が必要)。
- * `tags` が空の場合はクエリ自体を付けない(他の build*Href と同じ方針)。
+ * `tags` が空(=「全般」)でもクエリ自体は省略せず `NO_TAGS_EXPLICIT_VALUE` を明示的に残す
+ * (理由は buildPrepareHref のコメント参照)。
  */
 export function buildRecommendHref(params: BuildRecommendHrefParams): string {
   const query = createSupportQuery({
@@ -148,6 +163,7 @@ export function buildRecommendHref(params: BuildRecommendHrefParams): string {
     lifestage: params.lifestage,
     tags: params.tags,
     purposeId: params.purposeId,
+    explicitTags: true,
   });
   return `/result/recommend?${query.toString()}`;
 }

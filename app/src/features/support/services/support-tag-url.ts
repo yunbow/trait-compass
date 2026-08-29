@@ -48,3 +48,26 @@ export function setSupportTagsParam(query: URLSearchParams, tags: readonly Suppo
     query.delete("tags");
   }
 }
+
+/**
+ * tags クエリの「明示的に指定なし(全般)」を表す予約値(2026-08是正)。
+ *
+ * `/support/results` から `/result/prepare`・`/result/recommend` へ遷移する際、tags が空
+ * (=「全般」を選んでいる)場合に `setSupportTagsParam` のようにクエリ自体を省略すると、
+ * 「そもそも `/support` を経由していない(クエリという概念が無い)直接遷移」と区別が付かなくなる。
+ * 後者は端末に残っている自己チェック結果由来のタグへフォールバックしてよいが、前者(明示的な
+ * 「全般」)はフォールバックすべきではない(端末に古い自己チェック結果が残っていると、
+ * 無関係な相談分野タグが復活してしまう)。この2つを区別するため、`/support/results` 発の
+ * 遷移では tags が空でも `NO_TAGS_EXPLICIT_VALUE` を明示的にクエリへ残す
+ * (`setSupportTagsParamExplicit` 参照)。
+ */
+export const NO_TAGS_EXPLICIT_VALUE = "none";
+
+/**
+ * `setSupportTagsParam` と異なり、tags が空でも `tags` クエリ自体を省略しない版。
+ * `/result/prepare`・`/result/recommend` への遷移URL(`buildPrepareHref`・`buildRecommendHref`)
+ *専用(NO_TAGS_EXPLICIT_VALUE のドキュメント参照)。
+ */
+export function setSupportTagsParamExplicit(query: URLSearchParams, tags: readonly SupportTag[]): void {
+  query.set("tags", tags.length > 0 ? encodeSupportTagsParam(tags) : NO_TAGS_EXPLICIT_VALUE);
+}

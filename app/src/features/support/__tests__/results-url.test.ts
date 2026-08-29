@@ -10,6 +10,7 @@ import {
   buildSupportBackHref,
   buildSupportEntryHref,
 } from "@/features/support/services/results-url";
+import { NO_TAGS_EXPLICIT_VALUE } from "@/features/support/services/support-tag-url";
 
 const CODE = "13106";
 
@@ -195,6 +196,24 @@ describe("results URL builders", () => {
       expect(result.searchParams.get("lifestage")).toBe("preschool");
       expect(result.searchParams.get("tags")).toBe("routine");
       expect(result.searchParams.get("purpose")).toBe("use-day-service");
+    });
+  });
+
+  describe("tags が空(=「全般」)の場合の挙動の違い(2026-08是正)", () => {
+    it("buildResultsHref・buildSupportBackHref・buildPurposeHref は tags クエリ自体を省略する(従来どおり)", () => {
+      expect(url(buildResultsHref({ age: "child", municipalityCode: CODE, tags: [] }, "学校情報")).searchParams.has("tags")).toBe(false);
+      expect(url(buildSupportBackHref({ municipalityCode: CODE, lifestage: null, tags: [] })).searchParams.has("tags")).toBe(false);
+      expect(url(buildPurposeHref({ age: "child", municipalityCode: CODE, lifestage: "preschool", tags: [] })).searchParams.has("tags")).toBe(false);
+    });
+
+    it("buildPrepareHref・buildRecommendHref は tags クエリを省略せず NO_TAGS_EXPLICIT_VALUE を残す(自己チェック結果へのフォールバックと区別するため)", () => {
+      const prepareResult = url(buildPrepareHref({ age: "adult", municipalityCode: CODE, tags: [] }));
+      expect(prepareResult.searchParams.has("tags")).toBe(true);
+      expect(prepareResult.searchParams.get("tags")).toBe(NO_TAGS_EXPLICIT_VALUE);
+
+      const recommendResult = url(buildRecommendHref({ age: "adult", municipalityCode: CODE, tags: [] }));
+      expect(recommendResult.searchParams.has("tags")).toBe(true);
+      expect(recommendResult.searchParams.get("tags")).toBe(NO_TAGS_EXPLICIT_VALUE);
     });
   });
 });

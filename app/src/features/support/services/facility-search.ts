@@ -116,10 +116,16 @@ export interface FacilitySearchResult {
 
 /**
  * facility_tags と選択タグの一致判定(純関数)。
- * タグ未指定(空配列 = 「全般」、FR-023)の場合は常に true とする(全件が対象)。
+ * タグ未指定(空配列 = 「全般」、FR-023)の場合は常に false を返す(2026-08是正: 「全般」は
+ * 何にも一致していないという意味であり、タグ一致として扱うと表示側(FacilityCard の
+ * 「相談分野に関連」バッジ・FacilityListSection の「まず相談する候補」区分)がすべての施設を
+ * タグ一致扱いにしてしまい、実際には何も絞り込んでいないのに誤解を招く。全件を検索結果に
+ * 含めること自体は searchFacilities 側の WHERE 句(タグでは絞り込まない)で既に保証されて
+ * おり、本関数の返り値は表示上の優先度・バッジ判定にのみ使われるため、この変更で検索結果の
+ * 件数は変わらない)。
  */
 export function matchesSelectedTags(facilityTags: readonly string[], selectedTags: readonly SupportTag[]): boolean {
-  if (selectedTags.length === 0) return true;
+  if (selectedTags.length === 0) return false;
   return facilityTags.some((tag) => (selectedTags as readonly string[]).includes(tag));
 }
 

@@ -23,7 +23,12 @@ interface RecommendPageProps {
   initialMunicipality?: string | null;
   /** `/support/results` から引き継いだ区市町村の5桁コード(クエリ無し・不正時は null)。 */
   initialMunicipalityCode?: string | null;
-  /** `/support/results` から引き継いだ相談分野タグ(クエリ無し時は null。あれば supportTags より優先)。 */
+  /**
+   * `/support/results` から引き継いだ相談分野タグ。`tags` クエリ自体が無い(直接遷移)場合のみ
+   * null で、その場合だけ supportTags(端末の自己チェック結果由来)へフォールバックする。
+   * 明示的な「全般」(空配列)ではフォールバックしない(詳細は PreparePage.tsx の同名プロパティ
+   * コメント参照)。
+   */
   prefillTags?: SupportTag[] | null;
   /** 検索結果から引き継いだ元の年齢区分。戻り先の検索条件を保つために使う。 */
   initialLifestage?: Lifestage | null;

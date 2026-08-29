@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { PageReachTracker } from "@/components/common/PageReachTracker";
 import { RecommendPage } from "@/features/recommend/components/RecommendPage";
 import { parseResultsSearchParams } from "@/features/support/schema/results-search-params";
-import { parseSupportTagsParam } from "@/features/support/services/parse-support-tags";
+import { hasExplicitSupportTagsParam, parseSupportTagsParam } from "@/features/support/services/parse-support-tags";
 import { parseLifestagePrefillParam } from "@/features/support/services/parse-lifestage-prefill";
 import { parseSupportPurposeParam } from "@/features/support/services/parse-support-purpose";
 import { getP0Questions } from "@/features/survey/services/questions";
@@ -47,7 +47,7 @@ export default async function ResultRecommendPage({ searchParams }: ResultRecomm
         initialAgeGroup={parsedAgeMunicipality.success ? parsedAgeMunicipality.data.age : null}
         initialMunicipality={parsedAgeMunicipality.success ? parsedAgeMunicipality.data.municipality.name : null}
         initialMunicipalityCode={parsedAgeMunicipality.success ? parsedAgeMunicipality.data.municipality.code : null}
-        prefillTags={prefillTags.length > 0 ? prefillTags : null}
+        prefillTags={hasExplicitSupportTagsParam(raw.tags) ? prefillTags : null}
         initialLifestage={lifestage}
         initialPurposeId={purposeId}
       />

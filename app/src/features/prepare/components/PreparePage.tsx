@@ -39,7 +39,13 @@ interface PreparePageProps {
   initialMunicipality?: string | null;
   /** `/support/results` から引き継いだ区市町村の5桁コード(クエリ無し・不正時は null)。 */
   initialMunicipalityCode?: string | null;
-  /** `/support/results` から引き継いだ相談分野タグ(クエリ無し時は null。あれば supportTags より優先)。 */
+  /**
+   * `/support/results` から引き継いだ相談分野タグ。`tags` クエリ自体が無い(=`/support/results` を
+   * 経由しない直接遷移)場合のみ null で、その場合だけ supportTags(端末の自己チェック結果由来)へ
+   * フォールバックする。`/support/results` で明示的に「全般」を選んだ場合は空配列(`[]`)になり、
+   * フォールバックしない(2026-08是正: 空配列と null を区別しないと、無関係な古い自己チェック結果の
+   * タグが復活してしまう。support-tag-url.ts の NO_TAGS_EXPLICIT_VALUE 参照)。
+   */
   prefillTags?: SupportTag[] | null;
   /** `/support/results` から引き継いだ元の年齢選択(ライフステージ)。`PreparePanel` の5区分ピッカーの
    *  プリフィルと、戻り先(`/support/results`)への引き継ぎに使う(クエリ無し・不正時は null)。 */

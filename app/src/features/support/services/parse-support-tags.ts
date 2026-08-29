@@ -25,3 +25,17 @@ import type { SupportTagUrlId } from "@/features/support/services/support-tag-ur
 export function parseSupportTagsParam(raw: string | string[] | undefined): SupportTag[] {
   return parseDedupedListParam<SupportTagUrlId>(raw, isSupportTagUrlId).map(decodeSupportTagUrlId);
 }
+
+/**
+ * `tags` クエリ自体が付いていたかどうかを判定する(2026-08是正)。
+ *
+ * `/result/prepare`・`/result/recommend` は `parseSupportTagsParam` の結果が空配列のとき、
+ * 端末に残る自己チェック結果由来のタグへフォールバックする(TICKET-0039)。しかし
+ * `parseSupportTagsParam([])` だけでは「`/support/results` で明示的に『全般』を選んだ
+ * (フォールバックすべきでない)」のか「`tags` クエリという概念自体が無い直接遷移
+ * (フォールバックしてよい)」のかを区別できない。呼び出し側はこの関数で `raw` の生の
+ * 有無を先に確認し、真に「クエリ無し」の場合のみフォールバックする。
+ */
+export function hasExplicitSupportTagsParam(raw: string | string[] | undefined): boolean {
+  return raw !== undefined;
+}

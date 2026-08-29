@@ -70,11 +70,23 @@ npm run dev                # next dev を直接起動(Docker にも wrangler に
   `npx wrangler secret put <NAME>` で設定する。** `.env.example` に記載されているのはローカル
   MinIO 用の固定値のみ(本番環境の構築手順は各自の Cloudflare アカウント環境に依存するため、
   本ドキュメントの範囲外とする)。
-- `app/db/seed/no-diagnosis-facilities.sql`・`app/db/seed/adult-benefit-cards.sql` は実在の公的機関
-  情報を手動投入するシード(詳細は各ファイル冒頭コメント参照)。`DELETE` を行わない
-  一度きりの `INSERT` のため、`npm run db:seed:local:manual` を2回連続で実行すると
-  `UNIQUE constraint failed` になる(再実行したい場合は `npm run db:reset:local` で
-  ローカル D1 ごと作り直すこと)。`db:reset:local` は上記2ファイルの投入まで含めて自動で行う。
+- `app/db/seed/no-diagnosis-facilities.sql`・`app/db/seed/adult-benefit-cards.sql`・
+  `app/db/seed/consultation-desk-tags.sql` は実在の公的機関情報・相談分野タグを手動投入する
+  シード(詳細は各ファイル冒頭コメント参照)。`no-diagnosis-facilities.sql`・
+  `adult-benefit-cards.sql` は `DELETE` を行わない一度きりの `INSERT` のため、
+  `npm run db:seed:local:manual` を2回連続で実行すると `UNIQUE constraint failed` になる
+  (再実行したい場合は `npm run db:reset:local` でローカル D1 ごと作り直すこと)。
+  `consultation-desk-tags.sql` は `INSERT OR IGNORE` のため2回連続で実行してもエラーには
+  ならない。`db:reset:local` はこの3ファイルの投入まで含めて自動で行う。
+- `app/db/seed/consultation-desk-tags-open-data.sql`(相談窓口への `facility_tags`(相談分野タグ、
+  「相談分野との関連順」表示に使う)手動キュレーションのうち、オープンデータ取込
+  (`batch/scripts/ingest-open-data.mjs` の WAM NET 由来データ・CKAN自動取込)経由で投入される
+  施設のIDを参照する分)は、それらの施設を投入していないローカルD1では外部キー制約違反になる
+  ため、**`db:seed:local:manual`・`db:reset:local` には含めていない**(この2つは常に成功する
+  ことを前提にしたベースラインのため)。対象施設を別途投入済みの場合のみ
+  `npm run db:seed:local:tags-open-data` を実行すること。本番D1は対象施設が既に存在するため
+  `npm run db:seed:remote:tags-open-data` は常に成功するが、2026-08時点はハッカソン審査期間中
+  のため実施しない方針(docs/data/permission-requests/README.md 参照)。
 - `data/manual/examples/sample-municipality.yaml` は公開リポジトリでの動作確認用の**架空データ**
   である(学校名・窓口名・住所・電話番号等はすべて創作。区市町村コード/名称のみ、アプリの
   区市町村選択が解決できるよう実在の値(13106/台東区)を使っている)。実運用では、区市町村別の

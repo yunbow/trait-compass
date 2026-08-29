@@ -6,7 +6,9 @@ import {
   decodeSupportTagUrlId,
   encodeSupportTagsParam,
   isSupportTagUrlId,
+  NO_TAGS_EXPLICIT_VALUE,
   setSupportTagsParam,
+  setSupportTagsParamExplicit,
   SUPPORT_TAG_URL_IDS,
 } from "@/features/support/services/support-tag-url";
 import type { SupportTagUrlId } from "@/features/support/services/support-tag-url";
@@ -112,5 +114,24 @@ describe("setSupportTagsParam", () => {
     const query = new URLSearchParams("tags=sensory");
     setSupportTagsParam(query, []);
     expect(query.has("tags")).toBe(false);
+  });
+});
+
+describe("setSupportTagsParamExplicit", () => {
+  it("タグがある場合は setSupportTagsParam と同じくASCII IDのカンマ区切りで設定する", () => {
+    const query = new URLSearchParams();
+    setSupportTagsParamExplicit(query, ["感覚", "こころ・感情"]);
+    expect(query.get("tags")).toBe("sensory,emotion");
+  });
+
+  it("タグが空でも tags クエリを削除せず、NO_TAGS_EXPLICIT_VALUE を設定する(setSupportTagsParam との違い)", () => {
+    const query = new URLSearchParams();
+    setSupportTagsParamExplicit(query, []);
+    expect(query.has("tags")).toBe(true);
+    expect(query.get("tags")).toBe(NO_TAGS_EXPLICIT_VALUE);
+  });
+
+  it("NO_TAGS_EXPLICIT_VALUE は既知のタグIDとして解釈されない(parseSupportTagsParam で空配列に落ちる想定)", () => {
+    expect(isSupportTagUrlId(NO_TAGS_EXPLICIT_VALUE)).toBe(false);
   });
 });

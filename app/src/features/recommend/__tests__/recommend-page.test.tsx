@@ -107,6 +107,31 @@ describe("RecommendPage", () => {
     expect(screen.getByRole("button", { name: "こだわり", pressed: true })).toBeTruthy();
   });
 
+  it("prefillTags=[](/support/results で明示的に「全般」を選んだ場合)は、端末に残る自己チェック結果由来のタグへフォールバックしない(2026-08是正)", async () => {
+    // 「communication」カテゴリの回答があるため、フォールバックすれば「対人・コミュニケーション」が
+    // 選択されてしまう。prefillTags=[] を優先すればどのタグも選択されないはずである。
+    saveSurveyProgressState({
+      answers: [
+        { questionId: "ND-0001", value: 2 },
+        { questionId: "ND-0005", value: 2 },
+      ],
+      currentIndex: 2,
+    });
+
+    render(
+      <RecommendPage
+        questions={QUESTIONS}
+        initialAgeGroup="adult"
+        initialMunicipality="台東区"
+        initialMunicipalityCode="13106"
+        prefillTags={[]}
+      />,
+    );
+
+    expect(await screen.findByRole("heading", { name: "条件に合う相談先を絞り込む" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "対人・コミュニケーション", pressed: false })).toBeTruthy();
+  });
+
   it("lifestage が無い(URLが古い/改ざんされている等)場合、年齢の選択肢は未選択のまま表示される", async () => {
     render(
       <RecommendPage
