@@ -80,9 +80,24 @@ DELETE FROM facility_tags WHERE facility_id IN ('fac-manual-mhwc-taito', 'fac-ma
 --   一般向けの就労支援機関)。
 -- 出典: しんじゅく若者サポートステーション公式サイト https://syss.roukyou.gr.jp/ (確認日 2026-07-13)
 -- 出典: せたがや若者サポートステーション公式サイト https://www.setagaya-saposute.com/ (確認日 2026-07-13)
+--
+-- 対象年齢の符号化(2026-08是正): 対象は「15歳から49歳」のため、age_range='both' のみでは
+-- 未就学児・小学生・中学生の検索にまで表示されてしまっていた。age_range は 'both' を維持
+-- (高校生=18歳未満導線と大学生以上=18歳以上導線の両方で表示する必要があるため)しつつ、
+-- lifestage_min=2(高校生)〜 lifestage_max=4(社会人)を設定して細分絞り込みで除外する
+-- (序数は src/features/support/services/lifestage-mapping.ts の LIFESTAGE_ORDINAL、
+-- migration 0016)。通常のUI導線(/support → /support/purpose → /support/results)は常に
+-- age と lifestage を対で付与するため、この符号化で未就学児〜小中学生の検索には表示されない。
+-- 残余: lifestage クエリ未指定の直接アクセス・API呼び出しでは age_range フィルタのみが適用
+-- されるため、age=child 単独指定では引き続き表示されうる(facility-search.ts の
+-- lifestageFilterClause は lifestage 未指定時に句自体を付けない仕様)。
+-- 既投入済み環境(本番D1等)は本ファイルの再実行が datasets の主キー衝突で失敗するため、
+-- 以下の UPDATE を単独で実行して反映すること:
+--   UPDATE facilities SET lifestage_min = 2, lifestage_max = 4
+--     WHERE id IN ('fac-manual-saposute-shinjuku', 'fac-manual-saposute-setagaya');
 INSERT INTO facilities (
   id, dataset_id, name, category_type, municipality, municipality_code, address, phone, url,
-  age_range, is_medical, description, no_diagnosis_ok
+  age_range, is_medical, description, no_diagnosis_ok, lifestage_min, lifestage_max
 ) VALUES
   (
     'fac-manual-saposute-shinjuku', 'ds-manual-no-diagnosis-facilities',
@@ -91,7 +106,7 @@ INSERT INTO facilities (
     'https://syss.roukyou.gr.jp/',
     'both', 0,
     '働くことに悩む15〜49歳の方を対象に、相談から就職・定着までを無料で支援する公的な就労支援機関です。',
-    1
+    1, 2, 4
   ),
   (
     'fac-manual-saposute-setagaya', 'ds-manual-no-diagnosis-facilities',
@@ -100,5 +115,5 @@ INSERT INTO facilities (
     'https://www.setagaya-saposute.com/',
     'both', 0,
     '働くことに悩む15〜49歳の方を対象に、相談から就職・定着までを無料で支援する公的な就労支援機関です。',
-    1
+    1, 2, 4
   );

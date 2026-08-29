@@ -23,16 +23,12 @@
 //   (TICKET-0021、FR-03A。OllamaEmbedder + QdrantVectorStore。本番の Workers AI +
 //   Vectorize 経路とは独立。docker-compose の qdrant/ollama が起動している前提)。
 
-import {
-  computeStaleDays,
-  STALE_THRESHOLD_DAYS,
-  type DatasetStatusRow,
-} from "../../app/src/features/support/services/dataset-status";
 import { createEmbedder, EMBEDDING_DIM } from "../../app/src/lib/ai/embedder";
 import { QdrantVectorStore } from "../../app/src/lib/ai/providers/qdrant-vector-store";
 import { postSlackMessage } from "../../app/src/lib/notify/slack";
 import { runEmbedPipeline } from "./embed-pipeline";
 import { buildFeedbackDigestMessage, countPendingFeedbackComments } from "./feedback-digest";
+import { getHealthReport } from "./health";
 import { buildReportDigestMessage, countNewReports } from "./report-digest";
 import { purgeExpiredReports } from "./report-retention";
 import { IngestWorkflow, type IngestEnv, type IngestWorkflowParams } from "./workflow";
@@ -147,24 +143,14 @@ async function handleManualTrigger(request: Request, env: Env): Promise<Response
  * 判定ロジック(閾値・経過日数計算)は src/features/support/services/dataset-status.ts の
  * 純関数を使い、フォールバック表示ヘルパー(TICKET-0015 が使う getUnhealthyDatasets)と
  * 単一の閾値定数を共有する。
+ *
+ * 集計本体は health.ts(純関数 buildHealthReport)に切り出している。deadCount は
+ * dataset-status.ts の "frozen-or-unmonitored" 区分(2026-08是正)と同じく
+ * frozen=1 / ckan_package_id IS NULL のデータセットを除外して数え、除外分は
+ * unmonitoredCount として別枠で返す(詳細は health.ts の冒頭コメント参照)。
  */
 async function handleHealth(env: Env): Promise<Response> {
-  const { results } = await env.DB.prepare(
-    `SELECT id, is_alive AS isAlive, fetched_at AS fetchedAt FROM datasets ORDER BY id`,
-  ).all<DatasetStatusRow>();
-
-  const now = new Date();
-  const datasets = (results ?? []).map((row) => ({
-    id: row.id,
-    isAlive: row.isAlive === 1,
-    fetchedAt: row.fetchedAt,
-    staleDays: computeStaleDays(row.fetchedAt, now),
-  }));
-
-  const staleCount = datasets.filter((d) => d.staleDays > STALE_THRESHOLD_DAYS).length;
-  const deadCount = datasets.filter((d) => !d.isAlive).length;
-
-  return Response.json({ datasets, staleCount, deadCount });
+  return Response.json(await getHealthReport(env.DB));
 }
 
 /**

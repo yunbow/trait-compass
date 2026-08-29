@@ -32,15 +32,33 @@ async function expectPreparingFallback(page: Page): Promise<void> {
 
 async function selectMunicipality(page: Page, name: string): Promise<void> {
   const combobox = page.getByRole("combobox", { name: /お住まいの区市町村/ });
-  await combobox.fill(name);
+  // MunicipalityCombobox(Base UI の Combobox)は実際のキー入力で候補ポップアップを開くため、
+  // fill()(値の一括設定)ではなく pressSequentially() で1文字ずつ入力する(2026-08是正)。
+  await combobox.click();
+  await combobox.pressSequentially(name);
   await page.getByRole("option", { name, exact: true }).click();
 }
 
-test("child + シードに存在する区市町村を選択すると、施設カードと出典クレジットが表示される", async ({ page }) => {
+/**
+ * 年齢・地域選択後、目的選択画面(/support/purpose)を「目的を選ばず一覧を見る」経路で
+ * 通過して /support/results へ到達する(2026-08是正: 旧仕様の「支援情報を見る」1クリック
+ * 遷移は /support → /support/purpose → /support/results の3画面フローへ変更済みのため、
+ * 現行UIの実ボタンに合わせた)。目的を選ばないため、結果画面の見出しは
+ * 「{区市町村}・{年齢ラベル}の支援情報(N件)」形式のままになる(目的を選ぶと
+ * 「…」を選んだ方への案内 に変わる。FacilityResultsView の selectedPurposeLabel 参照)。
+ */
+async function proceedToResultsWithoutPurpose(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "次へ：相談したいことを選ぶ" }).click();
+  await expect(page).toHaveURL(/\/support\/purpose\?/);
+  await page.getByRole("button", { name: "それ以外" }).click();
+  await page.getByRole("button", { name: "一覧を見る" }).click();
+}
+
+test("child(小学生・中学生)+ シードに存在する区市町村を選択しても、15歳以上対象の施設は表示されない", async ({ page }) => {
   await page.goto("/support");
   await page.getByRole("button", { name: "小学生・中学生" }).click();
   await selectMunicipality(page, "世田谷区");
-  await page.getByRole("button", { name: "支援情報を見る" }).click();
+  await proceedToResultsWithoutPurpose(page);
 
   await expect(page).toHaveURL(/\/support\/results\?/);
 
@@ -49,22 +67,27 @@ test("child + シードに存在する区市町村を選択すると、施設カ
     return;
   }
 
-  await expect(page.getByRole("heading", { level: 1, name: "世田谷区で見つかった支援情報" })).toBeVisible();
-  // db/seed/no-diagnosis-facilities.sql: fac-manual-saposute-setagaya(世田谷区・相談窓口・
-  // age_range=both、実在データ)。2026-08-11: 同ファイルにあったダミー施設
-  // 「精神保健福祉センターB(ダミー)」は削除済みのため、実在の本施設で代替する。
-  await expect(page.getByText("せたがや若者サポートステーション")).toBeVisible();
-  // 出典クレジット(FR-026, NFR-54)。
-  await expect(page.getByText(/^出典: /).first()).toBeVisible();
+  // 先に結果画面自体が描画されたことを正の表明で担保する(見出しは FacilityResultsView の
+  // 「{区市町村}・{年齢ラベル}の支援情報(N件)」形式。年齢ラベルは lifestage クエリ由来)。
+  await expect(page.getByRole("heading", { level: 1, name: /^世田谷区・小学生・中学生の支援情報/ })).toBeVisible();
+  // db/seed/no-diagnosis-facilities.sql: fac-manual-saposute-setagaya の対象は15〜49歳のため、
+  // lifestage_min=2(高校生)〜lifestage_max=4(社会人)でシードしている(2026-08是正)。
+  // 小学生・中学生(序数1)の検索では lifestage 絞り込み(facility-search.ts の
+  // lifestageFilterClause)により除外され、表示されないのが正しい(以前は age_range='both' のみで
+  // 判定されて誤表示されており、本テストも誤って「表示される」を期待していた)。
+  // 成人検索での表示は下のタブ切替・後方互換テストで担保する。
+  await expect(page.getByText("せたがや若者サポートステーション")).toHaveCount(0);
 });
 
 test("シードに存在しない区市町村を選択すると、広域窓口へのフォールバック文言が表示される", async ({ page }) => {
-  await page.goto("/support");
-  await page.getByRole("button", { name: "小学生・中学生" }).click();
-  // 檜原村は自治体レジストリ(東京都62区市町村)には含まれるが、山間部で facilities に
-  // 登場する見込みが薄い(区市町村データ欠損のケース、FR-022)。
-  await selectMunicipality(page, "檜原村");
-  await page.getByRole("button", { name: "支援情報を見る" }).click();
+  // 2026-08是正(本タスクとは別の、既存のテスト基盤ドリフト): MunicipalityCombobox は
+  // SELECTABLE_MUNICIPALITY_REGISTRY(data/manual/municipalities/ にYAMLがある約49自治体のみ)
+  // しか候補に出さないため、檜原村(YAML未整備)を selectMunicipality() 経由でUI操作から
+  // 選ぶこと自体が現在は不可能(コンボボックスに候補が出ない)。本テストの検証意図は
+  // 「区市町村データ欠損時の広域フォールバック」であり、コンボボックスの選択可否とは無関係
+  // なため、フォームのUI操作は経由せず /support/results へ直接遷移する形に変更した
+  // (age=child は元のテストと同じ、municipality=13307 は檜原村の自治体コード)。
+  await page.goto("/support/results?age=child&municipality=13307");
 
   await expect(page).toHaveURL(/\/support\/results\?/);
 
@@ -91,6 +114,9 @@ test("タブを切り替えると category_type ごとの一覧に切り替わ�
   // age_range=both、実在データ)。
   await expect(page.getByRole("link", { name: /^相談窓口/ })).toHaveAttribute("aria-current", "page");
   await expect(page.getByText("せたがや若者サポートステーション")).toBeVisible();
+  // 出典クレジット(FR-026, NFR-54)。施設カードが表示される本テストで担保する
+  // (child 検索のテストは 2026-08是正で施設0件の期待に変わったため、ここへ移設)。
+  await expect(page.getByText(/^出典: /).first()).toBeVisible();
 
   // 「支援制度」タブへ切り替える(db/seed/adult-benefit-cards.sql: category_type=支援制度、
   // age_range=adult、municipality=東京都の広域データ)。
