@@ -89,10 +89,48 @@ export async function upsertDataset(db: D1Database, row: DatasetRow): Promise<vo
     .run();
 }
 
+/** D1 の SQL 変数上限を超えないよう、IN 句へ渡す ID 数の上限(facility-search.ts の MAX_IDS_PER_QUERY と同じ方針)。 */
+const MAX_IDS_PER_QUERY = 90;
+
+/**
+ * 2026-08是正(外部コードレビュー指摘): CKAN取込はこれまでUPSERTのみで、配信元で削除・
+ * 名称変更(=IDが変わる、`transform.ts` の `stableFacilityId` は name+address のハッシュ)された
+ * 施設が古いIDのままD1に残り続けていた。今回の取込で該当データセットの facilities に
+ * 存在しなくなったIDを検出し、facility_tags → facilities の順で削除する(手動調査再投入
+ * (`ingest-manual-survey.mjs`)・オープンデータ取込(`ingest-open-data.mjs`)の
+ * DELETE→INSERT パターンと揃える)。呼び出し元(`processDataset`)は `facilities.length === 0`
+ * の場合はこの関数自体を呼ばない(正規化が0件になった異常時に既存の正常なデータを
+ * 巻き込んで全削除してしまわないため。その場合は `is_alive=0` で不健全扱いにするだけに留める)。
+ */
+async function deleteStaleFacilities(
+  db: D1Database,
+  datasetId: string,
+  currentIds: readonly string[],
+): Promise<void> {
+  const { results } = await db
+    .prepare(`SELECT id AS id FROM facilities WHERE dataset_id = ?1`)
+    .bind(datasetId)
+    .all<{ id: string }>();
+
+  const currentIdSet = new Set(currentIds);
+  const staleIds = (results ?? []).map((row) => row.id).filter((id) => !currentIdSet.has(id));
+  if (staleIds.length === 0) return;
+
+  for (let start = 0; start < staleIds.length; start += MAX_IDS_PER_QUERY) {
+    const chunk = staleIds.slice(start, start + MAX_IDS_PER_QUERY);
+    const placeholders = chunk.map(() => "?").join(", ");
+    await db.batch([
+      db.prepare(`DELETE FROM facility_tags WHERE facility_id IN (${placeholders})`).bind(...chunk),
+      db.prepare(`DELETE FROM facilities WHERE id IN (${placeholders})`).bind(...chunk),
+    ]);
+  }
+}
+
 /**
  * db/schema.sql の facilities テーブルへ UPSERT する(バッチ実行)。
  * facility_tags(相談分野タグ)は TICKET-0013 でタグ語彙確定後に投入する想定のため、
- * 本 Worker では扱わない(意図的なスコープ外)。
+ * 本 Worker では扱わない(意図的なスコープ外。ただし削除同期(上記 deleteStaleFacilities)は
+ * facility_tags の外部キー制約に抵触しないよう先に消す必要があるため例外的に扱う)。
  */
 export async function upsertFacilities(
   db: D1Database,
@@ -100,6 +138,8 @@ export async function upsertFacilities(
   facilities: readonly NormalizedFacility[],
 ): Promise<void> {
   if (facilities.length === 0) return;
+
+  await deleteStaleFacilities(db, datasetId, facilities.map((facility) => facility.id));
 
   const statements = facilities.map((facility) =>
     db

@@ -119,4 +119,43 @@ describe("evaluateDatasetStatus", () => {
     );
     expect(result.isStale).toBe(false);
   });
+
+  // 2026-08是正(外部コードレビュー指摘): frozen(更新終了)・CKAN未登録データセットは
+  // is_alive=0 であっても「取得失敗」を意味しないため、is_alive=1 の場合と同様に常に
+  // isStale=false とする。更新終了の事実自体は DatasetFreshnessNote 側で別途案内する。
+  it("frozen=1 のデータセットは is_alive=0 でも isStale=false、kind=frozen-or-unmonitored", () => {
+    const result = evaluateDatasetStatus(
+      { id: "ds-kodomo-dx-registry", isAlive: 0, fetchedAt: "2025-08-20T00:00:00.000Z", license: "government-standard", frozen: 1, ckanPackageId: null },
+      now,
+    );
+    expect(result.isStale).toBe(false);
+    expect(result.kind).toBe("frozen-or-unmonitored");
+  });
+
+  it("ckanPackageId=null(CKAN未登録)のデータセットは frozen=0 でも is_alive=0 なら isStale=false、kind=frozen-or-unmonitored", () => {
+    const result = evaluateDatasetStatus(
+      { id: "ds-hattatsu-shien-center", isAlive: 0, fetchedAt: "2026-07-13T00:00:00.000Z", license: "pdl-1.0", frozen: 0, ckanPackageId: null },
+      now,
+    );
+    expect(result.isStale).toBe(false);
+    expect(result.kind).toBe("frozen-or-unmonitored");
+  });
+
+  it("frozen・ckanPackageId が未指定(旧来の呼び出し)の場合は従来どおりopen-data-unhealthy判定になる(後方互換)", () => {
+    const result = evaluateDatasetStatus(
+      { id: "ds-dead", isAlive: 0, fetchedAt: "2026-07-01T00:00:00.000Z", license: OPEN_DATA_LICENSE },
+      now,
+    );
+    expect(result.kind).toBe("open-data-unhealthy");
+    expect(result.isStale).toBe(true);
+  });
+
+  it("frozen=0・ckanPackageId が実在する通常のオープンデータは、is_alive=0 なら引き続き isStale=true(genuine fetch failure)", () => {
+    const result = evaluateDatasetStatus(
+      { id: "ds-a", isAlive: 0, fetchedAt: "2026-07-01T00:00:00.000Z", license: OPEN_DATA_LICENSE, frozen: 0, ckanPackageId: "t000054d0000000058" },
+      now,
+    );
+    expect(result.kind).toBe("open-data-unhealthy");
+    expect(result.isStale).toBe(true);
+  });
 });

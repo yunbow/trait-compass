@@ -31,9 +31,13 @@ DELETE→INSERT で冪等に行われ、他系統の行を上書きしない(`bu
 **既知の制約(2026-08是正)**: `facility_tags`(相談分野タグ)は取込パイプラインのスコープ外
 (意図的、上記いずれの経路も扱わない)のため、`app/db/seed/consultation-desk-tags*.sql` による
 手動キュレーションのみが投入経路である。ローカルオープンデータ取込
-(`batch/scripts/ingest-open-data.mjs`)は対象データセットの `facility_tags` を削除してから
-`facilities` を再投入するが、タグの再投入は行わない。該当データセット
-(現状 `ds-wam-net-disability-services`)を再取込した場合は、
+(`batch/scripts/ingest-open-data.mjs`)・個別許諾データ再投入(`batch/scripts/
+ingest-manual-survey.mjs`)はいずれも、対象施設の `facility_tags` を削除してから
+`facilities` を再投入するが、タグの再投入は行わない(2026-08是正で両スクリプトとも
+`facility_tags` の削除漏れ自体は修正し、外部キー制約違反で再投入そのものが失敗する不具合は
+解消したが、削除したタグの自動復元機能は無い)。該当データセット
+(現状 `ds-wam-net-disability-services`、および facility_tags が投入された任意の
+`ds-<自治体コード>-manual-survey-programs`)を再取込・再投入した場合は、
 `npm run db:seed:local:tags-open-data`(本番は `db:seed:remote:tags-open-data`)を再実行して
 タグを復元する必要がある(自動化はされていない、手動運用)。
 

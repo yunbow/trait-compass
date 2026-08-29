@@ -213,7 +213,7 @@ describe("buildSql", () => {
     expect(hiroshimaSql).toContain("'34207'");
   });
 
-  it("冪等な再取込のため、対象自治体の子テーブルから親テーブルの順にDELETEする", () => {
+  it("冪等な再取込のため、対象自治体の子テーブルから親テーブルの順にDELETEする(facility_tagsはfacilitiesより先に削除する、外部キー制約対策)", () => {
     const sql = buildSql(baseSurvey);
     const deleteLines = sql.split("\n").filter((line) => line.startsWith("DELETE FROM"));
     expect(deleteLines).toEqual([
@@ -227,6 +227,7 @@ describe("buildSql", () => {
       "DELETE FROM support_pathways WHERE municipality_code = '13106';",
       "DELETE FROM results_guide_notes WHERE municipality_code = '13106';",
       "DELETE FROM municipality_survey_meta WHERE municipality_code = '13106';",
+      "DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-13106-manual-survey-programs');",
       "DELETE FROM facilities WHERE dataset_id = 'ds-13106-manual-survey-programs';",
       "DELETE FROM datasets WHERE id = 'ds-13106-manual-survey-programs';",
     ]);
@@ -327,6 +328,40 @@ describe("buildSql", () => {
     const first = buildSql(baseSurvey);
     const second = buildSql(baseSurvey);
     expect(first).toBe(second);
+  });
+
+  // 2026-08是正(外部コードレビュー指摘 P0-4回帰確認): programのIDが配列indexに依存していたため、
+  // 内容が変わっていないprogramでも、他のprogramの並べ替え・追加・削除・コメントアウトだけで
+  // IDが変わり、facility_tags の手動キュレーションが指すIDが静かに失効していた。
+  it("programの並べ替え(内容は同じ)ではfacility IDが変わらない(配列indexに依存しない)", () => {
+    const programA = { name: "電話相談窓口", category: "school_consultation", description: "説明1", contact: "03-1234-5678", address: "東京都台東区東上野4-5-6" };
+    const programB = { name: "メール相談窓口", category: "counseling", description: "説明2", contact: "info@example.com" };
+
+    const sqlOriginalOrder = buildSql({ ...baseSurvey, programs: [programA, programB] });
+    const sqlReversedOrder = buildSql({ ...baseSurvey, programs: [programB, programA] });
+
+    const extractFacilityId = (sql, name) => {
+      const line = sql.split("\n").find((l) => l.startsWith("INSERT INTO facilities") && l.includes(`'${name}'`));
+      return line.match(/VALUES \('([^']+)'/)[1];
+    };
+
+    expect(extractFacilityId(sqlOriginalOrder, "電話相談窓口")).toBe(extractFacilityId(sqlReversedOrder, "電話相談窓口"));
+    expect(extractFacilityId(sqlOriginalOrder, "メール相談窓口")).toBe(extractFacilityId(sqlReversedOrder, "メール相談窓口"));
+  });
+
+  it("前方のprogramが削除・コメントアウトされても、内容が変わっていない後方のprogramのIDは変わらない", () => {
+    const programA = { name: "電話相談窓口", category: "school_consultation", description: "説明1", contact: "03-1234-5678", address: "東京都台東区東上野4-5-6" };
+    const programB = { name: "メール相談窓口", category: "counseling", description: "説明2", contact: "info@example.com" };
+
+    const sqlWithBoth = buildSql({ ...baseSurvey, programs: [programA, programB] });
+    const sqlWithoutFirst = buildSql({ ...baseSurvey, programs: [programB] });
+
+    const extractFacilityId = (sql, name) => {
+      const line = sql.split("\n").find((l) => l.startsWith("INSERT INTO facilities") && l.includes(`'${name}'`));
+      return line.match(/VALUES \('([^']+)'/)[1];
+    };
+
+    expect(extractFacilityId(sqlWithBoth, "メール相談窓口")).toBe(extractFacilityId(sqlWithoutFirst, "メール相談窓口"));
   });
 
   it("programsが空配列でもdatasets行は常にINSERTするが、facilitiesへのINSERTは生成しない", () => {

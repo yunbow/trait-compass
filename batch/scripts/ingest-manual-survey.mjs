@@ -121,6 +121,12 @@ export function buildSql(survey, options = {}) {
     `DELETE FROM support_pathways WHERE municipality_code = ${value(municipalityCode)};`,
     `DELETE FROM results_guide_notes WHERE municipality_code = ${value(municipalityCode)};`,
     `DELETE FROM municipality_survey_meta WHERE municipality_code = ${value(municipalityCode)};`,
+    // 2026-08是正(外部コードレビュー指摘 P0-4): facility_tags(facility_id に外部キー制約あり)を
+    // 削除しないまま facilities を削除していたため、この自治体のプログラムに facility_tags が
+    // 1件でも投入されていると PRAGMA foreign_keys = ON(このファイル冒頭)により再投入自体が
+    // 外部キー制約違反で失敗していた。ingest-open-data.mjs の DELETE→INSERT パターンと同じく、
+    // facilities より先に facility_tags を削除する。
+    `DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
     `DELETE FROM facilities WHERE dataset_id = ${value(datasetId)};`,
     `DELETE FROM datasets WHERE id = ${value(datasetId)};`,
   );
@@ -184,13 +190,21 @@ export function buildSql(survey, options = {}) {
 
   const fetchedAt = `${survey.surveyDate}T00:00:00.000Z`;
   lines.push(insert("datasets", ["id", "ckan_package_id", "title", "source_org", "license", "risk_level", "source_url", "fetched_at", "is_alive", "frozen"], [datasetId, null, `${municipality} 手動調査データ(相談・制度)`, municipality, "manual-fact-verified", "low", null, fetchedAt, 1, 0]));
-  for (const [index, program] of (survey.programs ?? []).entries()) {
+  for (const program of survey.programs ?? []) {
     const isZoningProgram = program.category === "special_needs_school_zoning";
     if ((isZoningProgram && !includeZoningData) || (!isZoningProgram && !includeConsultationWindowData)) continue;
     const contact = program.contact ?? null;
     const phone = contact && isPhoneNumber(contact) ? contact : null;
     const contactMethods = contact && !phone ? contact : null;
-    lines.push(insert("facilities", ["id", "dataset_id", "name", "category_type", "municipality", "municipality_code", "address", "phone", "age_range", "is_medical", "description", "contact_methods", "raw_json", "lat", "lng"], [idFor(survey.municipalityCode, "program", program.name, String(index)), datasetId, program.name, CATEGORY_TYPES[program.category] ?? CATEGORY_TYPES.other, municipality, municipalityCode, program.address ?? null, phone, "both", 0, program.description, contactMethods, json(program), program.lat ?? null, program.lng ?? null]));
+    // 2026-08是正(外部コードレビュー指摘 P0-4): 配列indexをIDに含めていたため、YAML内の
+    // programs の並べ替え・前方エントリのコメントアウト/削除だけで、内容が変わっていない
+    // プログラムのIDが変わってしまい、facility_tags の手動キュレーション(consultation-desk-
+    // tags.sql 等)が指すIDが静かに失効していた。名称・分類・住所というプログラムの内容自体で
+    // ハッシュすることで、並べ替えに対して安定させる(name+category+address が完全に同じ
+    // プログラムが2件ある場合のみ衝突するが、それは実質的に重複データであり、他の投入経路
+    // (idFor(datasetId, name, address) を使う ingest-open-data.mjs 等)と同じ設計判断)。
+    const programId = idFor(survey.municipalityCode, "program", program.category, program.name, program.address ?? "");
+    lines.push(insert("facilities", ["id", "dataset_id", "name", "category_type", "municipality", "municipality_code", "address", "phone", "age_range", "is_medical", "description", "contact_methods", "raw_json", "lat", "lng"], [programId, datasetId, program.name, CATEGORY_TYPES[program.category] ?? CATEGORY_TYPES.other, municipality, municipalityCode, program.address ?? null, phone, "both", 0, program.description, contactMethods, json(program), program.lat ?? null, program.lng ?? null]));
   }
 
   if (!includeSchoolClassData) {

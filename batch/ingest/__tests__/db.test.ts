@@ -124,7 +124,13 @@ describe("upsertDataset", () => {
 // ============================================================
 
 describe("upsertFacilities", () => {
-  function createFakeBatchDb() {
+  /**
+   * `existingFacilityIds` は deleteStaleFacilities の冒頭 SELECT が返す「D1に既に存在する
+   * facility_id」の一覧(既定は空 = 削除同期の対象なし)。既存テスト(座標・lifestage 等)は
+   * この値を指定しないため、常に空を返し、db.batch は upsert 用の1回だけ呼ばれる
+   * (deleteStaleFacilities は staleIds が0件なら db.batch を呼ばずに早期returnするため)。
+   */
+  function createFakeBatchDb(existingFacilityIds: string[] = []) {
     const prepareCalls: string[] = [];
     const bindCalls: unknown[][] = [];
 
@@ -134,7 +140,11 @@ describe("upsertFacilities", () => {
         return {
           bind: vi.fn((...args: unknown[]) => {
             bindCalls.push(args);
-            return { statement: sql, args };
+            return {
+              statement: sql,
+              args,
+              all: vi.fn(async () => ({ results: existingFacilityIds.map((id) => ({ id })) })),
+            };
           }),
         };
       }),
@@ -177,8 +187,8 @@ describe("upsertFacilities", () => {
       makeFacility(),
     ]);
 
-    expect(prepareCalls[0]).toContain("lat = COALESCE(excluded.lat, lat)");
-    expect(prepareCalls[0]).toContain("lng = COALESCE(excluded.lng, lng)");
+    expect(prepareCalls[1]).toContain("lat = COALESCE(excluded.lat, lat)");
+    expect(prepareCalls[1]).toContain("lng = COALESCE(excluded.lng, lng)");
   });
 
   it("CSV に直接マッピングされた有効な座標(台東区の X座標/Y座標 由来)は lat/lng として bind される", async () => {
@@ -194,8 +204,8 @@ describe("upsertFacilities", () => {
     // lifestage_min/lifestage_max(facility_subtype の直後、lat/lng の直前)追加により
     // 2列分さらに後方へずれ、さらに全国版移行 Phase 1 の municipality_code(municipality の直後)
     // 追加により1列分後方へずれている)。
-    expect(bindCalls[0][17]).toBe(35.7127);
-    expect(bindCalls[0][18]).toBe(139.7798);
+    expect(bindCalls[1][17]).toBe(35.7127);
+    expect(bindCalls[1][18]).toBe(139.7798);
   });
 
   it("座標列を持たないデータセット(既存の ds-tokyo-fukushi-shisetsu 等)の再取込では lat/lng を null で bind し、COALESCE により既存のジオコーディング結果を上書きしない", async () => {
@@ -205,8 +215,8 @@ describe("upsertFacilities", () => {
       makeFacility({ id: "fac-tokyo0001", datasetId: "ds-tokyo-fukushi-shisetsu", lat: null, lng: null }),
     ]);
 
-    expect(bindCalls[0][17]).toBeNull();
-    expect(bindCalls[0][18]).toBeNull();
+    expect(bindCalls[1][17]).toBeNull();
+    expect(bindCalls[1][18]).toBeNull();
   });
 
   it("is_out_of_scope が INSERT 列・ON CONFLICT 更新句の双方に含まれ、値が bind される(true→1, false→0、migration 0011)", async () => {
@@ -216,12 +226,12 @@ describe("upsertFacilities", () => {
       makeFacility({ id: "fac-taito0002", isOutOfScope: true }),
     ]);
 
-    expect(prepareCalls[0]).toContain("is_out_of_scope");
-    expect(prepareCalls[0]).toContain("is_out_of_scope = excluded.is_out_of_scope");
+    expect(prepareCalls[1]).toContain("is_out_of_scope");
+    expect(prepareCalls[1]).toContain("is_out_of_scope = excluded.is_out_of_scope");
     // bind 引数の並び(?1〜?20)の12番目(0-indexedで11)が is_out_of_scope(is_medical の直後、
     // lifestage_min/max は facility_subtype の後ろに位置するためこの列の位置には影響しない。
     // municipality_code 追加分だけ全体が1列分後方へずれている)。
-    expect(bindCalls[0][11]).toBe(1);
+    expect(bindCalls[1][11]).toBe(1);
   });
 
   // ============================================================
@@ -235,10 +245,10 @@ describe("upsertFacilities", () => {
       makeFacility({ id: "fac-hoiku0001", lifestageMin: 0, lifestageMax: 0 }),
     ]);
 
-    expect(prepareCalls[0]).toContain("lifestage_min");
-    expect(prepareCalls[0]).toContain("lifestage_max");
-    expect(prepareCalls[0]).toContain("lifestage_min = excluded.lifestage_min");
-    expect(prepareCalls[0]).toContain("lifestage_max = excluded.lifestage_max");
+    expect(prepareCalls[1]).toContain("lifestage_min");
+    expect(prepareCalls[1]).toContain("lifestage_max");
+    expect(prepareCalls[1]).toContain("lifestage_min = excluded.lifestage_min");
+    expect(prepareCalls[1]).toContain("lifestage_max = excluded.lifestage_max");
   });
 
   it("lifestageMin/lifestageMax が数値の facility は、bind 引数(0-indexedで16番目・17番目、facility_subtype の直後)にその値をそのまま bind する", async () => {
@@ -248,8 +258,8 @@ describe("upsertFacilities", () => {
       makeFacility({ id: "fac-hoiku0002", lifestageMin: 0, lifestageMax: 0 }),
     ]);
 
-    expect(bindCalls[0][15]).toBe(0);
-    expect(bindCalls[0][16]).toBe(0);
+    expect(bindCalls[1][15]).toBe(0);
+    expect(bindCalls[1][16]).toBe(0);
   });
 
   it("lifestageMin/lifestageMax が null(細分なし)の facility は null を bind する(既存データセットの回帰確認)", async () => {
@@ -259,8 +269,8 @@ describe("upsertFacilities", () => {
       makeFacility({ id: "fac-tokyo0002", lifestageMin: null, lifestageMax: null }),
     ]);
 
-    expect(bindCalls[0][15]).toBeNull();
-    expect(bindCalls[0][16]).toBeNull();
+    expect(bindCalls[1][15]).toBeNull();
+    expect(bindCalls[1][16]).toBeNull();
   });
 
   it("isOutOfScope=false の facility は is_out_of_scope に 0 を bind する", async () => {
@@ -270,7 +280,7 @@ describe("upsertFacilities", () => {
       makeFacility({ isOutOfScope: false }),
     ]);
 
-    expect(bindCalls[0][11]).toBe(0);
+    expect(bindCalls[1][11]).toBe(0);
   });
 
   it("複数件を db.batch にまとめて渡す(既存の一括更新方式の回帰確認)", async () => {
@@ -285,11 +295,70 @@ describe("upsertFacilities", () => {
     expect((db.batch as ReturnType<typeof vi.fn>).mock.calls[0][0]).toHaveLength(2);
   });
 
-  it("facilities が空配列の場合は db.batch を呼ばない", async () => {
-    const { db } = createFakeBatchDb();
+  it("facilities が空配列の場合は db.batch を呼ばない(既存データを巻き込んで全削除しないため、deleteStaleFacilities 自体を呼ばない)", async () => {
+    const { db } = createFakeBatchDb(["fac-old-1", "fac-old-2"]);
 
     await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-jidokan", []);
 
     expect(db.batch).not.toHaveBeenCalled();
+  });
+
+  // ============================================================
+  // 削除同期(deleteStaleFacilities、外部コードレビュー指摘 P0-3: CKAN取込がUPSERTのみで
+  // 削除・名称変更を同期しない)
+  // ============================================================
+
+  it("配信元から消えた施設(既存にはあるが今回の正規化結果に無いID)を facility_tags → facilities の順で削除する", async () => {
+    const { db, prepareCalls, bindCalls } = createFakeBatchDb(["fac-a", "fac-removed"]);
+
+    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
+      makeFacility({ id: "fac-a" }),
+    ]);
+
+    // db.batch が2回呼ばれる: ①削除同期(facility_tags→facilities)、②upsert。
+    expect(db.batch).toHaveBeenCalledTimes(2);
+    const deleteBatchCall = (db.batch as ReturnType<typeof vi.fn>).mock.calls[0][0] as unknown[];
+    expect(deleteBatchCall).toHaveLength(2);
+
+    const tagsDeleteIndex = prepareCalls.findIndex((sql) => sql.includes("DELETE FROM facility_tags"));
+    const facilitiesDeleteIndex = prepareCalls.findIndex((sql) => sql.includes("DELETE FROM facilities WHERE id IN"));
+    expect(tagsDeleteIndex).toBeGreaterThanOrEqual(0);
+    expect(facilitiesDeleteIndex).toBeGreaterThan(tagsDeleteIndex);
+    // 削除対象は「今回の正規化結果に含まれない fac-removed」のみ、現存する fac-a は対象外。
+    expect(bindCalls[tagsDeleteIndex]).toEqual(["fac-removed"]);
+    expect(bindCalls[facilitiesDeleteIndex]).toEqual(["fac-removed"]);
+  });
+
+  it("名称・住所変更でIDが変わったケース(旧IDが既存に残り、新IDが今回の結果に含まれる)も削除同期の対象になる(重複行の防止)", async () => {
+    const { db, bindCalls, prepareCalls } = createFakeBatchDb(["fac-old-name-hash"]);
+
+    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
+      makeFacility({ id: "fac-new-name-hash" }),
+    ]);
+
+    const facilitiesDeleteIndex = prepareCalls.findIndex((sql) => sql.includes("DELETE FROM facilities WHERE id IN"));
+    expect(bindCalls[facilitiesDeleteIndex]).toEqual(["fac-old-name-hash"]);
+  });
+
+  it("既存の全facilityIDが今回の結果にも含まれる場合は削除同期をスキップする(db.batchはupsertの1回のみ)", async () => {
+    const { db } = createFakeBatchDb(["fac-a"]);
+
+    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
+      makeFacility({ id: "fac-a" }),
+    ]);
+
+    expect(db.batch).toHaveBeenCalledTimes(1);
+  });
+
+  it("削除対象が91件(MAX_IDS_PER_QUERY=90超)の場合、2チャンクに分けて削除する", async () => {
+    const staleIds = Array.from({ length: 91 }, (_, i) => `fac-stale-${i}`);
+    const { db } = createFakeBatchDb(["fac-a", ...staleIds]);
+
+    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
+      makeFacility({ id: "fac-a" }),
+    ]);
+
+    // 削除チャンク2回 + upsert 1回 = 3回。
+    expect(db.batch).toHaveBeenCalledTimes(3);
   });
 });

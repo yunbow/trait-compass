@@ -311,11 +311,29 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
         notes.push(await this.convertXlsxToMarkdown(dataset, resourceId, raw.r2Key, step));
       }
 
+      // 2026-08是正(外部コードレビュー指摘): facilities が0件の場合、リソース取得自体は
+      // 成功していても「実際に使える施設データが無い」状態のため is_alive=1(健全)として
+      // 記録しない。従来は正規化結果に関わらず常に isAlive=1 だったため、XLSX(未対応で
+      // 常に0件、後述)や CSV のヘッダー形式変更で正規化が0件になった場合でも「取得成功・
+      // 最新」として扱われ、支援情報案内画面の不健全判定(getUnhealthyDatasets)に一切
+      // 引っかからなかった。is_alive=0 にすることで、この画面が既存の縮退表示・注記の
+      // 仕組みにそのまま乗るようになる(取得自体の失敗と区別する注記を freshness_note に残す)。
+      const isAlive = facilities.length > 0 ? 1 : 0;
+      if (isAlive === 0) {
+        notes.push(
+          format === "XLSX"
+            ? "XLSX からの facilities 自動反映は未対応のため、このデータセットには施設データが" +
+                "0件のまま記録されている(is_alive=0、TICKET-0012以降で対応予定)。"
+            : "正規化の結果、施設データが0件になった(取込元のCSV形式が変わった可能性がある。" +
+                "is_alive=0 として記録し、目視確認を促す)。",
+        );
+      }
+
       // ⑤ D1 UPSERT。
       await step.do(`upsert dataset: ${dataset.id}`, async () => {
         await upsertDataset(
           this.env.DB,
-          buildDatasetRow({ dataset, license, fetchedAt, sourceUrl: resourceUrl, notes, isAlive: 1 }),
+          buildDatasetRow({ dataset, license, fetchedAt, sourceUrl: resourceUrl, notes, isAlive }),
         );
       });
 

@@ -152,9 +152,14 @@ async function loadResultsData(
     isFallback: searchResult.isFallback,
     fallbackMessage: searchResult.fallbackMessage,
     // AC-2(最優先): 「確認が必要な状態」の汎用注記はオープンデータstaleのみで判定する。
-    // 他自治体の手動データ期限切れが原因で、無関係な自治体にこの注記が出ないようにする
-    // (getUnhealthyDatasets は全自治体の datasets を横断的に見るため)。
-    hasUnhealthyDatasets: staleOpenDataIds.size > 0,
+    // 2026-08是正(外部コードレビュー指摘): getUnhealthyDatasets は全自治体・全分野の datasets を
+    // 横断的に見るため、`staleOpenDataIds.size > 0` だけで判定すると、無関係な自治体・分野の
+    // stale データが原因で、この検索結果には一切影響していない場合でもバナーが出てしまう
+    // (実質ほぼ常時表示になり得る)。`staleDegraded.degradedCategories` は
+    // degradeUnhealthyCategoriesToBroadArea が「このレスポンスの facilitiesByCategory に実際に
+    // 含まれていたデータセットが不健全だったか」で判定済みのため、これを使うことで今回の検索に
+    // 実際に影響があった場合のみ true にする。
+    hasUnhealthyDatasets: staleDegraded.degradedCategories.length > 0,
     degradedCategories: staleDegraded.degradedCategories,
     expiredCategories: expiredDegraded.degradedCategories,
     schoolInfo,

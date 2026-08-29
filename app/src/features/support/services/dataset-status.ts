@@ -42,6 +42,19 @@ export interface DatasetStatusRow {
   fetchedAt: string;
   /** 手動調査データ(MANUAL_SURVEY_LICENSE)かどうかの判定に使う。 */
   license: string;
+  /**
+   * 更新終了フラグ(FR-034 AC-6)。1の場合、is_alive=0 は「取得失敗」ではなく「意図的に
+   * 自動監視の対象外にした」ことを意味する(batch/ingest/workflow.ts の
+   * `dataset.frozen || !dataset.ckanPackageId` → is_alive=0 の書き込み条件と対応)。
+   * 未指定(undefined)は 0 相当として扱う(既存の呼び出し側テストとの互換のため任意項目)。
+   */
+  frozen?: 0 | 1;
+  /**
+   * CKAN パッケージID。null の場合、この取込経路はCKAN自動取込・死活監視の対象外
+   * (手動追跡のみ)であり、is_alive=0 は同じく「取得失敗」を意味しない。
+   * 未指定(undefined)は「null ではない」扱いとする(既存の呼び出し側テストとの互換のため任意項目)。
+   */
+  ckanPackageId?: string | null;
 }
 
 /** 判定結果を含めたデータセット状態。 */
@@ -56,10 +69,14 @@ export interface DatasetStatus {
   /**
    * "open-data-unhealthy": 従来どおり is_alive=0 または30日stale閾値超過(オープンデータ)。
    * "manual-expired": 手動調査データが有効期限365日を超過(MANUAL_SURVEY_LICENSE)。
+   * "frozen-or-unmonitored": 更新終了(frozen)または CKAN未登録(ckanPackageId=null)の
+   * データセット。is_alive=0 であっても「取得失敗」ではなく意図的な状態のため、常に
+   * isStale=false とする(2026-08是正、外部コードレビュー指摘)。更新終了の事実自体は
+   * DatasetFreshnessNote 側で別途、非アラート調子で案内する。
    * 呼び出し側(facility-search.ts の縮退処理・results/page.tsx の hasUnhealthyDatasets 判定)は
    * この区分で表示挙動・文言を出し分ける。
    */
-  kind: "open-data-unhealthy" | "manual-expired";
+  kind: "open-data-unhealthy" | "manual-expired" | "frozen-or-unmonitored";
 }
 
 /**
@@ -96,6 +113,10 @@ export function evaluateDatasetStatus(
     return { id: row.id, isAlive, fetchedAt: row.fetchedAt, staleDays, isStale, kind: "manual-expired" };
   }
 
+  if (row.frozen === 1 || row.ckanPackageId === null) {
+    return { id: row.id, isAlive, fetchedAt: row.fetchedAt, staleDays, isStale: false, kind: "frozen-or-unmonitored" };
+  }
+
   const isStale = !isAlive || staleDays > thresholdDays;
   return { id: row.id, isAlive, fetchedAt: row.fetchedAt, staleDays, isStale, kind: "open-data-unhealthy" };
 }
@@ -113,7 +134,11 @@ export async function getUnhealthyDatasets(
   thresholdDays: number = STALE_THRESHOLD_DAYS,
 ): Promise<DatasetStatus[]> {
   const { results } = await db
-    .prepare(`SELECT id, is_alive AS isAlive, fetched_at AS fetchedAt, license AS license FROM datasets ORDER BY id`)
+    .prepare(
+      `SELECT id, is_alive AS isAlive, fetched_at AS fetchedAt, license AS license,
+              frozen AS frozen, ckan_package_id AS ckanPackageId
+       FROM datasets ORDER BY id`,
+    )
     .all<DatasetStatusRow>();
 
   return (results ?? [])
