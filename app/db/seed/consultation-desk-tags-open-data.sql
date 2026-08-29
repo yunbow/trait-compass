@@ -19,7 +19,7 @@
 -- docs/designs/data-governance.md §2 参照)。
 --
 -- 投入方法: wrangler d1 execute trait-compass --local --file=./db/seed/consultation-desk-tags-open-data.sql
---   (本番投入時は --local を --remote に置き換える。ハッカソン審査期間中は実施しない)
+--   (本番投入は npm run db:seed:remote:tags-open-data。2026-08-29に本番D1へ適用済み)
 
 INSERT OR IGNORE INTO facility_tags (facility_id, tag) VALUES
   -- 葛飾区子ども発達センター(堀切3-34-1 ウェルピアかつしか、dataset: ds-wam-net-disability-services)。

@@ -42,7 +42,9 @@
 --
 -- 投入方法: wrangler d1 execute trait-compass --local --file=./db/seed/consultation-desk-tags.sql
 --   (npm run db:seed:local:manual に含まれるため、通常は個別実行不要。本番投入は
---   npm run db:seed:remote:manual。ハッカソン審査期間中は実施しない)
+--   npm run db:seed:remote:manual。2026-08-29に本番D1へ適用済み。運営への確認により、
+--   新規自治体許諾データとは無関係な既存オープンデータへのタグ付与・実在施設情報の追加は
+--   審査期間中の反映が問題ないことを確認済み)
 
 INSERT OR IGNORE INTO facility_tags (facility_id, tag) VALUES
   -- しんじゅく若者サポートステーション: 働くことに悩む15〜49歳向けの就労支援

@@ -85,8 +85,7 @@ npm run dev                # next dev を直接起動(Docker にも wrangler に
   ため、**`db:seed:local:manual`・`db:reset:local` には含めていない**(この2つは常に成功する
   ことを前提にしたベースラインのため)。対象施設を別途投入済みの場合のみ
   `npm run db:seed:local:tags-open-data` を実行すること。本番D1は対象施設が既に存在するため
-  `npm run db:seed:remote:tags-open-data` は常に成功するが、2026-08時点はハッカソン審査期間中
-  のため実施しない方針(docs/data/permission-requests/README.md 参照)。
+  `npm run db:seed:remote:tags-open-data` は常に成功する(2026-08-29に適用済み)。
 - `data/manual/examples/sample-municipality.yaml` は公開リポジトリでの動作確認用の**架空データ**
   である(学校名・窓口名・住所・電話番号等はすべて創作。区市町村コード/名称のみ、アプリの
   区市町村選択が解決できるよう実在の値(13106/台東区)を使っている)。実運用では、区市町村別の
