@@ -377,14 +377,21 @@ export function buildSqlForSource(source, rows, fetchedAt) {
   const metadataOnly = !license.allowed || source.ingest_target === "none";
   // 2026-08是正(外部コードレビュー指摘、相談タグ再取込ずれ対応): facility_tags は
   // consultation-desk-tags*.sql による手動キュレーションのみが投入経路であり、本スクリプトは
-  // 一切関知しない(data-governance.md参照)。削除前にステージングテーブルへ退避し、
-  // 再投入後に同じ id で復活した施設へのみ復元する(ingest-manual-survey.mjs と同じ方針)。
-  // D1 は CREATE TEMP TABLE を許可しない(実機確認済み、SQLITE_AUTH)ため、通常の
-  // CREATE TABLE ... AS SELECT + 末尾 DROP TABLE を使う(自己修復のため冒頭に
-  // DROP TABLE IF EXISTS も置く)。
+  // 一切関知しない(data-governance.md参照)。削除前に永続ステージングテーブル
+  // (facility_tags_backup、migration 0035)へ退避し、再投入後に同じ id で復活した施設へ
+  // のみ復元する。
+  //
+  // 2026-08是正の追補(外部コードレビュー指摘 P1): このデータセットのSQLは1,000文単位で
+  // チャンク分割され、チャンクごとに別々のwrangler d1 execute呼び出し(それぞれ独立した
+  // トランザクション)として実行されうる(executeSqlChunks参照)。以前は使い捨ての
+  // `CREATE TABLE ... AS SELECT` + 末尾 `DROP TABLE` を使っており、チャンク境界をまたいだ
+  // 中断→再実行でタグが永久に失われる不具合があった(実機再現済み)。
+  // `INSERT ... WHERE NOT EXISTS`で「このdataset_idの退避行が既に存在するか」を判定する
+  // ことで、前回の実行が復元前に中断していた場合は退避をスキップしてそのまま再利用する
+  // (退避テーブルを上書きしない)。復元・削除(このファイル末尾)が実際に成功したときのみ
+  // dataset_id単位で退避行を削除するため、中断・再実行を何度繰り返してもタグを失わない。
   const statements = [
-    `DROP TABLE IF EXISTS _facility_tags_backup;`,
-    `CREATE TABLE _facility_tags_backup AS SELECT facility_id, tag FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
+    `INSERT INTO facility_tags_backup (facility_id, tag, dataset_id) SELECT facility_id, tag, ${value(datasetId)} FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)}) AND NOT EXISTS (SELECT 1 FROM facility_tags_backup WHERE dataset_id = ${value(datasetId)});`,
     `DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
     `DELETE FROM facilities WHERE dataset_id = ${value(datasetId)};`,
   ];
@@ -441,9 +448,11 @@ export function buildSqlForSource(source, rows, fetchedAt) {
   // facility_tags の復元(上記の退避と対応): 削除前と同じ id で再投入された施設のみ対象
   // (WHERE で facilities に現存する id に絞る)。id が変わった・施設自体が投入対象外になった
   // (metadataOnly・license-hold等)分の退避行は復元されずそのまま破棄される(意図的)。
+  // 削除(dataset_id単位)はこの復元が実際に成功したときのみ行われるため、この2文の間で
+  // 中断した場合は次回実行時に退避行がそのまま残り、再利用される(上記のNOT EXISTSガード)。
   statements.push(
-    `INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM _facility_tags_backup WHERE facility_id IN (SELECT id FROM facilities);`,
-    `DROP TABLE _facility_tags_backup;`,
+    `INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM facility_tags_backup WHERE dataset_id = ${value(datasetId)} AND facility_id IN (SELECT id FROM facilities);`,
+    `DELETE FROM facility_tags_backup WHERE dataset_id = ${value(datasetId)};`,
   );
 
   return statements;

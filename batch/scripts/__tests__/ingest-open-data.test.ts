@@ -444,7 +444,7 @@ describe("buildSqlForSource", () => {
     ingest_target: "none",
   };
 
-  it("DELETE文はfacility_tags→facilities→school_registry→datasetsの順で並ぶ(school_registryターゲット時)", () => {
+  it("DELETE文はfacility_tags→facilities→school_registry→datasetsの順で並ぶ(school_registryターゲット時、末尾のfacility_tags_backup削除は復元後の後始末)", () => {
     const statements = buildSqlForSource(schoolRegistrySource, [], "2026-07-20T00:00:00.000Z");
     const deleteStatements = statements.filter((statement) => statement.startsWith("DELETE FROM"));
     expect(deleteStatements).toEqual([
@@ -452,44 +452,61 @@ describe("buildSqlForSource", () => {
       "DELETE FROM facilities WHERE dataset_id = 'ds-mext-school-code-list';",
       "DELETE FROM school_registry WHERE source_id = 'mext-school-code-list';",
       "DELETE FROM datasets WHERE id = 'ds-mext-school-code-list';",
+      "DELETE FROM facility_tags_backup WHERE dataset_id = 'ds-mext-school-code-list';",
     ]);
   });
 
-  it("facilitiesターゲットではDELETEはfacility_tags→facilities→datasetsの順で並ぶ(school_registryのDELETEは含まない)", () => {
+  it("facilitiesターゲットではDELETEはfacility_tags→facilities→datasetsの順で並ぶ(school_registryのDELETEは含まない、末尾のfacility_tags_backup削除は復元後の後始末)", () => {
     const statements = buildSqlForSource(facilitiesSource, [], "2026-07-20T00:00:00.000Z");
     const deleteStatements = statements.filter((statement) => statement.startsWith("DELETE FROM"));
     expect(deleteStatements).toEqual([
       "DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-wam-net-disability-services');",
       "DELETE FROM facilities WHERE dataset_id = 'ds-wam-net-disability-services';",
       "DELETE FROM datasets WHERE id = 'ds-wam-net-disability-services';",
+      "DELETE FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services';",
     ]);
   });
 
   // 2026-08是正(外部コードレビュー指摘): facility_tags は本スクリプトが一切関知しない
   // 手動キュレーションデータ(consultation-desk-tags*.sql投入)のため、削除前に退避し、
-  // 同じidで再投入された施設にのみ復元する(ingest-manual-survey.mjs と同じ方針)。
-  // D1 は CREATE TEMP TABLE を許可しない(実機確認済み)ため、通常の CREATE TABLE ... AS SELECT
-  // + 末尾 DROP TABLE を使う。
+  // 同じidで再投入された施設にのみ復元する。
+  //
+  // 2026-08是正の追補(外部コードレビュー指摘 P1): 1データセットのSQLは1,000文単位で
+  // チャンク分割され、チャンクごとに別々のトランザクションとして実行されうる
+  // (executeSqlChunks参照)。使い捨ての CREATE TABLE ... AS SELECT + 末尾 DROP TABLE だと、
+  // チャンク境界をまたいだ中断→再実行でタグが永久に失われる不具合があったため、
+  // dataset_id列を持つ永続テーブル(facility_tags_backup、migration 0035)へ変更し、
+  // 「このdataset_idの退避行が既に存在するか」をNOT EXISTSで判定して退避の重複・
+  // 上書きを防ぐ設計にした。
   it("再取込時、facility_tagsを削除前にステージングテーブルへ退避し、facilities再投入後に復元する", () => {
     const statements = buildSqlForSource(facilitiesSource, [facilityRow], "2026-07-20T00:00:00.000Z");
 
-    const dropIfExistsIndex = statements.indexOf("DROP TABLE IF EXISTS _facility_tags_backup;");
     const backupIndex = statements.indexOf(
-      "CREATE TABLE _facility_tags_backup AS SELECT facility_id, tag FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-wam-net-disability-services');",
+      "INSERT INTO facility_tags_backup (facility_id, tag, dataset_id) SELECT facility_id, tag, 'ds-wam-net-disability-services' FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-wam-net-disability-services') AND NOT EXISTS (SELECT 1 FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services');",
     );
     const deleteTagsIndex = statements.findIndex((statement) => statement.startsWith("DELETE FROM facility_tags"));
     const lastFacilityInsertIndex = statements.map((s) => s.startsWith("INSERT INTO facilities")).lastIndexOf(true);
     const restoreIndex = statements.indexOf(
-      "INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM _facility_tags_backup WHERE facility_id IN (SELECT id FROM facilities);",
+      "INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services' AND facility_id IN (SELECT id FROM facilities);",
     );
-    const dropIndex = statements.indexOf("DROP TABLE _facility_tags_backup;");
+    const cleanupIndex = statements.indexOf("DELETE FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services';");
 
-    // 自己修復DROP → 退避 → 削除 → (facilities再投入) → 復元 → ステージングテーブル破棄、の順序。
-    expect(dropIfExistsIndex).toBeGreaterThanOrEqual(0);
-    expect(backupIndex).toBeGreaterThan(dropIfExistsIndex);
+    // 退避(NOT EXISTSガード付き) → 削除 → (facilities再投入) → 復元 → 退避行の削除、の順序。
+    expect(backupIndex).toBeGreaterThanOrEqual(0);
     expect(deleteTagsIndex).toBeGreaterThan(backupIndex);
     expect(restoreIndex).toBeGreaterThan(lastFacilityInsertIndex);
-    expect(dropIndex).toBe(restoreIndex + 1);
+    expect(cleanupIndex).toBe(restoreIndex + 1);
+    // 使い捨てテーブルパターン(TEMP TABLE非対応対策として一時採用していたもの)には戻っていない。
+    expect(statements.some((s) => s.includes("CREATE TABLE") || s.includes("DROP TABLE"))).toBe(false);
+  });
+
+  // 実機のD1でCREATE TEMP TABLEがSQLITE_AUTHで拒否されることを確認済みのため、
+  // 使い捨てテーブル方式には戻さない(dataset_id列による永続テーブル方式を維持する)回帰ガード。
+  it("退避行が既に存在する場合(前回実行が復元前に中断した状態)は退避をスキップする(NOT EXISTSガード)", () => {
+    const statements = buildSqlForSource(facilitiesSource, [facilityRow], "2026-07-20T00:00:00.000Z");
+    const backupStatement = statements.find((s) => s.startsWith("INSERT INTO facility_tags_backup"));
+
+    expect(backupStatement).toContain("AND NOT EXISTS (SELECT 1 FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services')");
   });
 
   it("SQL文字列中のシングルクォートはエスケープされる", () => {

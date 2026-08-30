@@ -467,3 +467,15 @@ AI 機能の原価防衛用固定ウィンドウ回数制限カウンタ(TICKET-
 | `count` | INTEGER | NOT NULL | `0` | - | 当該ウィンドウの送信回数 | migration 0031 |
 
 インデックス: `idx_feedback_rate_limits_window_start`(§21参照)。
+
+## 27. `facility_tags_backup`
+
+`facility_tags`(§3)の再取込時退避用ステージングテーブル(migration 0035、外部コードレビュー指摘P1是正)。`ingest-open-data.mjs`は1データセットのSQLが1,000文単位でチャンク分割され、チャンクごとに別々のトランザクションとして実行されうるため、使い捨ての`CREATE TABLE ... AS SELECT`ではチャンク境界をまたいだ中断・再実行でタグを永久に失う不具合があった(実機再現済み)。本テーブルは`dataset_id`列を持つ永続テーブルとし、「そのdataset_idの退避行が既に存在するか」をNOT EXISTSで判定することで、中断・再実行を繰り返してもタグを失わない設計にする。復元(`facility_tags`への再投入)が成功した後にのみ`dataset_id`単位で削除される。
+
+| カラム名 | 型 | NULL可否 | デフォルト | 制約 | 意味 | 由来 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `facility_id` | TEXT | NOT NULL | - | 複合PRIMARY KEYの一部 | 退避対象施設 | migration 0035 |
+| `tag` | TEXT | NOT NULL | - | 複合PRIMARY KEYの一部 | 退避した相談分野タグ | migration 0035 |
+| `dataset_id` | TEXT | NOT NULL | - | - | どの再取込処理による退避かを識別する(NOT EXISTSガード・復元後の削除範囲の絞り込みに使う) | migration 0035 |
+
+テーブル制約: `PRIMARY KEY (facility_id, tag)`。インデックス: `idx_facility_tags_backup_dataset_id`。

@@ -152,6 +152,34 @@ CREATE TABLE IF NOT EXISTS facility_tags (
 );
 
 -- ============================================================
+-- facility_tags_backup: 再取込時のfacility_tags退避用ステージングテーブル
+-- ============================================================
+-- migration 0035(外部コードレビュー指摘 P1是正): ingest-open-data.mjs は1データセットの
+-- SQLが1,000文単位でチャンク分割され、チャンクごとに別々の wrangler d1 execute 呼び出し
+-- (それぞれ独立したトランザクション)として実行される。以前は退避テーブルを
+-- `CREATE TABLE ... AS SELECT` + 末尾 `DROP TABLE` という単発の使い捨てとして実装していたが、
+-- 「退避 → 削除 → 大量INSERT(複数チャンクに分割されうる)→ 復元 → DROP」の一連が
+-- チャンク境界をまたいだ状態で処理が中断すると、facility_tags は空のまま・復元は未実行で、
+-- 退避テーブルだけが残る。この状態で再実行すると、冒頭の `DROP TABLE IF EXISTS` が
+-- 直前の退避テーブル(唯一残っていた正しいタグのコピー)を消してしまい、直後の
+-- `CREATE TABLE ... AS SELECT` は既に空になった facility_tags から取り直すため、
+-- タグが永久に失われる(実機再現済み)。
+--
+-- 対策として、退避テーブルを使い捨てではなく永続テーブルとし、dataset_id 列で区切って
+-- 「その dataset_id の退避行がまだ存在するか」で退避済みかどうかを判定する
+-- (ingest-open-data.mjs の buildSqlForSource 参照)。既に退避行が残っている
+-- (=前回の実行が復元前に中断した)場合は退避をスキップしてそのまま再利用し、
+-- 復元・削除が成功したときのみ dataset_id 単位で削除する。これにより、チャンク境界を
+-- またいだ中断・再実行を何度繰り返してもタグを失わない(施設データ自体の複数チャンク
+-- 非原子性という、より広い既知の課題の解消はスコープ外)。
+CREATE TABLE IF NOT EXISTS facility_tags_backup (
+  facility_id TEXT NOT NULL,
+  tag TEXT NOT NULL,
+  dataset_id TEXT NOT NULL,
+  PRIMARY KEY (facility_id, tag)
+);
+
+-- ============================================================
 -- インデックス
 -- ============================================================
 CREATE INDEX IF NOT EXISTS idx_facilities_municipality ON facilities(municipality);
@@ -161,6 +189,7 @@ CREATE INDEX IF NOT EXISTS idx_facilities_is_medical ON facilities(is_medical);
 CREATE INDEX IF NOT EXISTS idx_facilities_is_out_of_scope ON facilities(is_out_of_scope);
 CREATE INDEX IF NOT EXISTS idx_facilities_dataset_id ON facilities(dataset_id);
 CREATE INDEX IF NOT EXISTS idx_facility_tags_tag ON facility_tags(tag);
+CREATE INDEX IF NOT EXISTS idx_facility_tags_backup_dataset_id ON facility_tags_backup(dataset_id);
 CREATE INDEX IF NOT EXISTS idx_facility_tags_facility_id ON facility_tags(facility_id);
 
 -- ============================================================

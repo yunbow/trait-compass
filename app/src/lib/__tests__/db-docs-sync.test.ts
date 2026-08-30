@@ -159,7 +159,7 @@ describe("docs/designs/db-tables.md と db/schema.sql のカラム整合性", ()
 
   it("schema.sql に検索・手動調査テーブルが定義されている(テスト前提の確認)", () => {
     expect(Object.keys(schemaTables).sort()).toEqual(
-      ["datasets", "facilities", "facility_tags", "usage_counts", "ai_rate_limits", "schools", "school_fixed_classes", "school_resource_rooms", "high_school_pathways", "class_organizations", "special_needs_schools", "municipality_survey_meta", "school_registry", "support_pathways", "support_pathway_steps", "results_guide_notes", "facility_reports", "report_rate_limits", "content_reports", "beta_gate_rate_limits", "track_rate_limits", "feedback_rating_counts", "feedback_unclear_reason_counts", "feedback_comments", "feedback_rate_limits"].sort(),
+      ["datasets", "facilities", "facility_tags", "facility_tags_backup", "usage_counts", "ai_rate_limits", "schools", "school_fixed_classes", "school_resource_rooms", "high_school_pathways", "class_organizations", "special_needs_schools", "municipality_survey_meta", "school_registry", "support_pathways", "support_pathway_steps", "results_guide_notes", "facility_reports", "report_rate_limits", "content_reports", "beta_gate_rate_limits", "track_rate_limits", "feedback_rating_counts", "feedback_unclear_reason_counts", "feedback_comments", "feedback_rate_limits"].sort(),
     );
   });
 
