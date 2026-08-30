@@ -11,14 +11,26 @@ import type { Lifestage } from "@/features/support/services/lifestage-mapping";
 
 type PurposeDefaultTabs = Partial<Record<string, ResultsTab>>;
 
+/** 未就学児(preschool)向け。 */
+const PRESCHOOL_PURPOSE_DEFAULT_TABS: PurposeDefaultTabs = {
+  "use-day-service": "福祉ガイド",
+};
+
 /** 小学生・中学生(elementary-junior-high)向け。 */
 const ELEMENTARY_JUNIOR_HIGH_PURPOSE_DEFAULT_TABS: PurposeDefaultTabs = {
   "use-day-service": "福祉ガイド",
   "consult-transfer": SCHOOL_INFO_TAB,
 };
 
+/** 高校生(high-school)向け。 */
+const HIGH_SCHOOL_PURPOSE_DEFAULT_TABS: PurposeDefaultTabs = {
+  "use-day-service": "福祉ガイド",
+};
+
 const PURPOSE_DEFAULT_TABS_BY_LIFESTAGE: Partial<Record<Lifestage, PurposeDefaultTabs>> = {
+  preschool: PRESCHOOL_PURPOSE_DEFAULT_TABS,
   "elementary-junior-high": ELEMENTARY_JUNIOR_HIGH_PURPOSE_DEFAULT_TABS,
+  "high-school": HIGH_SCHOOL_PURPOSE_DEFAULT_TABS,
 };
 
 /** 対応表に無い場合は`undefined`(呼び出し側で既存の既定タブ挙動にフォールバックする)。 */

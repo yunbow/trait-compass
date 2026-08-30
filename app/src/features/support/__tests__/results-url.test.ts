@@ -64,6 +64,28 @@ describe("results URL builders", () => {
     expect(result.searchParams.get("purpose")).toBe("use-day-service");
   });
 
+  it.each([
+    ["preschool", "児童発達支援"],
+    ["elementary-junior-high", "放課後等デイサービス"],
+    ["high-school", "放課後等デイサービス"],
+  ] as const)("buildPurposeToResultsHref は %s の「利用したい」目的で tab=福祉ガイド・subtype=%s を付ける", (lifestage, subtype) => {
+    const result = url(buildPurposeToResultsHref({ age: "child", municipalityCode: CODE, lifestage, tags: [], purposeId: "use-day-service" }));
+    expect(result.searchParams.get("tab")).toBe("福祉ガイド");
+    expect(result.searchParams.get("subtype")).toBe(subtype);
+  });
+
+  it("buildPurposeToResultsHref は対応表に無い目的の場合 tab・subtype クエリを付けない", () => {
+    const result = url(buildPurposeToResultsHref({ age: "child", municipalityCode: CODE, lifestage: "preschool", tags: [], purposeId: "consult-development" }));
+    expect(result.searchParams.has("tab")).toBe(false);
+    expect(result.searchParams.has("subtype")).toBe(false);
+  });
+
+  it("buildPurposeToResultsHref は purposeId 未指定の場合 tab・subtype クエリを付けない", () => {
+    const result = url(buildPurposeToResultsHref({ age: "child", municipalityCode: CODE, lifestage: "preschool", tags: [] }));
+    expect(result.searchParams.has("tab")).toBe(false);
+    expect(result.searchParams.has("subtype")).toBe(false);
+  });
+
   it("buildContentReportGuideHref は自治体コードを引き継ぐ", () => {
     const result = url(buildContentReportGuideHref({ municipalityCode: CODE, tab: "福祉ガイド", lifestage: "preschool" }));
     expect(result.pathname).toBe("/support/content-report");
@@ -137,7 +159,9 @@ describe("results URL builders", () => {
     });
 
     it("buildPurposeToResultsHref", () => {
-      const href = buildPurposeToResultsHref({ age: "child", municipalityCode: CODE, lifestage: "preschool", tags: ["こだわり"], purposeId: "use-day-service" });
+      // 目的別の既定 tab/subtype(purpose-default-tabs.ts/purpose-default-subtypes.ts)が
+      // 付かない組み合わせを使い、createSupportQuery 由来の基本クエリの順序のみを検証する。
+      const href = buildPurposeToResultsHref({ age: "child", municipalityCode: CODE, lifestage: "preschool", tags: ["こだわり"], purposeId: "consult-development" });
       const [, search] = href.split("?");
       expect([...new URLSearchParams(search).keys()]).toEqual(["age", "municipality", "lifestage", "tags", "purpose"]);
     });

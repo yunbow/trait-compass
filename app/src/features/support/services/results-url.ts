@@ -6,6 +6,8 @@
 // (受動的プライバシー対策。日本語の相談分野ラベルをURLに残さない)。
 
 import type { ResultsTab } from "@/features/support/constants/results-tabs";
+import { getPurposeDefaultSubtype } from "@/features/support/constants/purpose-default-subtypes";
+import { getPurposeDefaultTab } from "@/features/support/constants/purpose-default-tabs";
 import type { AgeGroup } from "@/features/support/schema/age-group";
 import type { SupportTag } from "@/features/support/services/category-tag-mapping";
 import type { Lifestage } from "@/features/support/services/lifestage-mapping";
@@ -196,7 +198,17 @@ export interface BuildPurposeToResultsHrefParams {
   purposeId?: string | null;
 }
 
-/** `/support/purpose` から `/support/results` へ遷移するURLを組み立てる純関数。 */
+/**
+ * `/support/purpose` から `/support/results` へ遷移するURLを組み立てる純関数。
+ *
+ * 選んだ目的(`purposeId`)が対応表(purpose-default-tabs.ts / purpose-default-subtypes.ts)に
+ * ある場合、既定の `tab`/`subtype` クエリを付けて遷移する(例: 未就学児の
+ * 「児童発達支援・療育を利用したい」→ `tab=福祉ガイド&subtype=児童発達支援`)。`tab` は
+ * page.tsx側にも同じ対応表による既定値解決ロジックがあるため、ここで付けなくても同じ
+ * タブが選ばれるが、URLに明示することで「タブ切替」等でURLを再利用してもタブが保持される
+ * (`subtype` はクライアント専用のためpage.tsx側にフォールバックが無く、ここで付けないと
+ * 反映されない)。対応表に無い場合はどちらのクエリも付けない(既存の既定挙動のまま)。
+ */
 export function buildPurposeToResultsHref(params: BuildPurposeToResultsHrefParams): string {
   const query = createSupportQuery({
     age: params.age,
@@ -205,6 +217,12 @@ export function buildPurposeToResultsHref(params: BuildPurposeToResultsHrefParam
     tags: params.tags,
     purposeId: params.purposeId,
   });
+  if (params.purposeId != null) {
+    const defaultTab = getPurposeDefaultTab(params.lifestage, params.purposeId);
+    if (defaultTab != null) query.set("tab", defaultTab);
+    const defaultSubtype = getPurposeDefaultSubtype(params.lifestage, params.purposeId);
+    if (defaultSubtype != null) query.set("subtype", defaultSubtype);
+  }
   return `/support/results?${query.toString()}`;
 }
 

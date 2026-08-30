@@ -17,8 +17,16 @@ describe("getPurposeDefaultTab", () => {
     expect(getPurposeDefaultTab("elementary-junior-high", "certificate-info")).toBeUndefined();
   });
 
+  it("未就学児の「児童発達支援・療育を利用したい」は福祉ガイドを既定タブとする", () => {
+    expect(getPurposeDefaultTab("preschool", "use-day-service")).toBe("福祉ガイド");
+  });
+
+  it("高校生の「放課後等デイサービスを継続利用したい」は福祉ガイドを既定タブとする", () => {
+    expect(getPurposeDefaultTab("high-school", "use-day-service")).toBe("福祉ガイド");
+  });
+
   it("対応表に無いライフステージの場合は undefined を返す", () => {
-    expect(getPurposeDefaultTab("preschool", "use-day-service")).toBeUndefined();
-    expect(getPurposeDefaultTab("high-school", "use-day-service")).toBeUndefined();
+    expect(getPurposeDefaultTab("university-vocational", "use-day-service")).toBeUndefined();
+    expect(getPurposeDefaultTab("working-adult", "use-day-service")).toBeUndefined();
   });
 });
