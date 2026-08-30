@@ -22,6 +22,12 @@ import { PUBLISHABLE_LICENSE_STATUSES, validateMunicipalitySurvey } from "./vali
 // project-local executable explicitly because this script can also run via node.
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const wranglerPath = join(projectRoot, "node_modules", ".bin", "wrangler");
+// `wrangler d1 execute <database-name>` は cwd から wrangler.toml/wrangler.jsonc を探索するが、
+// batch/ にはそれらが無い(wrangler.ingest.toml のみ)ため既定探索では見つからない(batch/ から
+// 素の `wrangler d1 execute trait-compass --local` を叩くと "Couldn't find a D1 DB with the
+// name or binding 'trait-compass'" で失敗することを実機確認済み)。report-review.mjs と同じく
+// database_name="trait-compass" を宣言している wrangler.ingest.toml を明示的に指定する。
+const wranglerConfigPath = join(projectRoot, "batch", "wrangler.ingest.toml");
 
 export const CATEGORY_TYPES = {
   school_consultation: "相談窓口",
@@ -151,6 +157,17 @@ export function buildSql(survey, options = {}) {
     // D1 は `CREATE TEMP TABLE` を許可しない(`SQLITE_AUTH`、実機確認済み)ため、通常の
     // `CREATE TABLE ... AS SELECT` を使い、末尾で明示的に DROP する。前回実行が途中で
     // 失敗してテーブルが残っている場合に備え、作成前に `DROP TABLE IF EXISTS` で自己修復する。
+    //
+    // 2026-08是正(外部コードレビュー指摘 項目1): Vectorize 削除同期のための outbox
+    // (`pending_vector_deletions`、migration 0036)へ、削除対象になり得る facility_id を
+    // 削除より前に記録する。このスクリプトは自治体単位で DELETE→INSERT する(id が
+    // 変わらないプログラムも一旦消えて同じ id で復活する)ため、ここで記録した id の大半は
+    // 直後の再投入で facilities に復活し、実際には削除されない。復活した id は本ブロック末尾の
+    // `DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities)`
+    // (facilities に現存する id は定義上「削除済み」ではあり得ないという不変条件に基づく、
+    // 自治体をまたぐグローバルな整理)で取り消されるため、実際に配信元から無くなった
+    // (=id が変わった・削除された)プログラムの id だけが最終的に残る。
+    `INSERT OR IGNORE INTO pending_vector_deletions (facility_id, deleted_at) SELECT id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now') FROM facilities WHERE dataset_id = ${value(datasetId)};`,
     `DROP TABLE IF EXISTS _facility_tags_backup;`,
     `CREATE TABLE _facility_tags_backup AS SELECT facility_id, tag FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
     `DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
@@ -231,13 +248,21 @@ export function buildSql(survey, options = {}) {
     // プログラムが2件ある場合のみ衝突するが、それは実質的に重複データであり、他の投入経路
     // (idFor(datasetId, name, address) を使う ingest-open-data.mjs 等)と同じ設計判断)。
     const programId = idFor(survey.municipalityCode, "program", program.category, program.name, program.address ?? "");
-    // 2026-08是正(外部コードレビュー指摘: スキーマ・投入処理の土台のみ)。program.ageRange/
-    // lifestageMin/lifestageMax/status/confirmedOn が未指定の既存YAMLは、従来どおり
-    // age_range='both'・lifestage_min/max=NULL・confirmation_status='confirmed' で投入され、
-    // 挙動は変わらない(validate-manual.mjsでlifestageMin/Maxは両方指定/両方省略のみ許可)。
+    // 2026-08是正(外部コードレビュー指摘 項目3): program.status 未指定時の既定値を
+    // 'confirmed'(確認済み)から 'unconfirmed'(未確認)へ変更した。data/manual/schema/
+    // municipality.schema.ts の ConfirmationStatusSchema は「見つからない=ないと判定しない
+    // ための3値」という設計で、他のスキーマ(ClinicSchema.acceptingNewPatients 等)は
+    // すべて既定値 'unconfirmed' を採る。ProgramSchema だけが「未指定=確認済み」という
+    // 逆方向の既定値を持っていたのは、確認作業が完了していない情報を「確認済み」表示して
+    // しまう安全側でない挙動であり、スキーマ全体の「推測値は入れない」方針と整合しないため
+    // 是正する(ユーザー判断で確定済み)。この変更により、status 未指定の既存YAMLは
+    // confirmation_status='unconfirmed' で投入されるようになる(従来の 'confirmed' から変更、
+    // 表示側の出し分け未実装は migration 0034 コメント・docs/designs/data-governance.md 参照)。
+    // program.ageRange/lifestageMin/lifestageMax/confirmedOn が未指定の場合の挙動
+    // (age_range='both'・lifestage_min/max=NULL・confirmed_on=NULL)は変更しない。
     const lifestageMinOrdinal = program.lifestageMin !== undefined ? LIFESTAGE_ORDINAL[program.lifestageMin] : null;
     const lifestageMaxOrdinal = program.lifestageMax !== undefined ? LIFESTAGE_ORDINAL[program.lifestageMax] : null;
-    lines.push(insert("facilities", ["id", "dataset_id", "name", "category_type", "municipality", "municipality_code", "address", "phone", "age_range", "lifestage_min", "lifestage_max", "is_medical", "description", "contact_methods", "confirmation_status", "confirmed_on", "raw_json", "lat", "lng"], [programId, datasetId, program.name, CATEGORY_TYPES[program.category] ?? CATEGORY_TYPES.other, municipality, municipalityCode, program.address ?? null, phone, program.ageRange ?? "both", lifestageMinOrdinal, lifestageMaxOrdinal, 0, program.description, contactMethods, program.status ?? "confirmed", program.confirmedOn ?? null, json(program), program.lat ?? null, program.lng ?? null]));
+    lines.push(insert("facilities", ["id", "dataset_id", "name", "category_type", "municipality", "municipality_code", "address", "phone", "age_range", "lifestage_min", "lifestage_max", "is_medical", "description", "contact_methods", "confirmation_status", "confirmed_on", "raw_json", "lat", "lng"], [programId, datasetId, program.name, CATEGORY_TYPES[program.category] ?? CATEGORY_TYPES.other, municipality, municipalityCode, program.address ?? null, phone, program.ageRange ?? "both", lifestageMinOrdinal, lifestageMaxOrdinal, 0, program.description, contactMethods, program.status ?? "unconfirmed", program.confirmedOn ?? null, json(program), program.lat ?? null, program.lng ?? null]));
   }
 
   // facility_tags の復元(上記の退避と対応): 削除前と同じ id で再投入されたプログラムのみ
@@ -246,6 +271,11 @@ export function buildSql(survey, options = {}) {
   lines.push(
     `INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM _facility_tags_backup WHERE facility_id IN (SELECT id FROM facilities);`,
     `DROP TABLE _facility_tags_backup;`,
+    // 2026-08是正(外部コードレビュー指摘 項目1): 上記でマーキングした pending_vector_deletions
+    // のうち、同じ id で facilities に復活したもの(=実際には削除されていない)を取り消す。
+    // 「facilities に現存する id は削除済みではあり得ない」というグローバルな不変条件に基づく
+    // 整理のため、この自治体(dataset_id)に絞らず全件に対して行っても安全。
+    `DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities);`,
   );
 
   if (!includeSchoolClassData) {
@@ -321,7 +351,7 @@ export async function main(args = process.argv.slice(2)) {
   await writeFile(tempFile, buildSql(effectiveSurvey, { includeRestricted: flags.includes("--include-restricted") }), "utf8");
   let sqlSucceeded = false;
   try {
-    const result = spawnSync(wranglerPath, ["d1", "execute", "trait-compass", target, `--file=${tempFile}`], { stdio: "inherit" });
+    const result = spawnSync(wranglerPath, ["d1", "execute", "trait-compass", target, "-c", wranglerConfigPath, `--file=${tempFile}`], { stdio: "inherit" });
     if (result.error) throw result.error;
     if (result.status !== 0) {
       process.exitCode = result.status ?? 1;

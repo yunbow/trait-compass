@@ -11,6 +11,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
 import {
+  buildOrphanCleanupSql,
   buildSqlForSource,
   classifyLocalLicense,
   decodeCsvBuffer,
@@ -444,69 +445,89 @@ describe("buildSqlForSource", () => {
     ingest_target: "none",
   };
 
-  it("DELETE文はfacility_tags→facilities→school_registry→datasetsの順で並ぶ(school_registryターゲット時、末尾のfacility_tags_backup削除は復元後の後始末)", () => {
+  // 2026-08是正(実機D1検証で判明、外部コードレビュー指摘 項目4関連): facilities.dataset_id は
+  // datasets(id) への外部キー制約を持つ。facilities 本体を UPSERT 化したことで、2回目以降の
+  // 実行では常にこの dataset_id を参照する facilities 行が存在するようになったため、
+  // 従来の「DELETE FROM datasets → 再INSERT」のままだと DELETE 時点で
+  // FOREIGN KEY constraint failed になる(実機で再現・確認済み)。datasets もUPSERT
+  // (ON CONFLICT DO UPDATE)方式に変更し、削除しない。
+  it("school_registryターゲット時、DELETEはschool_registryのみ(datasetsはUPSERTのためDELETEしない)", () => {
     const statements = buildSqlForSource(schoolRegistrySource, [], "2026-07-20T00:00:00.000Z");
     const deleteStatements = statements.filter((statement) => statement.startsWith("DELETE FROM"));
     expect(deleteStatements).toEqual([
-      "DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-mext-school-code-list');",
-      "DELETE FROM facilities WHERE dataset_id = 'ds-mext-school-code-list';",
       "DELETE FROM school_registry WHERE source_id = 'mext-school-code-list';",
-      "DELETE FROM datasets WHERE id = 'ds-mext-school-code-list';",
-      "DELETE FROM facility_tags_backup WHERE dataset_id = 'ds-mext-school-code-list';",
     ]);
+    const datasetsLine = statements.find((s) => s.startsWith("INSERT INTO datasets"));
+    expect(datasetsLine).toContain("ON CONFLICT(id) DO UPDATE SET");
   });
 
-  it("facilitiesターゲットではDELETEはfacility_tags→facilities→datasetsの順で並ぶ(school_registryのDELETEは含まない、末尾のfacility_tags_backup削除は復元後の後始末)", () => {
+  it("facilitiesターゲットではDELETEはopen_data_batch_idsのリセットのみ(facilities本体・datasetsはいずれもUPSERTのためDELETEしない)", () => {
     const statements = buildSqlForSource(facilitiesSource, [], "2026-07-20T00:00:00.000Z");
     const deleteStatements = statements.filter((statement) => statement.startsWith("DELETE FROM"));
     expect(deleteStatements).toEqual([
-      "DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-wam-net-disability-services');",
-      "DELETE FROM facilities WHERE dataset_id = 'ds-wam-net-disability-services';",
-      "DELETE FROM datasets WHERE id = 'ds-wam-net-disability-services';",
-      "DELETE FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services';",
+      "DELETE FROM open_data_batch_ids WHERE dataset_id = 'ds-wam-net-disability-services';",
     ]);
+    const datasetsLine = statements.find((s) => s.startsWith("INSERT INTO datasets"));
+    expect(datasetsLine).toContain("ON CONFLICT(id) DO UPDATE SET");
   });
 
-  // 2026-08是正(外部コードレビュー指摘): facility_tags は本スクリプトが一切関知しない
-  // 手動キュレーションデータ(consultation-desk-tags*.sql投入)のため、削除前に退避し、
-  // 同じidで再投入された施設にのみ復元する。
-  //
-  // 2026-08是正の追補(外部コードレビュー指摘 P1): 1データセットのSQLは1,000文単位で
-  // チャンク分割され、チャンクごとに別々のトランザクションとして実行されうる
-  // (executeSqlChunks参照)。使い捨ての CREATE TABLE ... AS SELECT + 末尾 DROP TABLE だと、
-  // チャンク境界をまたいだ中断→再実行でタグが永久に失われる不具合があったため、
-  // dataset_id列を持つ永続テーブル(facility_tags_backup、migration 0035)へ変更し、
-  // 「このdataset_idの退避行が既に存在するか」をNOT EXISTSで判定して退避の重複・
-  // 上書きを防ぐ設計にした。
-  it("再取込時、facility_tagsを削除前にステージングテーブルへ退避し、facilities再投入後に復元する", () => {
+  // 2026-08是正(外部コードレビュー指摘 項目4): facilities本体は「DELETE FROM facilities」→
+  // 「N件INSERT」構成から、idFor()による内容ハッシュの決定性を利用した
+  // 「UPSERT(ON CONFLICT DO UPDATE)+ 事後差分クリーンアップ」方式に変更した。この方式では
+  // 内容不変(=idが変わらない)facilityのfacility_tagsは一切削除されないため、
+  // facility_tags_backupへの退避・復元(migration 0035)はこのsource向けにはもう不要になった
+  // (実際に配信元から消えたfacilityのタグはdb.tsのdeleteStaleFacilitiesと同じく
+  // 退避せずそのまま削除する。判断理由は本チケットの報告参照)。
+  it("facilities本体はDELETEせず、ON CONFLICT(id) DO UPDATE SETでUPSERTする(facility_tags_backupは一切使わない)", () => {
     const statements = buildSqlForSource(facilitiesSource, [facilityRow], "2026-07-20T00:00:00.000Z");
 
-    const backupIndex = statements.indexOf(
-      "INSERT INTO facility_tags_backup (facility_id, tag, dataset_id) SELECT facility_id, tag, 'ds-wam-net-disability-services' FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-wam-net-disability-services') AND NOT EXISTS (SELECT 1 FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services');",
-    );
-    const deleteTagsIndex = statements.findIndex((statement) => statement.startsWith("DELETE FROM facility_tags"));
-    const lastFacilityInsertIndex = statements.map((s) => s.startsWith("INSERT INTO facilities")).lastIndexOf(true);
-    const restoreIndex = statements.indexOf(
-      "INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services' AND facility_id IN (SELECT id FROM facilities);",
-    );
-    const cleanupIndex = statements.indexOf("DELETE FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services';");
-
-    // 退避(NOT EXISTSガード付き) → 削除 → (facilities再投入) → 復元 → 退避行の削除、の順序。
-    expect(backupIndex).toBeGreaterThanOrEqual(0);
-    expect(deleteTagsIndex).toBeGreaterThan(backupIndex);
-    expect(restoreIndex).toBeGreaterThan(lastFacilityInsertIndex);
-    expect(cleanupIndex).toBe(restoreIndex + 1);
-    // 使い捨てテーブルパターン(TEMP TABLE非対応対策として一時採用していたもの)には戻っていない。
+    expect(statements.some((s) => s.startsWith("DELETE FROM facilities"))).toBe(false);
+    expect(statements.some((s) => s.startsWith("DELETE FROM facility_tags"))).toBe(false);
+    expect(statements.some((s) => s.includes("facility_tags_backup"))).toBe(false);
     expect(statements.some((s) => s.includes("CREATE TABLE") || s.includes("DROP TABLE"))).toBe(false);
+
+    const upsertLine = statements.find((s) => s.startsWith("INSERT INTO facilities"));
+    expect(upsertLine).toContain("ON CONFLICT(id) DO UPDATE SET");
+    expect(upsertLine).toContain("name = excluded.name");
+    // 座標は既存のジオコーディング結果を上書き消去しないよう COALESCE する(db.tsのupsertFacilitiesと同じ方針)。
+    expect(upsertLine).toContain("lat = COALESCE(excluded.lat, lat)");
+    expect(upsertLine).toContain("lng = COALESCE(excluded.lng, lng)");
+    expect(upsertLine).toContain("updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')");
+    // idはON CONFLICT対象の主キーのため更新句には含めない。
+    expect(upsertLine).not.toContain("id = excluded.id");
   });
 
-  // 実機のD1でCREATE TEMP TABLEがSQLITE_AUTHで拒否されることを確認済みのため、
-  // 使い捨てテーブル方式には戻さない(dataset_id列による永続テーブル方式を維持する)回帰ガード。
-  it("退避行が既に存在する場合(前回実行が復元前に中断した状態)は退避をスキップする(NOT EXISTSガード)", () => {
-    const statements = buildSqlForSource(facilitiesSource, [facilityRow], "2026-07-20T00:00:00.000Z");
-    const backupStatement = statements.find((s) => s.startsWith("INSERT INTO facility_tags_backup"));
+  // ============================================================
+  // open_data_batch_ids(UPSERT後始末用マーカー、外部コードレビュー指摘 項目4)
+  // ============================================================
 
-    expect(backupStatement).toContain("AND NOT EXISTS (SELECT 1 FROM facility_tags_backup WHERE dataset_id = 'ds-wam-net-disability-services')");
+  it("facilitiesターゲットでは、実際のUPSERTより前にopen_data_batch_idsのリセット→マーキングを行う", () => {
+    const statements = buildSqlForSource(facilitiesSource, [facilityRow, { ...facilityRow, id: "row-2" }], "2026-07-20T00:00:00.000Z");
+
+    const resetIndex = statements.indexOf("DELETE FROM open_data_batch_ids WHERE dataset_id = 'ds-wam-net-disability-services';");
+    const markIndexes = statements.reduce((acc, s, i) => (s.startsWith("INSERT OR IGNORE INTO open_data_batch_ids") ? [...acc, i] : acc), [] as number[]);
+    const firstUpsertIndex = statements.findIndex((s) => s.startsWith("INSERT INTO facilities"));
+
+    expect(resetIndex).toBe(0);
+    expect(markIndexes).toHaveLength(2);
+    expect(markIndexes[0]).toBeGreaterThan(resetIndex);
+    expect(Math.max(...markIndexes)).toBeLessThan(firstUpsertIndex);
+    expect(statements).toContain("INSERT OR IGNORE INTO open_data_batch_ids (dataset_id, facility_id) VALUES ('ds-wam-net-disability-services', 'ds-wam-net-disability-services-abc123');");
+    expect(statements).toContain("INSERT OR IGNORE INTO open_data_batch_ids (dataset_id, facility_id) VALUES ('ds-wam-net-disability-services', 'row-2');");
+  });
+
+  it("school_registryターゲットではopen_data_batch_idsに一切触れない", () => {
+    const statements = buildSqlForSource(schoolRegistrySource, [schoolRegistryRow], "2026-07-20T00:00:00.000Z");
+    expect(statements.some((s) => s.includes("open_data_batch_ids"))).toBe(false);
+  });
+
+  it("ライセンス未許可でもingest_target='facilities'の場合、open_data_batch_idsはリセットのみ行いマーキングはしない(=後始末で既存facilitiesが全件削除される)", () => {
+    const licenseHoldFacilitiesSource = { ...facilitiesSource, license: "none" };
+    const statements = buildSqlForSource(licenseHoldFacilitiesSource, [facilityRow], "2026-07-20T00:00:00.000Z");
+
+    expect(statements).toContain("DELETE FROM open_data_batch_ids WHERE dataset_id = 'ds-wam-net-disability-services';");
+    expect(statements.some((s) => s.startsWith("INSERT OR IGNORE INTO open_data_batch_ids"))).toBe(false);
+    expect(statements.some((s) => s.startsWith("INSERT INTO facilities"))).toBe(false);
   });
 
   it("SQL文字列中のシングルクォートはエスケープされる", () => {
@@ -623,6 +644,50 @@ describe("buildSqlForSource", () => {
     const first = buildSqlForSource(facilitiesSource, [facilityRow], "2026-07-20T00:00:00.000Z");
     const second = buildSqlForSource(facilitiesSource, [facilityRow], "2026-07-20T00:00:00.000Z");
     expect(first).toEqual(second);
+  });
+});
+
+// ============================================================
+// buildOrphanCleanupSql(facilities後始末、外部コードレビュー指摘 項目4)
+// ============================================================
+// このsourceの全UPSERTチャンクが成功した後にのみ実行される、独立した最終ステップ。
+// main() 側でこの関数の呼び出し自体をゲートするため、ここでは生成されるSQLの内容
+// (削除対象の絞り込み・pending_vector_deletionsへの記録・後始末後のマーカークリア)を検証する。
+describe("buildOrphanCleanupSql", () => {
+  it("PRAGMAで始まり、単一の文字列(1回のwrangler d1 execute呼び出し=1トランザクション)として返す(途中のpending_vector_deletions記録だけが先に確定する逆矛盾を避けるため)", () => {
+    const sql = buildOrphanCleanupSql("ds-wam-net-disability-services");
+    expect(sql.startsWith("PRAGMA foreign_keys = ON;\n")).toBe(true);
+    expect(typeof sql).toBe("string");
+  });
+
+  it("open_data_batch_idsに含まれないfacilityをpending_vector_deletionsへ記録してから、facility_tags→facilitiesの順で削除し、最後にマーカーをクリアする", () => {
+    const sql = buildOrphanCleanupSql("ds-wam-net-disability-services");
+    const lines = sql.split("\n");
+
+    const notInBatch = "id NOT IN (SELECT facility_id FROM open_data_batch_ids WHERE dataset_id = 'ds-wam-net-disability-services')";
+    const pendingIndex = lines.findIndex((l) => l.startsWith("INSERT OR IGNORE INTO pending_vector_deletions"));
+    const tagsDeleteIndex = lines.findIndex((l) => l.startsWith("DELETE FROM facility_tags"));
+    const facilitiesDeleteIndex = lines.findIndex((l) => l.startsWith("DELETE FROM facilities"));
+    const markerClearIndex = lines.findIndex((l) => l.startsWith("DELETE FROM open_data_batch_ids"));
+
+    expect(pendingIndex).toBeGreaterThan(0);
+    expect(lines[pendingIndex]).toContain(notInBatch);
+    expect(lines[pendingIndex]).toContain("dataset_id = 'ds-wam-net-disability-services'");
+    expect(tagsDeleteIndex).toBeGreaterThan(pendingIndex);
+    expect(lines[tagsDeleteIndex]).toContain(notInBatch);
+    expect(facilitiesDeleteIndex).toBeGreaterThan(tagsDeleteIndex);
+    expect(lines[facilitiesDeleteIndex]).toContain(notInBatch);
+    expect(markerClearIndex).toBeGreaterThan(facilitiesDeleteIndex);
+    expect(lines[markerClearIndex]).toBe("DELETE FROM open_data_batch_ids WHERE dataset_id = 'ds-wam-net-disability-services';");
+  });
+
+  it("dataset_id中のシングルクォートはエスケープされる", () => {
+    const sql = buildOrphanCleanupSql("ds-o'brien");
+    expect(sql).toContain("'ds-o''brien'");
+  });
+
+  it("同一のdataset_idからは常に同じSQLを生成する(冪等・決定的)", () => {
+    expect(buildOrphanCleanupSql("ds-a")).toBe(buildOrphanCleanupSql("ds-a"));
   });
 });
 

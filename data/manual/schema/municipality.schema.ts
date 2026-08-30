@@ -212,7 +212,18 @@ export const ProgramSchema = z
      */
     lat: z.number().min(-90).max(90).optional(),
     lng: z.number().min(-180).max(180).optional(),
-    status: ConfirmationStatusSchema.default("confirmed"),
+    // 2026-08是正(外部コードレビュー指摘 項目3): 既定値を "confirmed" から "unconfirmed" へ
+    // 変更した。batch/scripts/ingest-manual-survey.mjs の buildSql も
+    // `program.status ?? "unconfirmed"` に揃えてあり(このスクリプトは Node が .ts を直接
+    // import できないためこの zod スキーマとは独立に既定値を持つ。値のパリティは人手で保つ
+    // 必要がある)、未確認のプログラムを「確認済み」表示してしまう安全側でない挙動を止め、
+    // 他の ConfirmationStatusSchema 利用箇所(ClinicSchema.acceptingNewPatients 等)と
+    // 同じ「未指定=未確認」という既定値に揃える。FixedClassSchema.status(129行目)・
+    // PathwaySchema.status(357行目)は、ingest側(ingest-manual-survey.mjs)がそれぞれ
+    // 独自に `?? "confirmed"` を既定値として使い続けており、今回の変更対象外
+    // (両者を変えると ingest 側の実際の投入値とスキーマの想定値がずれるため、
+    // スコープを ProgramSchema.status のみに限定する)。
+    status: ConfirmationStatusSchema.default("unconfirmed"),
     /**
      * 対象年齢の粗い区分(facilities.age_range)。2026-08是正(外部コードレビュー指摘:
      * スキーマ・投入処理の土台のみ)、任意項目。未指定時は ingest-manual-survey.mjs が

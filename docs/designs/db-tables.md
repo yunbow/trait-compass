@@ -51,7 +51,7 @@
 | `lng` | REAL | NULL可 | - | - | 経度。`lat`と同じ経路・既定値 | migration 0002 |
 | `no_diagnosis_ok` | INTEGER | NOT NULL | `0` | CHECK (`0`,`1`) | 「診断がなくても相談できる」フラグ。自動取込では判定不可な性質情報のため既定0、手動シードでのみ1を投入。risk_levelによる表示出し分け(FR-027)の対象外 | migration 0003 |
 | `contact_methods` | TEXT | NULL可 | - | - | 電話以外の連絡手段(メール・フォーム・来所予約等)の自由記述テキスト。値が空の場合はNULL(「連絡手段なし」と誤読させない) | migration 0004 |
-| `confirmation_status` | TEXT | NULL可 | - | CHECK (`confirmed`,`unconfirmed`,`phone_required`またはNULL) | 手動調査プログラム(`ProgramSchema.status`)の一次情報確認状況。NULLはこのフラグの対象外(CKAN/オープンデータ由来等)。`ingest-manual-survey.mjs`のみが非NULL値を投入。既存49自治体分のYAMLは値未設定のためNULLのまま(スキーマ・投入処理の土台のみで、表示側の出し分けは別途対応) | migration 0034 |
+| `confirmation_status` | TEXT | NULL可 | - | CHECK (`confirmed`,`unconfirmed`,`phone_required`またはNULL) | 手動調査プログラム(`ProgramSchema.status`)の一次情報確認状況。NULLはこのフラグの対象外(CKAN/オープンデータ由来等)。`ingest-manual-survey.mjs`のみが非NULL値を投入。既存49自治体分のYAMLは値未設定のためNULLのまま。表示側の出し分けは実装済み(通常検索の`FacilityCard`に加え、相談メモ(prepare)・AI推薦(recommend)でも共通コンポーネント`ConfirmationNotice`経由で表示、`phone_required`は「掲載内容は電話確認が未完了です」という掲載情報の検証状態の意味)。なお2026-08是正で`status`未指定YAMLの投入既定値が`unconfirmed`に変更されたため、**再投入以降は**既存49自治体分もNULLではなく`unconfirmed`が入るようになる(既に投入済みの本番データはコード変更だけでは変わらず、反映には再投入が別途必要) | migration 0034 |
 | `confirmed_on` | TEXT | NULL可 | - | - | 確認日(YYYY-MM-DD)。`ProgramSchema.confirmedOn`対応 | migration 0034 |
 | `raw_json` | TEXT | NULL可 | - | - | 取込元(CKANリソース/XLSX行等)の生データ。再取込・デバッグ用 | 初期schema |
 | `created_at` | TEXT | NOT NULL | `strftime('%Y-%m-%dT%H:%M:%fZ','now')` | - | 作成日時 | 初期schema |
@@ -470,7 +470,9 @@ AI 機能の原価防衛用固定ウィンドウ回数制限カウンタ(TICKET-
 
 ## 27. `facility_tags_backup`
 
-`facility_tags`(§3)の再取込時退避用ステージングテーブル(migration 0035、外部コードレビュー指摘P1是正)。`ingest-open-data.mjs`は1データセットのSQLが1,000文単位でチャンク分割され、チャンクごとに別々のトランザクションとして実行されうるため、使い捨ての`CREATE TABLE ... AS SELECT`ではチャンク境界をまたいだ中断・再実行でタグを永久に失う不具合があった(実機再現済み)。本テーブルは`dataset_id`列を持つ永続テーブルとし、「そのdataset_idの退避行が既に存在するか」をNOT EXISTSで判定することで、中断・再実行を繰り返してもタグを失わない設計にする。復元(`facility_tags`への再投入)が成功した後にのみ`dataset_id`単位で削除される。
+`facility_tags`(§3)の再取込時退避用ステージングテーブル(migration 0035、外部コードレビュー指摘P1是正)。当初は`ingest-open-data.mjs`が、1データセットのSQLが1,000文単位でチャンク分割され、チャンクごとに別々のトランザクションとして実行されうる(使い捨ての`CREATE TABLE ... AS SELECT`ではチャンク境界をまたいだ中断・再実行でタグを永久に失う不具合があった、実機再現済み)ことへの対策として、`dataset_id`列を持つ永続テーブルにし「そのdataset_idの退避行が既に存在するか」をNOT EXISTSで判定する設計にしていた。
+
+**2026-08是正(外部コードレビュー指摘 項目4)により、`ingest-open-data.mjs`は`facilities`本体をUPSERT(`ON CONFLICT DO UPDATE`)方式へ変更した。UPSERT方式では内容不変(=idが変わらない)facilityの`facility_tags`は一切削除されないため、本テーブルへの退避・復元は同スクリプトではもう行われない(詳細は`docs/designs/data-governance.md`参照)。他に本テーブルを参照する箇所は無く事実上未使用だが、本番D1への書き込みが制限された作業中はスキーマからの削除を見送り、将来のクリーンアップ候補として残している。**
 
 | カラム名 | 型 | NULL可否 | デフォルト | 制約 | 意味 | 由来 |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -479,3 +481,25 @@ AI 機能の原価防衛用固定ウィンドウ回数制限カウンタ(TICKET-
 | `dataset_id` | TEXT | NOT NULL | - | - | どの再取込処理による退避かを識別する(NOT EXISTSガード・復元後の削除範囲の絞り込みに使う) | migration 0035 |
 
 テーブル制約: `PRIMARY KEY (facility_id, tag)`。インデックス: `idx_facility_tags_backup_dataset_id`。
+
+## 28. `pending_vector_deletions`
+
+Vectorize 削除同期用の outbox テーブル(migration 0036、外部コードレビュー指摘 項目1)。`facilities`(§2)から削除された facility の Vectorize 側ベクトルも削除する必要があるが、`batch/ingest/workflow.ts` の埋め込みステップは `EMBEDDINGS_ENABLED` ゲート下でのみ動作し、`VectorStore.delete()` が失敗すると削除対象IDがどこにも残らず永久にVectorizeへ古いベクトルが残留する問題があった。`batch/ingest/db.ts` の `deleteStaleFacilities` が `facilities`/`facility_tags` の削除と同一の `db.batch`(アトミック)内で本テーブルへ記録し、`workflow.ts` の `runEmbeddingStep` は毎回本テーブルの全行を読み取って削除を再試行し、成功した行のみ取り除く(自己修復設計)。`ingest-open-data.mjs`/`ingest-manual-survey.mjs` が生成するSQLも同様に記録する。
+
+| カラム名 | 型 | NULL可否 | デフォルト | 制約 | 意味 | 由来 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `facility_id` | TEXT | NOT NULL | - | PRIMARY KEY | Vectorize側の削除待ち施設ID | migration 0036 |
+| `deleted_at` | TEXT | NOT NULL | - | - | D1からの削除を記録した日時(ISO 8601) | migration 0036 |
+
+テーブル制約: `PRIMARY KEY (facility_id)`。
+
+## 29. `open_data_batch_ids`
+
+`ingest-open-data.mjs` のfacilities UPSERT後始末用マーカーテーブル(migration 0037、外部コードレビュー指摘 項目4)。同スクリプトは大きなsourceのSQLを1,000文単位でチャンク分割し、チャンクごとに別々のトランザクションとして実行するため、従来の「DELETE→INSERT」構成では後半チャンクの失敗で部分投入状態になり得た。facilities本体をUPSERT(`ON CONFLICT DO UPDATE`)方式に変更し、本テーブルへ「今回のバッチに含まれるfacility_id」を実際のUPSERTより先にマーキングする。UPSERT自体がチャンク境界で中断しても、後始末(配信元で削除されたfacilityの削除、`buildOrphanCleanupSql`)は全チャンク成功後にのみ実行される独立した最終ステップのため、誤って削除されることはない。
+
+| カラム名 | 型 | NULL可否 | デフォルト | 制約 | 意味 | 由来 |
+| --- | --- | --- | --- | --- | --- | --- |
+| `dataset_id` | TEXT | NOT NULL | - | 複合PRIMARY KEYの一部 | どのsourceの取込によるマーキングかを識別する | migration 0037 |
+| `facility_id` | TEXT | NOT NULL | - | 複合PRIMARY KEYの一部 | 今回のバッチに含まれる施設ID | migration 0037 |
+
+テーブル制約: `PRIMARY KEY (dataset_id, facility_id)`(先頭列が`dataset_id`のため、`WHERE dataset_id = X`検索は追加のインデックス無しでこの主キーの前方一致で処理できる)。

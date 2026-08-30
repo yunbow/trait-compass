@@ -24,6 +24,12 @@ import { fileURLToPath } from "node:url";
 
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 export const DEFAULT_WRANGLER_PATH = join(projectRoot, "node_modules", ".bin", "wrangler");
+// `wrangler d1 execute <database-name>` は cwd から wrangler.toml/wrangler.jsonc を探索するが、
+// batch/ にはそれらが無い(wrangler.ingest.toml のみ)ため既定探索では見つからない(batch/ から
+// 素の `wrangler d1 execute trait-compass --local` を叩くと "Couldn't find a D1 DB with the
+// name or binding 'trait-compass'" で失敗することを実機確認済み)。report-review.mjs と同じく
+// database_name="trait-compass" を宣言している wrangler.ingest.toml を明示的に指定する。
+export const DEFAULT_WRANGLER_CONFIG_PATH = join(projectRoot, "batch", "wrangler.ingest.toml");
 
 /** `npm run ingest:dev`(wrangler dev -c wrangler.ingest.toml)の既定ポート(wrangler の既定値)。 */
 export const DEFAULT_INGEST_DEV_URL = "http://127.0.0.1:8787";
@@ -82,13 +88,18 @@ export function parseWranglerSelectIds(rawStdout) {
  * spawnSync 自体の失敗(バイナリ不在等)・非0終了・JSON 解析失敗はいずれも例外を投げる
  * (呼び出し元でこの関数を try/catch し、埋め込みリフレッシュ全体を失敗させずに握りつぶす)。
  */
-export function queryFacilityIds({ datasetIds, wranglerPath = DEFAULT_WRANGLER_PATH, spawnSyncImpl = defaultSpawnSync }) {
+export function queryFacilityIds({
+  datasetIds,
+  wranglerPath = DEFAULT_WRANGLER_PATH,
+  wranglerConfigPath = DEFAULT_WRANGLER_CONFIG_PATH,
+  spawnSyncImpl = defaultSpawnSync,
+}) {
   const sql = buildFacilityIdsSelectSql(datasetIds);
   if (sql === null) return [];
 
   const result = spawnSyncImpl(
     wranglerPath,
-    ["d1", "execute", "trait-compass", "--local", "--json", "--command", sql],
+    ["d1", "execute", "trait-compass", "--local", "-c", wranglerConfigPath, "--json", "--command", sql],
     { encoding: "utf8" },
   );
   if (result.error) throw result.error;
@@ -117,11 +128,12 @@ export function computeStaleIds(beforeIds, afterIds) {
 export function captureFacilityIdsBeforeApply({
   datasetIds,
   wranglerPath = DEFAULT_WRANGLER_PATH,
+  wranglerConfigPath = DEFAULT_WRANGLER_CONFIG_PATH,
   spawnSyncImpl = defaultSpawnSync,
   warn = console.warn,
 }) {
   try {
-    return queryFacilityIds({ datasetIds, wranglerPath, spawnSyncImpl });
+    return queryFacilityIds({ datasetIds, wranglerPath, wranglerConfigPath, spawnSyncImpl });
   } catch (error) {
     warn(
       `埋め込み削除同期用の事前 facility ID 取得に失敗したため、今回は削除同期をスキップします: ${error instanceof Error ? error.message : error}`,
@@ -158,7 +170,15 @@ export function buildEmbedRefreshFailureGuidance({ devUrl, deleteFacilityIds = [
 
 /**
  * `--remote` 実行時、SQL 適用成功後に表示する案内メッセージを組み立てる純関数
- * (D1 への追加クエリは行わない。本番の埋め込み更新方法・削除ベクトルの残留を案内する)。
+ * (D1 への追加クエリは行わない。本番の埋め込み更新方法・削除ベクトルの同期を案内する)。
+ *
+ * 2026-08是正(外部コードレビュー指摘 項目1): 削除された施設のベクトルは、以前は
+ * 「Vectorize に残留するため手動削除が必要」という誤った(=実際には自動化されていない)
+ * 案内をしていた。ingest-open-data.mjs / ingest-manual-survey.mjs が生成する SQL は、
+ * facilities を削除する箇所で `pending_vector_deletions`(outbox、migration 0036)へ
+ * 削除対象 facility_id を記録するようになったため、本番の CKAN 取込 Worker
+ * (EMBEDDINGS_ENABLED=true)の次回実行時に `runEmbeddingStep` がこの outbox を読み取り、
+ * 自動的に Vectorize から削除する(手動削除は不要になった)。
  */
 export function buildRemoteEmbedGuidance({ deleteFacilityIds = [] } = {}) {
   const lines = [
@@ -166,9 +186,10 @@ export function buildRemoteEmbedGuidance({ deleteFacilityIds = [] } = {}) {
     "本番埋め込みは CKAN 取込 Worker(EMBEDDINGS_ENABLED)の次回実行時に facilities が全件再 upsert されます。",
     "既存の `POST /embed` は Ollama + Qdrant 専用のローカル開発用エンドポイントであり、Workers AI / Vectorize には使用できません。",
     // --remote では D1 への追加クエリ(事前/事後の facility ID 比較)を行わないため、このスクリプトの
-    // 実行で施設が削除されたかどうかは特定できない。削除の有無に関わらず一般的な注意として案内する
-    // (deleteFacilityIds が判明している場合のみ、具体的な ID を追記する)。
-    "このスクリプトの実行で削除された施設がある場合、対応するベクトルは Vectorize に残留するため手動削除が必要です。",
+    // 実行で施設が削除されたかどうかはこのメッセージ自体からは特定できない
+    // (deleteFacilityIds が判明している場合のみ、具体的な ID を追記する)。削除同期自体は
+    // D1 側の pending_vector_deletions への記録により既に完了している。
+    "このスクリプトの実行で削除された施設がある場合も、削除IDは pending_vector_deletions テーブルに記録済みのため、CKAN 取込 Worker の次回実行時に自動的に Vectorize から削除されます(手動削除は不要です)。",
   ];
   if (deleteFacilityIds.length > 0) {
     lines.push(
@@ -191,6 +212,7 @@ export async function finishLocalEmbedRefresh({
   datasetIds,
   beforeIds,
   wranglerPath = DEFAULT_WRANGLER_PATH,
+  wranglerConfigPath = DEFAULT_WRANGLER_CONFIG_PATH,
   spawnSyncImpl = defaultSpawnSync,
   devUrl,
   fetchImpl = fetch,
@@ -201,7 +223,7 @@ export async function finishLocalEmbedRefresh({
 
   let deleteFacilityIds = [];
   try {
-    const afterIds = queryFacilityIds({ datasetIds, wranglerPath, spawnSyncImpl });
+    const afterIds = queryFacilityIds({ datasetIds, wranglerPath, wranglerConfigPath, spawnSyncImpl });
     deleteFacilityIds = computeStaleIds(beforeIds, afterIds);
   } catch (error) {
     warn(

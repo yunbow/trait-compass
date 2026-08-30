@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import { classifyLicense } from "../../../app/src/features/data-ingest/services/licenseClassifier";
 import { INGEST_DATASETS } from "../datasets.config";
-import { buildDatasetRow, upsertDataset, upsertFacilities } from "../db";
+import { buildDatasetRow, clearPendingVectorDeletions, fetchPendingVectorDeletionIds, upsertDataset, upsertFacilities } from "../db";
 import type { DatasetRow } from "../db";
 import type { NormalizedFacility } from "../transform";
 
@@ -317,18 +317,23 @@ describe("upsertFacilities", () => {
       makeFacility({ id: "fac-a" }),
     ]);
 
-    // db.batch が2回呼ばれる: ①削除同期(facility_tags→facilities)、②upsert。
+    // db.batch が2回呼ばれる: ①削除同期(facility_tags→facilities→pending_vector_deletions)、②upsert。
     expect(db.batch).toHaveBeenCalledTimes(2);
     const deleteBatchCall = (db.batch as ReturnType<typeof vi.fn>).mock.calls[0][0] as unknown[];
-    expect(deleteBatchCall).toHaveLength(2);
+    // 2026-08是正(外部コードレビュー指摘 項目1): 削除と同一バッチで pending_vector_deletions
+    // (Vectorize削除同期のoutbox)への記録も行うため3文になる。
+    expect(deleteBatchCall).toHaveLength(3);
 
     const tagsDeleteIndex = prepareCalls.findIndex((sql) => sql.includes("DELETE FROM facility_tags"));
     const facilitiesDeleteIndex = prepareCalls.findIndex((sql) => sql.includes("DELETE FROM facilities WHERE id IN"));
+    const pendingDeletionInsertIndex = prepareCalls.findIndex((sql) => sql.includes("INSERT OR IGNORE INTO pending_vector_deletions"));
     expect(tagsDeleteIndex).toBeGreaterThanOrEqual(0);
     expect(facilitiesDeleteIndex).toBeGreaterThan(tagsDeleteIndex);
+    expect(pendingDeletionInsertIndex).toBeGreaterThan(facilitiesDeleteIndex);
     // 削除対象は「今回の正規化結果に含まれない fac-removed」のみ、現存する fac-a は対象外。
     expect(bindCalls[tagsDeleteIndex]).toEqual(["fac-removed"]);
     expect(bindCalls[facilitiesDeleteIndex]).toEqual(["fac-removed"]);
+    expect(bindCalls[pendingDeletionInsertIndex]).toEqual(["fac-removed"]);
     // 2026-08(Vectorize削除同期対応): upsertFacilities は削除した stale facility ID を返す
     // (workers/ingest/workflow.ts が Vectorize 側の VectorStore.delete に使う)。
     expect(deletedFacilityIds).toEqual(["fac-removed"]);
@@ -369,5 +374,93 @@ describe("upsertFacilities", () => {
     expect(db.batch).toHaveBeenCalledTimes(3);
     // チャンク分割(MAX_IDS_PER_QUERY超)されても、返り値には削除対象91件全てが含まれる。
     expect(deletedFacilityIds).toEqual(staleIds);
+  });
+});
+
+// ============================================================
+// pending_vector_deletions(Vectorize削除同期のoutbox、外部コードレビュー指摘 項目1)
+// ============================================================
+
+describe("fetchPendingVectorDeletionIds / clearPendingVectorDeletions", () => {
+  function createFakeDb(existingIds: string[] = []) {
+    const prepareCalls: string[] = [];
+    const bindCalls: unknown[][] = [];
+    const runCalls: string[] = [];
+
+    const db = {
+      prepare: vi.fn((sql: string) => {
+        prepareCalls.push(sql);
+        return {
+          bind: vi.fn((...args: unknown[]) => {
+            bindCalls.push(args);
+            return {
+              all: vi.fn(async () => ({ results: existingIds.map((id) => ({ id })) })),
+              run: vi.fn(async () => ({})),
+            };
+          }),
+          all: vi.fn(async () => ({ results: existingIds.map((id) => ({ id })) })),
+          run: vi.fn(async () => {
+            runCalls.push(sql);
+            return {};
+          }),
+        };
+      }),
+    };
+
+    return { db, prepareCalls, bindCalls, runCalls };
+  }
+
+  it("fetchPendingVectorDeletionIds は、先にfacilitiesに現存するfacility_idをoutboxから取り除いてから、残りの全facility_idを返す", async () => {
+    const { db, prepareCalls } = createFakeDb(["fac-a", "fac-b"]);
+
+    const ids = await fetchPendingVectorDeletionIds(db as unknown as Parameters<typeof fetchPendingVectorDeletionIds>[0]);
+
+    // ①先にpurge(DELETE ... WHERE facility_id IN (SELECT id FROM facilities))、②その後SELECT、の順。
+    expect(prepareCalls[0]).toContain("DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities)");
+    expect(prepareCalls[1]).toContain("SELECT facility_id AS id FROM pending_vector_deletions");
+    expect(ids).toEqual(["fac-a", "fac-b"]);
+  });
+
+  // 2026-08是正(オーケストレーターレビュー指摘、クロス実行エッジケース): 実行Nで削除された
+  // facility Xがoutboxに残ったまま、実行N+1で同じ内容ハッシュidで再作成された場合、
+  // embed pipelineの全件upsert(Xの生きたベクトルもここで書き込まれる)の後にoutbox全行を
+  // VectorStore.deleteしてしまうと、直前にupsertしたXの生きたベクトルを誤って削除してしまう。
+  // fetchPendingVectorDeletionIdsがSELECT前に「facilitiesに現存するfacility_id」をpurgeする
+  // ことで、この誤削除を防ぐ(このテストではrunSql呼び出しの実行自体を確認する。実際に
+  // facilitiesに現存するかどうかの判定はSQLのサブクエリに委ねているため、フェイクDBの
+  // all()モックはpurge後のSELECT結果を模すのみで、purgeの中身のSQL実行はrunCallsで検証する)。
+  it("purgeのDELETE文はSELECT前に1回だけ実行される(runで呼ばれる、bind不要)", async () => {
+    const { db, runCalls } = createFakeDb(["fac-a"]);
+
+    await fetchPendingVectorDeletionIds(db as unknown as Parameters<typeof fetchPendingVectorDeletionIds>[0]);
+
+    expect(runCalls).toHaveLength(1);
+    expect(runCalls[0]).toContain("DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities)");
+  });
+
+  it("clearPendingVectorDeletions は指定したfacility_idをDELETEする", async () => {
+    const { db, prepareCalls, bindCalls } = createFakeDb();
+
+    await clearPendingVectorDeletions(db as unknown as Parameters<typeof clearPendingVectorDeletions>[0], ["fac-a", "fac-b"]);
+
+    expect(prepareCalls[0]).toContain("DELETE FROM pending_vector_deletions WHERE facility_id IN");
+    expect(bindCalls[0]).toEqual(["fac-a", "fac-b"]);
+  });
+
+  it("clearPendingVectorDeletions は空配列の場合、DBへ問い合わせしない", async () => {
+    const { db } = createFakeDb();
+
+    await clearPendingVectorDeletions(db as unknown as Parameters<typeof clearPendingVectorDeletions>[0], []);
+
+    expect(db.prepare).not.toHaveBeenCalled();
+  });
+
+  it("clearPendingVectorDeletions は91件(MAX_IDS_PER_QUERY=90超)の場合、2チャンクに分けてDELETEする", async () => {
+    const ids = Array.from({ length: 91 }, (_, i) => `fac-${i}`);
+    const { db } = createFakeDb();
+
+    await clearPendingVectorDeletions(db as unknown as Parameters<typeof clearPendingVectorDeletions>[0], ids);
+
+    expect(db.prepare).toHaveBeenCalledTimes(2);
   });
 });

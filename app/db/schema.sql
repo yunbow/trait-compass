@@ -114,13 +114,15 @@ CREATE TABLE IF NOT EXISTS facilities (
   -- 値が空の場合は NULL とし、「連絡手段なし」と誤読させる表示はしない(表示側は NULL を
   -- 非表示として扱う)。
   contact_methods TEXT,
-  -- 確認状態(migration 0034、外部コードレビュー指摘: スキーマ・投入処理の土台のみ)。手動調査
-  -- プログラム(data/manual/schema/municipality.schema.ts の ProgramSchema.status)の一次情報
-  -- 確認状況を保持する。NULL = 本フラグの対象外(CKAN/オープンデータ由来など、確認状態という
-  -- 概念を持たない取込元)。ingest-manual-survey.mjs のみが非NULL値を投入する。表示側での
-  -- 出し分け(unconfirmedの非表示・phone_requiredの注記等)は本フィールド追加時点では未実装で、
-  -- 別途対応が必要(既存49自治体分のYAMLはstatusが未確認/要電話でも実際の値をここに反映する
-  -- ingest側の対応まで含めて是正が必要、詳細はdocs/designs/data-governance.md参照)。
+  -- 確認状態(migration 0034)。手動調査プログラム(data/manual/schema/municipality.schema.ts の
+  -- ProgramSchema.status)の一次情報確認状況を保持する。NULL = 本フラグの対象外(CKAN/オープン
+  -- データ由来など、確認状態という概念を持たない取込元)。ingest-manual-survey.mjs のみが
+  -- 非NULL値を投入する。表示側の出し分け(unconfirmedの注記・phone_requiredの掲載情報検証状態
+  -- 注記等)は実装済み(FacilityCard・相談メモ・AI推薦の共通ConfirmationNoticeコンポーネント、
+  -- 2026-08是正)。既存49自治体分のYAMLはstatus未設定のためNULLのままだが、2026-08是正で
+  -- status未指定時の投入既定値がunconfirmedへ変更されたため、再投入以降はNULLではなく
+  -- unconfirmedが入る(既投入の本番データはコード変更だけでは変わらず、再投入が別途必要。
+  -- 詳細はdocs/designs/data-governance.md参照)。
   confirmation_status TEXT CHECK (confirmation_status IS NULL OR confirmation_status IN ('confirmed', 'unconfirmed', 'phone_required')),
   -- 確認日(YYYY-MM-DD、任意)。ProgramSchema.confirmedOn 対応、migration 0034。
   confirmed_on TEXT,
@@ -177,6 +179,39 @@ CREATE TABLE IF NOT EXISTS facility_tags_backup (
   tag TEXT NOT NULL,
   dataset_id TEXT NOT NULL,
   PRIMARY KEY (facility_id, tag)
+);
+
+-- ============================================================
+-- pending_vector_deletions: Vectorize 削除同期用の outbox
+-- ============================================================
+-- migration 0036(外部コードレビュー指摘 項目1)。facilities から削除された(=Vectorize から
+-- も削除すべき)facility_id を記録する永続 outbox。db.ts の deleteStaleFacilities が
+-- facilities/facility_tags の削除と同一の db.batch(アトミック)内で本テーブルへ INSERT する。
+-- workflow.ts の runEmbeddingStep は毎回本テーブルの全行を読み取って VectorStore.delete の
+-- 対象にし、削除に成功した行のみ本テーブルから取り除く(失敗分は次回実行時に自動リトライされる
+-- 自己修復設計)。ingest-open-data.mjs / ingest-manual-survey.mjs が生成する SQL も、facilities
+-- を削除する箇所で同様に本テーブルへ記録する。
+CREATE TABLE IF NOT EXISTS pending_vector_deletions (
+  facility_id TEXT PRIMARY KEY,
+  deleted_at TEXT NOT NULL
+);
+
+-- ============================================================
+-- open_data_batch_ids: ingest-open-data.mjs のUPSERT後始末用マーカー
+-- ============================================================
+-- migration 0037(外部コードレビュー指摘 項目4)。ingest-open-data.mjs は facilities 本体を
+-- UPSERT(ON CONFLICT DO UPDATE)方式で投入するよう改めた(従来の DELETE→INSERT 構成は
+-- splitSqlIntoChunks によるチャンク分割で非原子的だった)。本テーブルは「今回のバッチに
+-- 含まれる facility_id」を実際のUPSERTより先にマーキングするマーカーで、UPSERT自体が
+-- チャンク境界で中断しても、後始末(配信元で削除された facility の削除)は全チャンク成功後に
+-- のみ実行される独立した最終ステップのため、誤って削除されることはない(詳細は
+-- ingest-open-data.mjs の buildSqlForSource / buildOrphanCleanupSql のコメント参照)。
+-- dataset_id を PRIMARY KEY の先頭列にすることで、`WHERE dataset_id = X` 検索は追加の
+-- インデックス無しでこの主キーインデックスの前方一致で効率的に処理できる。
+CREATE TABLE IF NOT EXISTS open_data_batch_ids (
+  dataset_id TEXT NOT NULL,
+  facility_id TEXT NOT NULL,
+  PRIMARY KEY (dataset_id, facility_id)
 );
 
 -- ============================================================

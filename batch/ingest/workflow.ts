@@ -33,7 +33,9 @@ import { fetchCkanPackage, fetchWithUserAgent, selectIngestResource, normalizeRe
 import { CKAN_BASE_URL, INGEST_DATASETS, type DatasetConfig } from "./datasets.config";
 import {
   buildDatasetRow,
+  clearPendingVectorDeletions,
   fetchFacilitiesNeedingGeocode,
+  fetchPendingVectorDeletionIds,
   updateFacilityLatLng,
   upsertDataset,
   upsertFacilities,
@@ -125,6 +127,12 @@ export interface DatasetIngestResult {
    * 行わなかった)の場合は空配列。Cloudflare Workflows のリプレイ安全性のため、この配列は
    * `upsertFacilities` を呼ぶ `step.do` の戻り値(シリアライズ可能な JSON)経由でのみ
    * 伝播させ、step 外の変数への副作用としては持ち出さない。
+   *
+   * 2026-08是正(外部コードレビュー指摘 項目1): この配列自体は Workflow 実行結果の情報表示用
+   * (どの facility が今回削除されたかの可観測性)に留まり、Vectorize 側のベクトル削除同期は
+   * `deleteStaleFacilities` が同一トランザクションで記録する `pending_vector_deletions`
+   * (outbox、migration 0036)経由で行う(`runEmbeddingStep` 参照)。そのため、この配列を
+   * Workflow の他ステップへ引き回す必要はもう無い。
    */
   deletedFacilityIds: string[];
 }
@@ -164,14 +172,12 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
       results.push(await this.processDataset(dataset, step));
     }
 
-    // 全データセット分の削除同期結果(db.ts の deleteStaleFacilities)を集約する。
-    // 各要素は既に step.do の戻り値(上記 processDataset 内)として確定済みのプレーン配列のため、
-    // ここでの集約自体はリプレイ安全性に影響しない(step を新たに跨がない純粋な配列結合)。
-    const deletedFacilityIds = results.flatMap((result) => result.deletedFacilityIds);
-
     // D1 UPSERT 後段の埋め込み生成・Vectorize 投入(FR-03A、TICKET-0021)。
     // EMBEDDINGS_ENABLED=false(既定)の場合は何もせず、上記の CKAN→R2→D1 の結果には影響しない。
-    const embedding = await this.runEmbeddingStep(step, deletedFacilityIds);
+    // 2026-08是正(外部コードレビュー指摘 項目1): Vectorize 側の削除同期は `pending_vector_
+    // deletions`(outbox)を毎回全件読み取る自己修復設計に変わったため、今回の Workflow 実行分
+    // (`results` の `deletedFacilityIds`)をここで集約して渡す必要は無くなった。
+    const embedding = await this.runEmbeddingStep(step);
 
     // D1 UPSERT 後段の facilities ジオコーディング(FR-02A、TICKET-0028)。
     // GEOCODING_ENABLED=false(既定)の場合は何もせず、上記の結果には影響しない。
@@ -193,14 +199,17 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
    * 取得して upsert する設計(embed-pipeline.ts の `fetchEmbeddableFacilities` →
    * `embedAndUpsertFacilities`)のため、今回の取込で更新された facility のベクトルは
    * この全件 upsert により自動的に上書きされる(更新分だけを別途 upsert する追加対応は不要)。
-   * 一方、削除された facility(`deletedFacilityIds`)は全件 upsert の対象に含まれないため、
-   * Vectorize 側に古いベクトルが残留する。これを防ぐため、削除 ID が1件以上あれば
-   * 別の `step.do` で明示的に `VectorStore.delete` を呼ぶ。
+   *
+   * 2026-08是正(外部コードレビュー指摘 項目1): 削除された facility のベクトル削除同期は、
+   * 今回の Workflow 実行分の ID を引数で受け取る方式(失敗すると ID が失われ復旧不能だった)
+   * から、`pending_vector_deletions`(outbox、migration 0036、db.ts の `deleteStaleFacilities`
+   * が facilities/facility_tags の削除と同一トランザクションで記録)を毎回全件読み取る
+   * 自己修復方式に変更した。過去の Workflow 実行で `VectorStore.delete` が失敗した分も
+   * outbox に残り続けているため、今回の実行で自動的にリトライされる。`VectorStore.delete`
+   * が成功した ID のみ `clearPendingVectorDeletions` で outbox から取り除く(失敗時は
+   * 例外が catch 節に送られ、outbox には触れないため次回実行時に再度リトライされる)。
    */
-  private async runEmbeddingStep(
-    step: WorkflowStep,
-    deletedFacilityIds: readonly string[],
-  ): Promise<EmbeddingStepResult> {
+  private async runEmbeddingStep(step: WorkflowStep): Promise<EmbeddingStepResult> {
     if (this.env.EMBEDDINGS_ENABLED !== "true") {
       return { status: "disabled" };
     }
@@ -214,11 +223,16 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
         }),
       );
 
+      const pendingDeletionIds = await step.do("fetch pending vector deletions", EMBED_STEP_CONFIG, async () =>
+        fetchPendingVectorDeletionIds(this.env.DB),
+      );
+
       let deletedVectors = 0;
-      if (deletedFacilityIds.length > 0) {
+      if (pendingDeletionIds.length > 0) {
         deletedVectors = await step.do("delete stale facility vectors", EMBED_STEP_CONFIG, async () => {
-          await createVectorStore("vectorize", this.env.VECTORIZE).delete([...deletedFacilityIds]);
-          return deletedFacilityIds.length;
+          await createVectorStore("vectorize", this.env.VECTORIZE).delete([...pendingDeletionIds]);
+          await clearPendingVectorDeletions(this.env.DB, pendingDeletionIds);
+          return pendingDeletionIds.length;
         });
       }
 

@@ -25,6 +25,13 @@ import {
 const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 const sourcesPath = join(projectRoot, "data", "open-data", "sources.yaml");
 const wranglerPath = join(projectRoot, "node_modules", ".bin", "wrangler");
+// `wrangler d1 execute <database-name>` は cwd から wrangler.toml/wrangler.jsonc を探索するが、
+// batch/ にはそれらが無い(wrangler.ingest.toml のみ)ため既定探索では見つからない(batch/ から
+// 素の `wrangler d1 execute trait-compass --local` を叩くと "Couldn't find a D1 DB with the
+// name or binding 'trait-compass'" で失敗することを実機確認済み)。report-review.mjs /
+// ingest-manual-survey.mjs と同じく database_name="trait-compass" を宣言している
+// wrangler.ingest.toml を明示的に指定する。
+const wranglerConfigPath = join(projectRoot, "batch", "wrangler.ingest.toml");
 const insertChunkSize = 1_000;
 export const HTML_KNOWLEDGE_DESCRIPTION_MAX_LENGTH = 500;
 
@@ -371,66 +378,122 @@ export function splitSqlIntoChunks(sqlStatements, chunkSize = insertChunkSize) {
   return chunks;
 }
 
-/** source の再投入に必要な DELETE と INSERT 文の配列を作る。 */
+/** facility 1行分の UPSERT(ON CONFLICT DO UPDATE)文を組み立てる。 */
+function insertFacilityUpsert(row) {
+  const columns = [
+    "id", "dataset_id", "name", "category_type", "municipality", "municipality_code", "address",
+    "phone", "url", "lat", "lng", "age_range", "service_category", "facility_subtype", "lifestage_min", "lifestage_max", "is_medical", "description", "raw_json",
+  ];
+  const values = [
+    row.id, row.dataset_id, row.name, row.category_type, row.municipality, row.municipality_code ?? toMunicipalityCode(row.municipality), row.address,
+    row.phone, row.url, row.lat, row.lng, row.age_range, row.service_category, row.facility_subtype, row.lifestage_min ?? null, row.lifestage_max ?? null, row.is_medical, row.description,
+    typeof row.raw_json === "string" ? row.raw_json : JSON.stringify(row.raw_json),
+  ];
+  const updateClauses = columns
+    .filter((column) => column !== "id")
+    .map((column) => {
+      // 緯度経度は db.ts の upsertFacilities(TICKET-0011作業ログ)と同じ理由で COALESCE する:
+      // 座標列を持たない source の再取込や、本番CKAN取込Workerのジオコーディングステップ
+      // (FR-02A、dataset_id を問わず address はあるが lat 未設定の facilities 全件が対象)が
+      // 後から設定した lat/lng を、このスクリプトの再実行(通常 lat/lng は NULL)で
+      // 上書き消去しないようにするため。
+      if (column === "lat") return "lat = COALESCE(excluded.lat, lat)";
+      if (column === "lng") return "lng = COALESCE(excluded.lng, lng)";
+      return `${column} = excluded.${column}`;
+    });
+  updateClauses.push("updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')");
+
+  return `INSERT INTO facilities (${columns.join(", ")}) VALUES (${values.map(value).join(", ")}) ON CONFLICT(id) DO UPDATE SET ${updateClauses.join(", ")};`;
+}
+
+/**
+ * source の再投入に必要な SQL 文の配列を作る。
+ *
+ * 2026-08是正(外部コードレビュー指摘 項目4): facilities 本体は従来「DELETE FROM facilities
+ * WHERE dataset_id=X」→「N件INSERT」構成だった。このデータセットのSQLは1,000文単位で
+ * チャンク分割され、チャンクごとに別々の wrangler d1 execute 呼び出し(それぞれ独立した
+ * トランザクション)として実行されうる(executeSqlChunks参照)ため、後半チャンクの失敗で
+ * 「既存データは消えたが新データは一部しか入っていない」部分投入状態になり得た
+ * (facility_tags 側は migration 0035 で対応済みだったが facilities 本体は未対応だった)。
+ *
+ * facilities.id は idFor() による内容ハッシュのため、内容が変わらなければ再取込でも同じ id に
+ * なる決定性を利用し、「UPSERT(ON CONFLICT DO UPDATE)+ 事後差分クリーンアップ」方式に変更する。
+ * 1. 各行を UPSERT する(冪等。チャンク境界で中断しても、再実行するだけで同じ内容が
+ *    再度書き込まれるだけであり、何度re-runしても収束する)。
+ * 2. 「配信元で削除され今回のバッチに含まれなくなった facility」の削除(後始末)は、UPSERTとは
+ *    別の独立したステップ(`buildOrphanCleanupSql`、main() 参照)で、このsourceの全チャンクが
+ *    成功した場合にのみ実行する。今回のバッチの facility id 一覧は `open_data_batch_ids`
+ *    (永続マーカーテーブル、migration 0037)へ実際のUPSERTより先に(このSQLの冒頭で)
+ *    マーキングする。UPSERT自体がチャンク境界で中断しても、マーキングは既に完了しており、
+ *    後始末は「全チャンク成功後の独立した最終ステップ」としてのみ実行されるため、
+ *    UPSERTが中断された場合に後始末が誤って実行されることはない
+ *    (再実行時は冒頭の DELETE で前回の残骸をクリアしてからマーキングし直す)。
+ * 3. metadataOnly(ライセンス未許可等)の場合はマーキングを一切行わない。これにより、
+ *    後始末ステップは「今回のバッチに含まれるfacility=0件」として、この dataset_id に
+ *    紐づく既存の facilities を全件削除する(ライセンス状態が許可→不許可に変わった場合に
+ *    表示を止める、という従来の DELETE ALL 相当の挙動を保つ)。
+ *
+ * facility_tags については、UPSERT方式では内容不変(=idが変わらない)facilityのタグは
+ * 一切触れられないため、旧方式(facility_tags_backup への退避・復元、migration 0035)は
+ * このsource向けには不要になった。実際に削除される(=配信元で消えた)facilityのタグは、
+ * db.ts の deleteStaleFacilities と同じく退避せずそのまま削除する(復元する意味の対応関係が
+ * 無くなった以上、退避を続ける理由がない。facility_tags_backup テーブル自体の要否は
+ * 別途の判断・報告を参照)。
+ */
 export function buildSqlForSource(source, rows, fetchedAt) {
   const datasetId = source.dataset_id ?? `ds-${source.id}`;
   const license = classifyLocalLicense(source.license);
   const metadataOnly = !license.allowed || source.ingest_target === "none";
-  // 2026-08是正(外部コードレビュー指摘、相談タグ再取込ずれ対応): facility_tags は
-  // consultation-desk-tags*.sql による手動キュレーションのみが投入経路であり、本スクリプトは
-  // 一切関知しない(data-governance.md参照)。削除前に永続ステージングテーブル
-  // (facility_tags_backup、migration 0035)へ退避し、再投入後に同じ id で復活した施設へ
-  // のみ復元する。
-  //
-  // 2026-08是正の追補(外部コードレビュー指摘 P1): このデータセットのSQLは1,000文単位で
-  // チャンク分割され、チャンクごとに別々のwrangler d1 execute呼び出し(それぞれ独立した
-  // トランザクション)として実行されうる(executeSqlChunks参照)。以前は使い捨ての
-  // `CREATE TABLE ... AS SELECT` + 末尾 `DROP TABLE` を使っており、チャンク境界をまたいだ
-  // 中断→再実行でタグが永久に失われる不具合があった(実機再現済み)。
-  // `INSERT ... WHERE NOT EXISTS`で「このdataset_idの退避行が既に存在するか」を判定する
-  // ことで、前回の実行が復元前に中断していた場合は退避をスキップしてそのまま再利用する
-  // (退避テーブルを上書きしない)。復元・削除(このファイル末尾)が実際に成功したときのみ
-  // dataset_id単位で退避行を削除するため、中断・再実行を何度繰り返してもタグを失わない。
-  const statements = [
-    `INSERT INTO facility_tags_backup (facility_id, tag, dataset_id) SELECT facility_id, tag, ${value(datasetId)} FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)}) AND NOT EXISTS (SELECT 1 FROM facility_tags_backup WHERE dataset_id = ${value(datasetId)});`,
-    `DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)});`,
-    `DELETE FROM facilities WHERE dataset_id = ${value(datasetId)};`,
-  ];
+  const includeFacilities = !metadataOnly && source.ingest_target === "facilities";
+
+  const statements = [];
+
+  if (source.ingest_target === "facilities") {
+    // 前回実行の残骸(中断・ライセンス状態変更等)を除去してから、今回のバッチを先に
+    // マーキングする(実際のUPSERTより前に行うことの理由は関数コメント参照)。
+    statements.push(`DELETE FROM open_data_batch_ids WHERE dataset_id = ${value(datasetId)};`);
+    if (includeFacilities) {
+      for (const row of rows) {
+        statements.push(`INSERT OR IGNORE INTO open_data_batch_ids (dataset_id, facility_id) VALUES (${value(datasetId)}, ${value(row.id)});`);
+      }
+    }
+  }
 
   if (source.ingest_target === "school_registry") {
     statements.push(`DELETE FROM school_registry WHERE source_id = ${value(source.id)};`);
   }
 
+  // 2026-08是正(外部コードレビュー指摘 項目4の実機検証で判明): facilities.dataset_id は
+  // `REFERENCES datasets(id)` の外部キー制約を持つ。facilities 本体を UPSERT 方式に変更した
+  // ことで、この dataset_id を参照する facilities 行が(2回目以降の実行では)常に既に存在する
+  // ようになったため、旧来の「DELETE FROM datasets → 再INSERT」パターンのまま残すと、
+  // 削除文の実行時点で PRAGMA foreign_keys = ON により
+  // `FOREIGN KEY constraint failed` で失敗する(実機のローカルD1で再現・確認済み)。
+  // db.ts の upsertDataset と同じ ON CONFLICT DO UPDATE 方式に変更し、datasets 行を
+  // 一度も削除しないようにする。
+  const datasetColumns = ["id", "ckan_package_id", "title", "source_org", "license", "risk_level", "source_url", "fetched_at", "freshness_note", "is_alive", "frozen"];
+  const datasetValues = [
+    datasetId,
+    source.ckan_package_id,
+    source.title,
+    source.sourceOrg,
+    source.license,
+    license.riskLevel,
+    source.url,
+    fetchedAt,
+    metadataOnly ? "license-hold またはメタ情報のみ記録" : null,
+    1,
+    0,
+  ];
+  const datasetUpdateClauses = datasetColumns.filter((c) => c !== "id").map((c) => `${c} = excluded.${c}`);
+  datasetUpdateClauses.push("updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')");
   statements.push(
-    `DELETE FROM datasets WHERE id = ${value(datasetId)};`,
-    insert("datasets", [
-      "id", "ckan_package_id", "title", "source_org", "license", "risk_level",
-      "source_url", "fetched_at", "freshness_note", "is_alive", "frozen",
-    ], [
-      datasetId,
-      source.ckan_package_id,
-      source.title,
-      source.sourceOrg,
-      source.license,
-      license.riskLevel,
-      source.url,
-      fetchedAt,
-      metadataOnly ? "license-hold またはメタ情報のみ記録" : null,
-      1,
-      0,
-    ]),
+    `INSERT INTO datasets (${datasetColumns.join(", ")}) VALUES (${datasetValues.map(value).join(", ")}) ON CONFLICT(id) DO UPDATE SET ${datasetUpdateClauses.join(", ")};`,
   );
 
-  if (!metadataOnly && source.ingest_target === "facilities") {
+  if (includeFacilities) {
     for (const row of rows) {
-      statements.push(insert("facilities", [
-        "id", "dataset_id", "name", "category_type", "municipality", "municipality_code", "address",
-        "phone", "url", "lat", "lng", "age_range", "service_category", "facility_subtype", "lifestage_min", "lifestage_max", "is_medical", "description", "raw_json",
-      ], [
-        row.id, row.dataset_id, row.name, row.category_type, row.municipality, row.municipality_code ?? toMunicipalityCode(row.municipality), row.address,
-        row.phone, row.url, row.lat, row.lng, row.age_range, row.service_category, row.facility_subtype, row.lifestage_min ?? null, row.lifestage_max ?? null, row.is_medical, row.description,
-        typeof row.raw_json === "string" ? row.raw_json : JSON.stringify(row.raw_json),
-      ]));
+      statements.push(insertFacilityUpsert(row));
     }
   }
 
@@ -446,17 +509,34 @@ export function buildSqlForSource(source, rows, fetchedAt) {
     }
   }
 
-  // facility_tags の復元(上記の退避と対応): 削除前と同じ id で再投入された施設のみ対象
-  // (WHERE で facilities に現存する id に絞る)。id が変わった・施設自体が投入対象外になった
-  // (metadataOnly・license-hold等)分の退避行は復元されずそのまま破棄される(意図的)。
-  // 削除(dataset_id単位)はこの復元が実際に成功したときのみ行われるため、この2文の間で
-  // 中断した場合は次回実行時に退避行がそのまま残り、再利用される(上記のNOT EXISTSガード)。
-  statements.push(
-    `INSERT INTO facility_tags (facility_id, tag) SELECT facility_id, tag FROM facility_tags_backup WHERE dataset_id = ${value(datasetId)} AND facility_id IN (SELECT id FROM facilities);`,
-    `DELETE FROM facility_tags_backup WHERE dataset_id = ${value(datasetId)};`,
-  );
-
   return statements;
+}
+
+/**
+ * このsourceの全UPSERTチャンクが成功した後にのみ実行する、facilities の後始末
+ * (配信元で削除され今回のバッチ(`open_data_batch_ids`)に含まれなくなった facility の削除)
+ * SQLを組み立てる(外部コードレビュー指摘 項目4)。
+ *
+ * 単一の文字列(1回の wrangler d1 execute --file 呼び出し = 1トランザクション)として返す。
+ * 複数チャンクに分割すると、途中で中断した場合に
+ * 「pending_vector_deletionsだけ記録されてfacilities/facility_tagsの削除が伴わない」
+ * (=まだ存在するfacilityのベクトルを次回誤ってVectorizeから削除してしまう)逆方向の不整合が
+ * 起こり得るため、原子性を保つために意図的に1回の実行にまとめる。
+ *
+ * 削除対象は「dataset_id が一致し、かつ open_data_batch_ids に today's batch として
+ * マーキングされていない facility」。削除前に pending_vector_deletions(outbox、migration
+ * 0036)へ記録し(Vectorize削除同期、外部コードレビュー指摘 項目1)、facility_tags →
+ * facilities の順で削除した後、当該 dataset_id のマーカーをクリアして次回実行に備える。
+ */
+export function buildOrphanCleanupSql(datasetId) {
+  const notInBatch = `id NOT IN (SELECT facility_id FROM open_data_batch_ids WHERE dataset_id = ${value(datasetId)})`;
+  return [
+    "PRAGMA foreign_keys = ON;",
+    `INSERT OR IGNORE INTO pending_vector_deletions (facility_id, deleted_at) SELECT id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now') FROM facilities WHERE dataset_id = ${value(datasetId)} AND ${notInBatch};`,
+    `DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = ${value(datasetId)} AND ${notInBatch});`,
+    `DELETE FROM facilities WHERE dataset_id = ${value(datasetId)} AND ${notInBatch};`,
+    `DELETE FROM open_data_batch_ids WHERE dataset_id = ${value(datasetId)};`,
+  ].join("\n");
 }
 
 /** fetch-meta.json を読み、未取得の場合は実行順を案内する。 */
@@ -572,7 +652,18 @@ async function readCachedHtml(filePath) {
   }
 }
 
-/** 一時 SQL ファイルを D1 に順次適用する。 */
+/**
+ * 一時 SQL ファイルを D1 に順次適用する。
+ *
+ * 戻り値は全チャンクが成功したかどうかの真偽値(2026-08是正: 従来は `process.exitCode` の
+ * 設定のみで呼び出し元に成否を伝えていたが、`process.exitCode` はプロセス全体で一度設定される
+ * と次に明示的に上書きされるまで残り続けるため、複数 source をループ処理する main() で
+ * 「直前の source が失敗した」ことと「今回の source 自体が失敗した」ことを区別できなかった。
+ * facilities の後始末(`buildOrphanCleanupSql`)を「このsourceのUPSERTが実際に成功した場合に
+ * 限り実行する」ためには source ごとの正確な成否が必要なため、戻り値で明示的に返す)。
+ * `process.exitCode` の設定自体は既存の呼び出し元(main() 末尾の hasSourceFailure 判定)との
+ * 互換のため維持する。
+ */
 async function executeSqlChunks(sqlChunks, target) {
   const temporaryFiles = [];
 
@@ -586,16 +677,17 @@ async function executeSqlChunks(sqlChunks, target) {
       await writeFile(temporaryFile, sql, "utf8");
 
       const result = spawnSync(wranglerPath, [
-        "d1", "execute", "trait-compass", target, `--file=${temporaryFile}`,
+        "d1", "execute", "trait-compass", target, "-c", wranglerConfigPath, `--file=${temporaryFile}`,
       ], { stdio: "inherit" });
       if (result.error) {
         throw result.error;
       }
       if (result.status !== 0) {
         process.exitCode = result.status ?? 1;
-        return;
+        return false;
       }
     }
+    return true;
   } finally {
     await Promise.all(temporaryFiles.map((file) => unlink(file).catch(() => {})));
   }
@@ -623,7 +715,9 @@ async function main() {
 
   const target = flags.includes("--remote") ? "--remote" : "--local";
   // 埋め込みリフレッシュ(--localのみ)用に、対象データセット全件のIDをSQL適用前に確定しておく
-  // (このスクリプトは source ごとに DELETE→INSERT するため、事前IDはループ開始前に一括取得する)。
+  // (facilities本体はUPSERT方式(2026-08是正、外部コードレビュー指摘 項目4)だが、ローカル
+  // Qdrant向けの削除同期(embed-refresh.mjs)は依然として事前/事後のfacility_id差分で
+  // 判定するため、ループ開始前に一括取得する)。
   const datasetIds = selectedSources.map((source) => source.dataset_id ?? `ds-${source.id}`);
   const beforeFacilityIds = target === "--local" ? captureFacilityIdsBeforeApply({ datasetIds }) : [];
 
@@ -638,8 +732,21 @@ async function main() {
       if (!classifyLocalLicense(source.license).allowed || source.ingest_target === "none") {
         console.log(`license-hold(またはメタのみ): ${source.id}`);
       }
-      await executeSqlChunks(sqlChunks, target);
-      if (process.exitCode) hasSourceFailure = true;
+      const upsertSucceeded = await executeSqlChunks(sqlChunks, target);
+      if (!upsertSucceeded) {
+        hasSourceFailure = true;
+        continue;
+      }
+
+      // 2026-08是正(外部コードレビュー指摘 項目4): facilities の後始末(配信元で削除された
+      // facilityのクリーンアップ、buildOrphanCleanupSql)は、このsourceの全UPSERTチャンクが
+      // 成功した場合にのみ実行する。単一ファイルとして実行する(executeSqlChunksへ長さ1の
+      // 配列を渡す)ことで、後始末自体の原子性も担保する。
+      if (source.ingest_target === "facilities") {
+        const datasetId = source.dataset_id ?? `ds-${source.id}`;
+        const cleanupSucceeded = await executeSqlChunks([buildOrphanCleanupSql(datasetId)], target);
+        if (!cleanupSucceeded) hasSourceFailure = true;
+      }
     } catch (error) {
       hasSourceFailure = true;
       console.error(`${source.id}: ${error instanceof Error ? error.message : error}`);

@@ -101,6 +101,13 @@ const MAX_IDS_PER_QUERY = 90;
  * DELETE→INSERT パターンと揃える)。呼び出し元(`processDataset`)は `facilities.length === 0`
  * の場合はこの関数自体を呼ばない(正規化が0件になった異常時に既存の正常なデータを
  * 巻き込んで全削除してしまわないため。その場合は `is_alive=0` で不健全扱いにするだけに留める)。
+ *
+ * 2026-08是正(外部コードレビュー指摘 項目1): 削除した facility_id は Vectorize 側のベクトルも
+ * 削除対象になる(`workflow.ts` の `runEmbeddingStep` 参照)。この削除処理自体は D1 の
+ * facilities/facility_tags 削除と同一の `db.batch`(アトミック)に含め、`pending_vector_deletions`
+ * (outbox、migration 0036)へ記録する。VectorStore.delete が(リトライを使い果たすなどで)
+ * 失敗しても、この outbox には残り続けるため、次回以降の埋め込みステップ実行時に自動的に
+ * リトライされる(戻り値の `staleIds` を Workflow 実行結果の情報表示に使う従来の用途とは独立)。
  */
 async function deleteStaleFacilities(
   db: D1Database,
@@ -119,12 +126,62 @@ async function deleteStaleFacilities(
   for (let start = 0; start < staleIds.length; start += MAX_IDS_PER_QUERY) {
     const chunk = staleIds.slice(start, start + MAX_IDS_PER_QUERY);
     const placeholders = chunk.map(() => "?").join(", ");
+    const pendingDeletionPlaceholders = chunk.map(() => "(?, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))").join(", ");
     await db.batch([
       db.prepare(`DELETE FROM facility_tags WHERE facility_id IN (${placeholders})`).bind(...chunk),
       db.prepare(`DELETE FROM facilities WHERE id IN (${placeholders})`).bind(...chunk),
+      db
+        .prepare(`INSERT OR IGNORE INTO pending_vector_deletions (facility_id, deleted_at) VALUES ${pendingDeletionPlaceholders}`)
+        .bind(...chunk),
     ]);
   }
   return staleIds;
+}
+
+/**
+ * `pending_vector_deletions`(Vectorize 削除同期用の outbox、migration 0036)の全行の
+ * facility_id を取得する(`workflow.ts` の `runEmbeddingStep` が毎回全件を読み取り、リトライ対象
+ * にする自己修復設計のため、今回のWorkflow実行に限らず過去の失敗分も含めて全件返す)。
+ *
+ * 2026-08是正(オーケストレーターレビュー指摘、クロス実行エッジケース): 「facilities に現存する
+ * facility_id は削除済みではあり得ない」という不変条件(`ingest-manual-survey.mjs` の
+ * buildSql 末尾で同様に使っている整理と同じ)を、Worker 側でも守る必要がある。
+ *
+ * 誤削除シナリオ: (1) 実行 N で facility X が削除され outbox に記録される。(2) `VectorStore.delete`
+ * が失敗する(または outbox 反映後に別経路の取込が走る)ため outbox に X が残る。(3) 実行 N+1 で
+ * 同一内容の facility X が同じ内容ハッシュ id で再作成される(`upsertFacilities` は outbox を
+ * 一切触らない)。(4) 実行 N+1 の `runEmbeddingStep` が embed pipeline の全件 upsert
+ * (facilities 全件を再 upsert、X の生きたベクトルもここで書き込まれる)の**後**に outbox 全行を
+ * 削除対象として `VectorStore.delete` してしまうと、直前に upsert した X の生きたベクトルを
+ * 削除してしまう(次回の全件再 upsert まで検索結果からベクトルが欠落する)。
+ *
+ * このため、SELECT の**前**に facilities に現存する facility_id の outbox 行を先に取り除く
+ * (「復活」した facility を outbox から purge する)。この purge は何度実行しても結果が変わらない
+ * (冪等)ため、Cloudflare Workflows のリプレイ安全性にも問題ない。purge を行わないと、
+ * 一度でも復活した facility_id の outbox 行が永久に残り続け(`clearPendingVectorDeletions` は
+ * 呼び出し元が明示的に渡した ID しか消さないため)outbox が肥大化する問題も同時に解消する。
+ */
+export async function fetchPendingVectorDeletionIds(db: D1Database): Promise<string[]> {
+  await db
+    .prepare(`DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities)`)
+    .run();
+
+  const { results } = await db.prepare(`SELECT facility_id AS id FROM pending_vector_deletions`).all<{ id: string }>();
+  return (results ?? []).map((row) => row.id);
+}
+
+/**
+ * `VectorStore.delete` が成功した facility_id を `pending_vector_deletions` から取り除く
+ * (呼び出し元は削除に成功した ID だけを渡すこと。失敗した ID を渡すと outbox からリトライ機会が
+ * 失われてしまうため、成功が確認できた場合のみ呼ぶこと)。
+ */
+export async function clearPendingVectorDeletions(db: D1Database, ids: readonly string[]): Promise<void> {
+  if (ids.length === 0) return;
+  for (let start = 0; start < ids.length; start += MAX_IDS_PER_QUERY) {
+    const chunk = ids.slice(start, start + MAX_IDS_PER_QUERY);
+    const placeholders = chunk.map(() => "?").join(", ");
+    await db.prepare(`DELETE FROM pending_vector_deletions WHERE facility_id IN (${placeholders})`).bind(...chunk).run();
+  }
 }
 
 /**

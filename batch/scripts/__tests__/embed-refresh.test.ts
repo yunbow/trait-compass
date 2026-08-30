@@ -123,14 +123,34 @@ describe("queryFacilityIds", () => {
       stdout: JSON.stringify([{ results: [{ id: "fac-a" }] }]),
     }));
 
-    const ids = queryFacilityIds({ datasetIds: ["ds-a"], wranglerPath: "/bin/wrangler", spawnSyncImpl });
+    const ids = queryFacilityIds({
+      datasetIds: ["ds-a"],
+      wranglerPath: "/bin/wrangler",
+      wranglerConfigPath: "/repo/batch/wrangler.ingest.toml",
+      spawnSyncImpl,
+    });
 
     expect(ids).toEqual(["fac-a"]);
     expect(spawnSyncImpl).toHaveBeenCalledWith(
       "/bin/wrangler",
-      ["d1", "execute", "trait-compass", "--local", "--json", "--command", "SELECT id FROM facilities WHERE dataset_id IN ('ds-a')"],
+      ["d1", "execute", "trait-compass", "--local", "-c", "/repo/batch/wrangler.ingest.toml", "--json", "--command", "SELECT id FROM facilities WHERE dataset_id IN ('ds-a')"],
       expect.objectContaining({ encoding: "utf8" }),
     );
+  });
+
+  // 2026-08是正: batch/ には wrangler.toml/wrangler.jsonc が無く(wrangler.ingest.toml のみ)、
+  // `-c` 無しでは "Couldn't find a D1 DB with the name or binding 'trait-compass'" で
+  // 実機で失敗することを確認済み(report-review.mjs と同じ既知の制約)。既定値でも
+  // `-c` フラグが自動的に付与されることを回帰確認する。
+  it("wranglerConfigPath省略時はDEFAULT_WRANGLER_CONFIG_PATH(batch/wrangler.ingest.toml)を-cへ渡す", () => {
+    const spawnSyncImpl = vi.fn(() => ({ status: 0, stdout: JSON.stringify([{ results: [] }]) }));
+
+    queryFacilityIds({ datasetIds: ["ds-a"], spawnSyncImpl });
+
+    const args = spawnSyncImpl.mock.calls[0][1];
+    const configFlagIndex = args.indexOf("-c");
+    expect(configFlagIndex).toBeGreaterThan(0);
+    expect(args[configFlagIndex + 1]).toMatch(/batch[/\\]wrangler\.ingest\.toml$/);
   });
 
   it("spawnSync が result.error を返した場合は例外を投げる", () => {
@@ -242,6 +262,15 @@ describe("buildRemoteEmbedGuidance", () => {
 
   it("deleteFacilityIds 未指定でも例外を投げない(--remoteはD1を追加クエリしないため常に不明)", () => {
     expect(() => buildRemoteEmbedGuidance()).not.toThrow();
+  });
+
+  // 2026-08是正(外部コードレビュー指摘 項目1): 削除された施設のベクトルは
+  // pending_vector_deletions(outbox)経由でCKAN取込Workerの次回実行時に自動削除されるように
+  // なったため、「手動削除が必要」という誤った案内を出さないことを回帰確認する。
+  it("削除同期がpending_vector_deletions経由で自動化されており、手動削除が不要であることを案内する", () => {
+    const message = buildRemoteEmbedGuidance();
+    expect(message).toContain("pending_vector_deletions");
+    expect(message).not.toContain("手動削除が必要");
   });
 });
 

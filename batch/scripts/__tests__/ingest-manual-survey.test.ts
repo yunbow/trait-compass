@@ -241,7 +241,30 @@ describe("buildSql", () => {
       "DELETE FROM facility_tags WHERE facility_id IN (SELECT id FROM facilities WHERE dataset_id = 'ds-13106-manual-survey-programs');",
       "DELETE FROM facilities WHERE dataset_id = 'ds-13106-manual-survey-programs';",
       "DELETE FROM datasets WHERE id = 'ds-13106-manual-survey-programs';",
+      // 2026-08是正(外部コードレビュー指摘 項目1): Vectorize削除同期のoutbox整理
+      // (pending_vector_deletionsのうち、同じidでfacilitiesに復活したものを取り消す)。
+      "DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities);",
     ]);
+  });
+
+  // ============================================================
+  // pending_vector_deletions(Vectorize削除同期のoutbox、外部コードレビュー指摘 項目1)
+  // ============================================================
+  it("facilities削除前にpending_vector_deletionsへ削除対象候補を記録し、再投入後に現存するidを取り消す", () => {
+    const sql = buildSql(baseSurvey);
+    const lines = sql.split("\n").filter((line) => line.length > 0);
+
+    const markIndex = lines.indexOf(
+      "INSERT OR IGNORE INTO pending_vector_deletions (facility_id, deleted_at) SELECT id, strftime('%Y-%m-%dT%H:%M:%fZ', 'now') FROM facilities WHERE dataset_id = 'ds-13106-manual-survey-programs';",
+    );
+    const deleteFacilitiesIndex = lines.findIndex((line) => line.startsWith("DELETE FROM facilities WHERE dataset_id"));
+    const reconcileIndex = lines.indexOf("DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities);");
+
+    // 記録(マーキング)はfacilities削除より前、取り消しは全体の末尾付近(facilities再投入後)。
+    expect(markIndex).toBeGreaterThanOrEqual(0);
+    expect(markIndex).toBeLessThan(deleteFacilitiesIndex);
+    expect(reconcileIndex).toBeGreaterThan(deleteFacilitiesIndex);
+    expect(reconcileIndex).toBe(lines.length - 1);
   });
 
   // 2026-08是正(外部コードレビュー指摘): facility_tags は本スクリプトが一切関知しない
@@ -436,7 +459,10 @@ describe("buildSql: program.ageRange/lifestageMin/lifestageMax/status/confirmedO
     juniorHighSchools: [],
   };
 
-  it("未指定の場合、従来どおり age_range='both'・lifestage_min/max=NULL・confirmation_status='confirmed'・confirmed_on=NULL で投入される(既存YAML互換)", () => {
+  // 2026-08是正(外部コードレビュー指摘 項目3): status未指定時の既定値を
+  // 'confirmed'から'unconfirmed'へ変更(ConfirmationStatusSchemaの他スキーマ・
+  // 「推測値は入れない」方針との整合、ユーザー判断で確定済み)。
+  it("未指定の場合、age_range='both'・lifestage_min/max=NULL・confirmation_status='unconfirmed'・confirmed_on=NULL で投入される", () => {
     const sql = buildSql({
       ...surveyBase,
       programs: [{ name: "テスト窓口", category: "counseling", description: "説明" }],
@@ -447,7 +473,7 @@ describe("buildSql: program.ageRange/lifestageMin/lifestageMax/status/confirmedO
     expect(row.get("age_range")).toBe("'both'");
     expect(row.get("lifestage_min")).toBe("NULL");
     expect(row.get("lifestage_max")).toBe("NULL");
-    expect(row.get("confirmation_status")).toBe("'confirmed'");
+    expect(row.get("confirmation_status")).toBe("'unconfirmed'");
     expect(row.get("confirmed_on")).toBe("NULL");
   });
 

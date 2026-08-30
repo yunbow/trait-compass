@@ -22,29 +22,57 @@
 学校系テーブル(`schools` 等)は行ごとに `sources_json` で出典を保持する。
 
 **系統間の優先順位を判定する仕組みは存在しない。** 各経路の再取込は
-自分のスコープ(手動調査は自治体コード単位、オープンデータはデータセットID単位)の
-DELETE→INSERT で冪等に行われ、他系統の行を上書きしない(`buildSql()` を参照)。
+自分のスコープ(手動調査は自治体コード単位、オープンデータはデータセットID単位)でのみ
+冪等に行われ、他系統の行を上書きしない。具体的な実現方式は経路により異なり、個別許諾データ
+(手動調査)は自治体コード単位の DELETE→INSERT(`buildSql()` を参照)、ローカルオープンデータ
+取込は `facilities` 本体の UPSERT+事後差分クリーンアップである(詳細は次段落)。
 唯一の例外的な補完として、`batch/scripts/enrich-school-addresses.mjs` が
 文部科学省の学校コード一覧から住所を追記するが、これは**住所が未設定の学校のみ**が
 対象で、手動調査で確認済みの値は変更しない。
 
 **既知の制約(2026-08是正)**: `facility_tags`(相談分野タグ)は取込パイプラインのスコープ外
 (意図的、上記いずれの経路も扱わない)のため、`app/db/seed/consultation-desk-tags*.sql` による
-手動キュレーションのみが投入経路である。ローカルオープンデータ取込
-(`batch/scripts/ingest-open-data.mjs`)・個別許諾データ再投入(`batch/scripts/
-ingest-manual-survey.mjs`)はいずれも、対象施設の `facility_tags` を削除してから
-`facilities` を再投入する(外部キー制約対策で facility_tags を先に削除する必要があるため)。
-
-2026-08是正の追補(外部コードレビュー指摘、相談タグ再取込ずれ対応): 両スクリプトとも、
-削除前に該当施設の `facility_tags` をステージングテーブル(`_facility_tags_backup`)へ退避し、
-再投入後に**同じ id で復活した施設のみ**へ自動復元するようにした。プログラム・施設の内容
+手動キュレーションのみが投入経路である。両スクリプトとも facilities の内容
 (名称・分類・住所等)が変わらなければ id は安定している(`idFor()` の内容ハッシュ設計)ため、
-通常の再取込ではタグは失われない。id が変わった・施設自体が投入対象外になった
-(license-hold等)分の退避行は復元されずそのまま破棄される(内容が変わった以上、タグの
-対応関係も再検証が必要なため意図的に自動復元しない)。D1 は `CREATE TEMP TABLE` を許可しない
-(実機確認済み、`SQLITE_AUTH`)ため、通常の `CREATE TABLE ... AS SELECT` を使い、前回実行が
-途中で失敗してステージングテーブルが残っている場合に備えて冒頭に `DROP TABLE IF EXISTS` を
-置いて自己修復する。
+id が変わらない再取込では `facility_tags` は失われない。ただし2つの経路で実現方式が異なる
+(2026-08是正、外部コードレビュー指摘 項目4)。
+
+- **個別許諾データ再投入(`batch/scripts/ingest-manual-survey.mjs`)**: 自治体単位で
+  `facilities` を DELETE→INSERT する構成のまま(1回の `wrangler d1 execute --file` 実行が
+  そのまま1トランザクションになるため非原子性の問題は無い)。削除前に該当施設の
+  `facility_tags` を使い捨てのステージングテーブル(`_facility_tags_backup`、
+  `CREATE TABLE ... AS SELECT` + 末尾 `DROP TABLE`)へ退避し、再投入後に**同じ id で
+  復活した施設のみ**へ自動復元する。D1 は `CREATE TEMP TABLE` を許可しない(実機確認済み、
+  `SQLITE_AUTH`)ため通常の `CREATE TABLE` を使い、前回実行が途中で失敗してステージング
+  テーブルが残っている場合に備えて冒頭に `DROP TABLE IF EXISTS` を置いて自己修復する。
+- **ローカルオープンデータ取込(`batch/scripts/ingest-open-data.mjs`)**: `facilities` 本体を
+  `INSERT ... ON CONFLICT(id) DO UPDATE SET ...` の UPSERT 方式で投入する(旧 DELETE→INSERT
+  構成は1データセットのSQLが1,000文単位でチャンク分割され、チャンクごとに別々のトランザクション
+  として実行されるため非原子的だった、実機再現済み)。UPSERT方式では内容不変(=idが変わらない)
+  facilityの`facility_tags`は一切削除されないため、退避・復元の仕組み自体が不要になった
+  (旧`facility_tags_backup`永続テーブル、migration 0035、は本スクリプトではもう使われない。
+  テーブル自体はスキーマから削除していない。理由は後述)。今回のバッチに含まれるfacility id
+  一覧は、実際のUPSERTより先に永続マーカーテーブル`open_data_batch_ids`(migration 0037、
+  [db-tables.md §29](./db-tables.md)参照)へ記録し、全UPSERTチャンク成功後の後始末でのみ参照する。
+  配信元で削除されたfacility(今回のバッチに含まれなくなったid)のみ、後始末ステップ
+  (`buildOrphanCleanupSql`、全UPSERTチャンク成功後にのみ実行)で`facility_tags`→`facilities`
+  の順に削除する(削除前と同じidで復活する見込みが無い以上、退避する意味が無いため退避しない)。
+
+id が変わった・施設自体が投入対象外になった(license-hold等)分のタグは、いずれの経路でも
+復元されずそのまま破棄される(内容が変わった以上、タグの対応関係も再検証が必要なため
+意図的に自動復元しない)。
+
+**Vectorize 削除同期(2026-08是正、外部コードレビュー指摘 項目1)**: 上記いずれの経路で
+`facilities` が削除された場合も、削除対象の facility_id は `pending_vector_deletions`
+(outbox テーブル、migration 0036)へ記録される。本番の CKAN 取込 Worker
+(`EMBEDDINGS_ENABLED=true`)の次回実行時に `runEmbeddingStep` がこの outbox を全件読み取り、
+Vectorize から対応するベクトルを削除する(削除に失敗した分は outbox に残り、次回以降に
+自動的にリトライされる自己修復設計)。
+
+なお、`facility_tags_backup`(migration 0035)テーブル自体は、上記の設計変更により
+`ingest-open-data.mjs` からは参照されなくなった。他に参照箇所が無いため事実上未使用だが、
+本チケットの範囲では(本番D1への書き込みが禁止されているため)スキーマからの削除は行わず、
+将来のクリーンアップ候補として残している。
 
 なお、この自動復元は「id が変わらない再取込」のみをカバーする。データセット自体を
 まるごと入れ替える・タグ語彙を新規追加する等の場合は、引き続き
