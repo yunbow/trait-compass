@@ -69,6 +69,39 @@ id が変わった・施設自体が投入対象外になった(license-hold等)
 Vectorize から対応するベクトルを削除する(削除に失敗した分は outbox に残り、次回以降に
 自動的にリトライされる自己修復設計)。
 
+**migration 0036 適用前に取りこぼした過去分の残留ベクトル(2026-08是正、外部コードレビュー
+指摘)**: outbox は migration 0036 適用**後**に削除された facility しか記録できないため、
+それ以前に `facilities` から削除済みだった行のベクトルは outbox に一切現れず、Vectorize に
+永久に残留する。Cloudflare Vectorize の Workers バインディングには ID 列挙 API が無く
+(`describe`/`query`/`queryById`/`insert`/`upsert`/`deleteByIds`/`getByIds` のみ)、残留 ID を
+コード側で特定して個別削除する reconcile 方式は採れない。そのため、**インデックス削除→
+再作成→メタデータインデックス(municipality/age_range/lifestage_min/lifestage_max)再作成→
+全 facility 再 embed**という一度限りの運用手順(runbook)で解消する設計とした。
+
+1. 既存の Vectorize インデックスを削除する(`wrangler vectorize delete <index名>`)。
+   破壊的操作でロールバック不可、メタデータインデックス設定も含めて消える。
+2. 同じ次元数・メトリック(`src/lib/ai/embedder.ts` の `EMBEDDING_DIM` と一致させる)で
+   インデックスを再作成する(`wrangler vectorize create <index名> --dimensions=<N> --metric=cosine`)。
+3. municipality/age_range/lifestage_min/lifestage_max の4フィールド分のメタデータインデックスを、
+   ベクトルの再 upsert(次の手順)より**前**に作成する(`wrangler vectorize create-metadata-index
+   <index名> --property-name=<field> --type=<string|number>`)。インデックス作成前に upsert
+   済みのベクトルはインデックス作成後もフィルタ対象にならないため、順序を守らないと同じ問題が
+   再発する。
+4. 全 facility の再 embed をトリガーする。`runEmbedPipeline`(`batch/ingest/embed-pipeline.ts`)
+   は D1 の埋め込み対象を毎回**全件**取得して upsert する設計のため、CKAN 取込 Workflow を
+   1回実行すれば全施設が入り直る(`EMBEDDINGS_ENABLED=true` が前提)。
+5. 手順1(インデックス削除)から手順4(再 embed 完了)までの間、RAG のベクトル検索経路は
+   インデックス不在によりエラーまたは0件となり、タグベース検索へ丸ごとフォールバックする
+   (D1 のみで完結する経路は無影響)。トラフィックの少ない時間帯の実施を推奨する。
+6. 再 embed 完了後、実際に自治体・年齢・ライフステージによる絞り込みが機能していることを
+   動作確認する(フィルタ未機能時もエラーにはならずタグ検索相当の結果に静かに劣化するため、
+   レスポンスの中身を確認する)。
+7. 本 runbook は一度限りの過去分クリーンアップである。migration 0036 適用後に発生する削除は
+   outbox の自己修復機構でカバーされるため、通常運用でインデックスの削除・再作成を繰り返す
+   必要はない。
+
+(実際のインデックス名・アカウント固有の運用手順は非公開の運用ドキュメントを参照)
+
 なお、`facility_tags_backup`(migration 0035)テーブル自体は、上記の設計変更により
 `ingest-open-data.mjs` からは参照されなくなった。他に参照箇所が無いため事実上未使用だが、
 本チケットの範囲では(本番D1への書き込みが禁止されているため)スキーマからの削除は行わず、
