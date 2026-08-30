@@ -60,4 +60,44 @@ describe("buildPrepareMemoText", () => {
     const text = buildPrepareMemoText(memo);
     expect(text).toContain("広域窓口を表示しています。");
   });
+
+  describe("confirmationStatus に応じた注意喚起", () => {
+    const buildMemoWithFacilityStatus = (confirmationStatus: PrepareResponse["facilities"][number]["confirmationStatus"]): PrepareResponse => ({
+      ...BASE_MEMO,
+      facilities: [
+        {
+          id: "fac-1",
+          name: "テスト相談窓口",
+          municipality: "世田谷区",
+          address: "東京都世田谷区1-1-1",
+          phone: "03-0000-0000",
+          url: "https://example.com",
+          sourceCredit: "出典: テストデータセット(テスト組織)、cc-by-4.0",
+          sourceUrl: "https://example.com/dataset",
+          confirmationStatus,
+          confirmedOn: null,
+        },
+      ],
+    });
+
+    it("phone_required の場合は電話確認の注意喚起文を含める", () => {
+      const text = buildPrepareMemoText(buildMemoWithFacilityStatus("phone_required"));
+      expect(text).toContain("掲載内容は電話確認が未完了です。利用前に窓口へご確認ください。");
+    });
+
+    it("unconfirmed の場合は未確認情報の注意喚起文を含める", () => {
+      const text = buildPrepareMemoText(buildMemoWithFacilityStatus("unconfirmed"));
+      expect(text).toContain("掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。");
+    });
+
+    it("confirmed の場合は注意喚起文を含めない", () => {
+      const text = buildPrepareMemoText(buildMemoWithFacilityStatus("confirmed"));
+      expect(text).not.toContain("利用前に");
+    });
+
+    it("confirmationStatus が null の場合は注意喚起文を含めない", () => {
+      const text = buildPrepareMemoText(buildMemoWithFacilityStatus(null));
+      expect(text).not.toContain("利用前に");
+    });
+  });
 });

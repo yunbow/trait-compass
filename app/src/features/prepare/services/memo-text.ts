@@ -5,6 +5,7 @@
 // components/PreparePanel.tsx を参照)に委ねるため、本ファイルはコピー用途のみを担う。
 
 import type { PrepareResponse } from "@/features/prepare/schema/prepare";
+import { getConfirmationNoticeText } from "@/features/support/components/ConfirmationNotice";
 
 function formatList(items: readonly string[]): string {
   return items.map((item) => `・${item}`).join("\n");
@@ -35,6 +36,8 @@ export function buildPrepareMemoText(memo: PrepareResponse): string {
     sections.push("", "■ 窓口候補");
     for (const facility of memo.facilities) {
       const lines = [`・${facility.name}(${facility.municipality})`];
+      const confirmationNotice = getConfirmationNoticeText(facility.confirmationStatus);
+      if (confirmationNotice) lines.push(`  ${confirmationNotice}`);
       if (facility.address) lines.push(`  住所: ${facility.address}`);
       if (facility.phone) lines.push(`  電話: ${facility.phone}`);
       if (facility.url) lines.push(`  URL: ${facility.url}`);
