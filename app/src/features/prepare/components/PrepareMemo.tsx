@@ -7,6 +7,7 @@ import { ProvenanceLabel } from "@/components/common/ProvenanceLabel";
 import { useMemoPrintCopy } from "@/lib/print/use-memo-print-copy";
 import { buildPrepareMemoText } from "@/features/prepare/services/memo-text";
 import type { PrepareResponse } from "@/features/prepare/schema/prepare";
+import { ConfirmationNotice } from "@/features/support/components/ConfirmationNotice";
 
 interface PrepareMemoProps {
   memo: PrepareResponse;
@@ -70,6 +71,7 @@ export function PrepareMemo({ memo }: PrepareMemoProps) {
               {memo.facilities.map((facility) => (
                 <li key={facility.id} className="rounded-lg border border-border p-3">
                   <p className="font-medium text-foreground">{facility.name}</p>
+                  <ConfirmationNotice confirmationStatus={facility.confirmationStatus} />
                   {facility.address && <p className="text-xs text-muted-foreground">{facility.address}</p>}
                   {facility.phone && <p className="text-xs text-muted-foreground">{facility.phone}</p>}
                   {facility.url && (

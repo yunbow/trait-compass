@@ -61,10 +61,10 @@ describe("FacilityCard: noDiagnosisOk バッジ(TICKET-0050)", () => {
 });
 
 describe("FacilityCard: 確認状態の注意喚起(migration 0034)", () => {
-  it("confirmationStatus='phone_required' の場合、電話確認が必要な旨を表示する", () => {
+  it("confirmationStatus='phone_required' の場合、掲載内容の電話確認が未完了である旨を表示する(施設利用に電話確認が必要という誤解を招く文言にしない、2026-08是正)", () => {
     render(<FacilityCard facility={makeFacility({ confirmationStatus: "phone_required" })} />);
 
-    expect(screen.getByText("利用には事前に電話での確認が必要とされています。")).toBeTruthy();
+    expect(screen.getByText("掲載内容は電話確認が未完了です。利用前に窓口へご確認ください。")).toBeTruthy();
   });
 
   it("confirmationStatus='unconfirmed' の場合、未確認の注記を表示する", () => {
@@ -76,14 +76,14 @@ describe("FacilityCard: 確認状態の注意喚起(migration 0034)", () => {
   it("confirmationStatus='confirmed' の場合、注記を表示しない", () => {
     render(<FacilityCard facility={makeFacility({ confirmationStatus: "confirmed" })} />);
 
-    expect(screen.queryByText("利用には事前に電話での確認が必要とされています。")).toBeNull();
+    expect(screen.queryByText("掲載内容は電話確認が未完了です。利用前に窓口へご確認ください。")).toBeNull();
     expect(screen.queryByText("掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。")).toBeNull();
   });
 
   it("confirmationStatus=null(CKAN/オープンデータ由来でこの概念を持たない施設)の場合、注記を表示しない", () => {
     render(<FacilityCard facility={makeFacility({ confirmationStatus: null })} />);
 
-    expect(screen.queryByText("利用には事前に電話での確認が必要とされています。")).toBeNull();
+    expect(screen.queryByText("掲載内容は電話確認が未完了です。利用前に窓口へご確認ください。")).toBeNull();
     expect(screen.queryByText("掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。")).toBeNull();
   });
 });

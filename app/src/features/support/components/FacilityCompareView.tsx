@@ -49,12 +49,17 @@ export function FacilityCompareView({ facilities, onBack }: { facilities: Facili
 /**
  * 「情報の確認状態」行の表示文言を組み立てる純関数(migration 0034)。noDiagnosisOk と同じく
  * リスク区分(mode)によらない性質情報のため、mode に応じた出し分けは行わない。
+ *
+ * `confirmationStatus` は「掲載情報そのものが一次情報で確認済みか」を表す性質情報であり、
+ * 「施設利用に電話確認が必要」という利用案内ではない(2026-08是正、
+ * ConfirmationNotice.tsx・FacilityCard.tsx 参照)。"phone_required" の文言もこの意味に
+ * 留め、掲載情報の検証待ちであることを示す。
  */
 function formatConfirmationStatus(facility: FacilityDisplayData): string {
   if (facility.confirmationStatus === "confirmed") {
     return facility.confirmedOn ? `確認済み(${formatConfirmedOnDate(facility.confirmedOn)}時点)` : "確認済み";
   }
-  if (facility.confirmationStatus === "phone_required") return "利用前に要電話確認";
+  if (facility.confirmationStatus === "phone_required") return "電話確認待ち";
   if (facility.confirmationStatus === "unconfirmed") return "未確認";
   return "—";
 }

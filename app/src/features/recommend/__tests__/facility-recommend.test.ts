@@ -103,6 +103,24 @@ describe("toRecommendFacility", () => {
     const facility = toRecommendFacility(makeFacilityRow(), null);
     expect(facility.aiNote).toBeNull();
   });
+
+  it("confirmationStatus/confirmedOn を取りこぼさず引き継ぐ(通常検索カードと同じ確認状態表示のための配線、外部レビュー指摘対応)", () => {
+    const row = makeFacilityRow({ confirmationStatus: "unconfirmed", confirmedOn: null });
+
+    const facility = toRecommendFacility(row, null);
+
+    expect(facility.confirmationStatus).toBe("unconfirmed");
+    expect(facility.confirmedOn).toBeNull();
+  });
+
+  it("confirmationStatus='confirmed' の場合、confirmedOn も引き継ぐ(mode=summary でも出し分け対象外)", () => {
+    const row = makeFacilityRow({ riskLevel: "medium", confirmationStatus: "confirmed", confirmedOn: "2026-07-01" });
+
+    const facility = toRecommendFacility(row, null);
+
+    expect(facility.confirmationStatus).toBe("confirmed");
+    expect(facility.confirmedOn).toBe("2026-07-01");
+  });
 });
 
 describe("buildFallbackFacilities", () => {

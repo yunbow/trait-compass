@@ -105,6 +105,8 @@ describe("RecommendHintSection", () => {
               sourceCredit: "出典: ダミーデータセット(東京都福祉局)、cc-by-4.0",
               sourceUrl: "https://example.com/dataset",
               aiNote: "落ち着いた環境で相談できる点が合いそうです。",
+              confirmationStatus: null,
+              confirmedOn: null,
             },
           ],
           isAiEnabled: true,
@@ -147,6 +149,46 @@ describe("RecommendHintSection", () => {
     // TICKET-0062: D1一次データ(施設名等)とAI生成のaiNoteをラベルで区別して表示する。
     expect(screen.getByText("一次データ")).toBeTruthy();
     expect(screen.getByText("AIによる要約(参考情報)")).toBeTruthy();
+  });
+
+  it("confirmationStatus='phone_required' の施設には、FacilityCard と同じ確認状態の注意書きを表示する(外部レビュー指摘対応)", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          facilities: [
+            {
+              id: "fac-001",
+              name: "世田谷区 発達障がい相談支援センター",
+              municipality: "世田谷区",
+              categoryType: "相談窓口",
+              address: "東京都世田谷区XX",
+              phone: "03-1234-5678",
+              summary: "説明文",
+              url: "https://example.com",
+              sourceCredit: "出典: ダミーデータセット(東京都福祉局)、cc-by-4.0",
+              sourceUrl: "https://example.com/dataset",
+              aiNote: null,
+              confirmationStatus: "phone_required",
+              confirmedOn: null,
+            },
+          ],
+          isAiEnabled: true,
+          isFallback: false,
+          fallbackMessage: null,
+          isCrisisResponse: false,
+        }),
+        { status: 200 },
+      ),
+    );
+
+    render(<RecommendHintSection initialTags={[]} />);
+    openForm();
+    fillForm();
+    fireEvent.click(screen.getByText("送信内容を確認"));
+    await screen.findByText("送信内容を確認してください。");
+    fireEvent.click(screen.getByText("同意して送信"));
+
+    expect(await screen.findByText("掲載内容は電話確認が未完了です。利用前に窓口へご確認ください。")).toBeTruthy();
   });
 
   it("APIがエラーを返した場合はエラー表示に切り替わる", async () => {

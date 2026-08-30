@@ -42,6 +42,8 @@ describe("buildPrepareMemoText", () => {
           url: "https://example.com",
           sourceCredit: "出典: テストデータセット(テスト組織)、cc-by-4.0",
           sourceUrl: "https://example.com/dataset",
+          confirmationStatus: null,
+          confirmedOn: null,
         },
       ],
     };

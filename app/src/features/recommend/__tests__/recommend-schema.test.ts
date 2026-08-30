@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { RecommendRequestSchema } from "@/features/recommend/schema/recommend";
+import { RecommendFacilitySchema, RecommendRequestSchema } from "@/features/recommend/schema/recommend";
 
 const VALID_BODY = {
   query: "会議の内容を覚えておくのが難しい",
@@ -47,6 +47,40 @@ describe("RecommendRequestSchema", () => {
 
   it("query が空文字列の場合はエラーになる", () => {
     const result = RecommendRequestSchema.safeParse({ ...VALID_BODY, query: "" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("RecommendFacilitySchema(confirmationStatus/confirmedOn、外部レビュー指摘対応)", () => {
+  const BASE_FACILITY = {
+    id: "fac-1",
+    name: "ダミー窓口",
+    municipality: "世田谷区",
+    categoryType: "相談窓口",
+    address: null,
+    phone: null,
+    summary: null,
+    url: null,
+    sourceCredit: "出典: ダミーデータセット",
+    sourceUrl: null,
+    aiNote: null,
+  };
+
+  it.each(["confirmed", "unconfirmed", "phone_required"] as const)(
+    "confirmationStatus='%s' を受理する",
+    (confirmationStatus) => {
+      const result = RecommendFacilitySchema.safeParse({ ...BASE_FACILITY, confirmationStatus, confirmedOn: null });
+      expect(result.success).toBe(true);
+    },
+  );
+
+  it("confirmationStatus=null(CKAN/オープンデータ由来でこの概念を持たない施設)を受理する", () => {
+    const result = RecommendFacilitySchema.safeParse({ ...BASE_FACILITY, confirmationStatus: null, confirmedOn: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("confirmationStatus に3値以外の文字列を渡すとエラーになる", () => {
+    const result = RecommendFacilitySchema.safeParse({ ...BASE_FACILITY, confirmationStatus: "invalid", confirmedOn: null });
     expect(result.success).toBe(false);
   });
 });

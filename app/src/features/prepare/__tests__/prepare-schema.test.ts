@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  PrepareFacilitySchema,
   PrepareRequestSchema,
   PrepareResponseSchema,
 } from "@/features/prepare/schema/prepare";
@@ -172,5 +173,45 @@ describe("PrepareResponseSchema", () => {
       fallbackMessage: null,
     });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("PrepareFacilitySchema(confirmationStatus/confirmedOn、外部レビュー指摘対応)", () => {
+  const BASE_FACILITY = {
+    id: "fac-1",
+    name: "テスト相談窓口",
+    municipality: "世田谷区",
+    address: null,
+    phone: null,
+    url: null,
+    sourceCredit: "出典: テストデータセット",
+    sourceUrl: null,
+  };
+
+  it.each(["confirmed", "unconfirmed", "phone_required"] as const)(
+    "confirmationStatus='%s' を受理する",
+    (confirmationStatus) => {
+      const result = PrepareFacilitySchema.safeParse({ ...BASE_FACILITY, confirmationStatus, confirmedOn: null });
+      expect(result.success).toBe(true);
+    },
+  );
+
+  it("confirmationStatus=null(CKAN/オープンデータ由来でこの概念を持たない施設)を受理する", () => {
+    const result = PrepareFacilitySchema.safeParse({ ...BASE_FACILITY, confirmationStatus: null, confirmedOn: null });
+    expect(result.success).toBe(true);
+  });
+
+  it("confirmationStatus に3値以外の文字列を渡すとエラーになる", () => {
+    const result = PrepareFacilitySchema.safeParse({ ...BASE_FACILITY, confirmationStatus: "invalid", confirmedOn: null });
+    expect(result.success).toBe(false);
+  });
+
+  it("confirmedOn に確認日文字列を渡すと受理する", () => {
+    const result = PrepareFacilitySchema.safeParse({
+      ...BASE_FACILITY,
+      confirmationStatus: "confirmed",
+      confirmedOn: "2026-07-01",
+    });
+    expect(result.success).toBe(true);
   });
 });

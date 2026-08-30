@@ -14,6 +14,7 @@ import { SingleChoiceButtonGroup } from "@/components/common/SingleChoiceButtonG
 import { extractApiErrorCode, resolveAiErrorMessage } from "@/lib/api/ai-error-codes";
 import { postJson } from "@/lib/api/post-json";
 import { isCurrentLocationEnabled } from "@/features/history/services/settings";
+import { ConfirmationNotice } from "@/features/support/components/ConfirmationNotice";
 import { MunicipalityCombobox } from "@/features/support/components/MunicipalityCombobox";
 import { SupportTagToggleGroup } from "@/features/support/components/SupportTagToggleGroup";
 import { findNearestMunicipality } from "@/features/support/constants/municipality-centers";
@@ -284,6 +285,7 @@ export function RecommendHintSection({
                   <p className="font-medium text-foreground">{facility.name}</p>
                   <ProvenanceLabel source="primary" />
                 </div>
+                <ConfirmationNotice confirmationStatus={facility.confirmationStatus} />
                 {facility.aiNote && (
                   <div className="mt-1 flex flex-col gap-1">
                     <ProvenanceLabel source="ai" />

@@ -5,6 +5,7 @@ import { ExternalLink, Flag, MapPin, MessageCircle, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SourceCredit } from "@/components/common/SourceCredit";
 import { AuxActionLink } from "@/features/support/components/CardAuxActions";
+import { ConfirmationNotice } from "@/features/support/components/ConfirmationNotice";
 import type { FacilityDisplayData } from "@/features/support/services/facility-display";
 import { getFacilitySubtypeDescription } from "@/features/support/services/facility-subtype-descriptions";
 import { buildGoogleMapsSearchHref } from "@/features/support/services/google-maps-link";
@@ -47,9 +48,13 @@ interface FacilityCardProps {
  * なし」と誤読させない)。
  *
  * 掲載内容の確認状態(`confirmationStatus`、migration 0034)は noDiagnosisOk バッジと同じく
- * mode によらず常に表示する。"phone_required"・"unconfirmed" の場合のみ利用前の注意喚起を
- * 表示し、"confirmed"・null(CKAN/オープンデータ由来でこの概念を持たない施設)の場合は
- * 何も表示しない(null を「未確認」と誤解させないため)。
+ * mode によらず常に表示する(`ConfirmationNotice` 共有コンポーネント、外部レビュー指摘対応で
+ * 相談メモ(prepare)・AI推薦(recommend)の各画面表示コンポーネントと文言を一元化した)。
+ * "confirmationStatus" は「掲載情報そのものが一次情報で確認済みか」を表す性質情報であり、
+ * 「施設利用に電話確認が必要」という利用案内ではない(2026-08是正、ConfirmationNotice.tsx
+ * 参照)。"phone_required"・"unconfirmed" の場合のみ利用前の注意喚起を表示し、"confirmed"・
+ * null(CKAN/オープンデータ由来でこの概念を持たない施設)の場合は何も表示しない(null を
+ * 「未確認」と誤解させないため)。
  */
 export function FacilityCard({ facility, selectedMunicipality, selectable = false, selected = false, onSelectedChange, onSubtypeClick, subtypeActive = false }: FacilityCardProps) {
   const isOutsideSelectedMunicipality = selectedMunicipality && facility.municipality !== selectedMunicipality;
@@ -115,16 +120,7 @@ export function FacilityCard({ facility, selectedMunicipality, selectable = fals
         </p>
       )}
 
-      {facility.confirmationStatus === "phone_required" && (
-        <p className="w-fit rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-          利用には事前に電話での確認が必要とされています。
-        </p>
-      )}
-      {facility.confirmationStatus === "unconfirmed" && (
-        <p className="w-fit rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
-          掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。
-        </p>
-      )}
+      <ConfirmationNotice confirmationStatus={facility.confirmationStatus} />
 
       {facility.mode === "full" ? (
         <div className="flex flex-col gap-2 text-sm text-foreground">

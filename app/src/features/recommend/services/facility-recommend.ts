@@ -47,6 +47,8 @@ export function toRecommendFacility(row: FacilityRow, aiNote: string | null): Re
     sourceCredit: formatSourceCredit(row),
     sourceUrl: row.sourceUrl,
     aiNote,
+    confirmationStatus: row.confirmationStatus,
+    confirmedOn: row.confirmedOn,
   };
 }
 

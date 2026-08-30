@@ -87,6 +87,15 @@ export const PrepareFacilitySchema = z.object({
   url: z.string().nullable(),
   sourceCredit: z.string(),
   sourceUrl: z.string().nullable(),
+  /**
+   * 掲載内容の確認状態(migration 0034、facility-search.ts の `ConfirmationStatus` と同じ3値)。
+   * NULL は「未確認」ではなく、CKAN/オープンデータ由来でこの概念自体を持たない施設を表す
+   * (混同しないこと。通常検索カード FacilityCard と同じ意味で、相談メモでも取りこぼさず
+   * 引き継ぐ、外部レビュー指摘対応)。
+   */
+  confirmationStatus: z.enum(["confirmed", "unconfirmed", "phone_required"]).nullable(),
+  /** confirmationStatus="confirmed" の場合の確認日(YYYY-MM-DD)。値が無い場合は null。 */
+  confirmedOn: z.string().nullable(),
 });
 export type PrepareFacility = z.infer<typeof PrepareFacilitySchema>;
 

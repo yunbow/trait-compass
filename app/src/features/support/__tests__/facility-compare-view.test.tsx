@@ -87,12 +87,12 @@ describe("FacilityCompareView: 情報の確認状態(migration 0034)", () => {
     expect(screen.getByText("確認済み")).toBeTruthy();
   });
 
-  it("confirmationStatus='phone_required' の場合、要電話確認と表示する", () => {
+  it("confirmationStatus='phone_required' の場合、電話確認待ちと表示する(施設利用に電話確認が必要という誤解を招く文言にしない、2026-08是正)", () => {
     render(
       <FacilityCompareView facilities={[makeFacility({ confirmationStatus: "phone_required" })]} onBack={vi.fn()} />,
     );
 
-    expect(screen.getByText("利用前に要電話確認")).toBeTruthy();
+    expect(screen.getByText("電話確認待ち")).toBeTruthy();
   });
 
   it("confirmationStatus='unconfirmed' の場合、未確認と表示する", () => {

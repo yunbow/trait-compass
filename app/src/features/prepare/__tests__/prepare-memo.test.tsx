@@ -61,3 +61,37 @@ describe("PrepareMemo(TICKET-0046 AC-3)", () => {
     expect(await screen.findByText("コピーしました")).toBeTruthy();
   });
 });
+
+describe("PrepareMemo: 窓口候補の確認状態の注意喚起(外部レビュー指摘対応)", () => {
+  const BASE_FACILITY = {
+    id: "fac-1",
+    name: "テスト相談窓口",
+    municipality: "世田谷区",
+    address: null,
+    phone: null,
+    url: null,
+    sourceCredit: "出典: テストデータセット",
+    sourceUrl: null,
+  };
+
+  it("confirmationStatus='phone_required' の窓口候補には、FacilityCard と同じ確認状態の注意書きを表示する", () => {
+    const memo: PrepareResponse = {
+      ...MEMO,
+      facilities: [{ ...BASE_FACILITY, confirmationStatus: "phone_required", confirmedOn: null }],
+    };
+    render(<PrepareMemo memo={memo} />);
+
+    expect(screen.getByText("掲載内容は電話確認が未完了です。利用前に窓口へご確認ください。")).toBeTruthy();
+  });
+
+  it("confirmationStatus='confirmed' の窓口候補には注意書きを表示しない", () => {
+    const memo: PrepareResponse = {
+      ...MEMO,
+      facilities: [{ ...BASE_FACILITY, confirmationStatus: "confirmed", confirmedOn: "2026-07-01" }],
+    };
+    render(<PrepareMemo memo={memo} />);
+
+    expect(screen.queryByText("掲載内容は電話確認が未完了です。利用前に窓口へご確認ください。")).toBeNull();
+    expect(screen.queryByText("掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。")).toBeNull();
+  });
+});

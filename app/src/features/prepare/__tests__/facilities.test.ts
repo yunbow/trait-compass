@@ -81,6 +81,26 @@ describe("toPrepareFacility", () => {
       url: "https://example.com",
       sourceCredit: "出典: テストデータセット(テスト組織)を加工して作成、cc-by-4.0",
       sourceUrl: "https://example.com/dataset",
+      confirmationStatus: null,
+      confirmedOn: null,
     });
+  });
+
+  it("confirmationStatus/confirmedOn を取りこぼさず引き継ぐ(通常検索カードと同じ確認状態表示のための配線、外部レビュー指摘対応)", () => {
+    const facility = toPrepareFacility(
+      makeFacility({ confirmationStatus: "phone_required", confirmedOn: null }),
+    );
+
+    expect(facility.confirmationStatus).toBe("phone_required");
+    expect(facility.confirmedOn).toBeNull();
+  });
+
+  it("confirmationStatus='confirmed' の場合、confirmedOn も引き継ぐ", () => {
+    const facility = toPrepareFacility(
+      makeFacility({ confirmationStatus: "confirmed", confirmedOn: "2026-07-01" }),
+    );
+
+    expect(facility.confirmationStatus).toBe("confirmed");
+    expect(facility.confirmedOn).toBe("2026-07-01");
   });
 });

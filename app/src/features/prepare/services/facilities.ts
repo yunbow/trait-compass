@@ -34,5 +34,7 @@ export function toPrepareFacility(row: FacilityWithTags): PrepareFacility {
     url: row.url,
     sourceCredit: formatSourceCredit(row),
     sourceUrl: row.sourceUrl,
+    confirmationStatus: row.confirmationStatus,
+    confirmedOn: row.confirmedOn,
   };
 }
