@@ -38,6 +38,17 @@ database_id = "REPLACE_ME"
 # RAG(検索拡張生成、/api/recommend)用。facilities の埋め込み検索先。
 # 事前に `wrangler vectorize create trait-compass-facilities --dimensions=1024 --metric=cosine`
 # でインデックスを作成しておく(batch/wrangler.ingest.toml と同じ index_name を使うこと)。
+#
+# さらに、自治体・年齢/ライフステージによる絞り込み(RAG検索の filter、
+# facility-vector-search.ts の buildRecommendFilterTiers)に使うメタデータインデックスも
+# 事前に作成しておく必要がある。**これらが無いと該当フィールドを含む filter が常に 0 件を
+# 返し、RAG検索の自治体・年齢絞り込みが機能しない**(段階的フォールバック設計とタグ検索への
+# フォールバックにより検索自体が全滅することはないが、AI推薦のRAG経路が実質無効になる)。
+#
+#   wrangler vectorize create-metadata-index trait-compass-facilities --property-name=municipality --type=string
+#   wrangler vectorize create-metadata-index trait-compass-facilities --property-name=age_range --type=string
+#   wrangler vectorize create-metadata-index trait-compass-facilities --property-name=lifestage_min --type=number
+#   wrangler vectorize create-metadata-index trait-compass-facilities --property-name=lifestage_max --type=number
 [ai]
 binding = "AI"
 
