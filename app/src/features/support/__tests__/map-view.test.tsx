@@ -16,7 +16,7 @@ vi.mock("next/navigation", () => ({
 
 const CENTER = { lat: 35.6938, lng: 139.7036 }; // 新宿区役所付近
 
-function facility(id: string, name: string): FacilityDisplayData { return { id, name, municipality: "世田谷区", categoryType: "相談窓口", mode: "full", address: "東京都", phone: "03-0000-0000", summary: "説明", url: null, matchesTags: true, facilitySubtype: null, sourceCredit: "出典", sourceUrl: null, lat: 35.6467, lng: 139.6531, datasetId: "ds", datasetTitle: "データ", fetchedAt: "2026-01-01", frozen: false, noDiagnosisOk: false, contactMethods: null, isPathwayFacility: false }; }
+function facility(id: string, name: string): FacilityDisplayData { return { id, name, municipality: "世田谷区", categoryType: "相談窓口", mode: "full", address: "東京都", phone: "03-0000-0000", summary: "説明", url: null, matchesTags: true, facilitySubtype: null, sourceCredit: "出典", sourceUrl: null, lat: 35.6467, lng: 139.6531, datasetId: "ds", datasetTitle: "データ", fetchedAt: "2026-01-01", frozen: false, noDiagnosisOk: false, contactMethods: null, confirmationStatus: null, confirmedOn: null, isPathwayFacility: false }; }
 const PINS: MapPin[] = [
   { id: "fac-001", name: "世田谷区発達障がい相談支援センター", lat: 35.6467, lng: 139.6531, facility: facility("fac-001", "世田谷区発達障がい相談支援センター") },
   { id: "fac-002", name: "新宿区発達障害者支援窓口", lat: 35.694, lng: 139.7038, facility: facility("fac-002", "新宿区発達障害者支援窓口") },

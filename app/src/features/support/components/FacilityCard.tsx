@@ -45,6 +45,11 @@ interface FacilityCardProps {
  * 住所・電話と同じ「事実情報」の扱いのため mode="full" のみで値を持つ(facility-display.ts
  * 側で summary は null に落とす)。値が無い(null)場合は何も描画しない(AC-4、「連絡手段
  * なし」と誤読させない)。
+ *
+ * 掲載内容の確認状態(`confirmationStatus`、migration 0034)は noDiagnosisOk バッジと同じく
+ * mode によらず常に表示する。"phone_required"・"unconfirmed" の場合のみ利用前の注意喚起を
+ * 表示し、"confirmed"・null(CKAN/オープンデータ由来でこの概念を持たない施設)の場合は
+ * 何も表示しない(null を「未確認」と誤解させないため)。
  */
 export function FacilityCard({ facility, selectedMunicipality, selectable = false, selected = false, onSelectedChange, onSubtypeClick, subtypeActive = false }: FacilityCardProps) {
   const isOutsideSelectedMunicipality = selectedMunicipality && facility.municipality !== selectedMunicipality;
@@ -107,6 +112,17 @@ export function FacilityCard({ facility, selectedMunicipality, selectable = fals
       {facility.categoryType === "相談窓口" && facility.noDiagnosisOk && (
         <p className="w-fit rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
           診断がなくても相談できるとされています。個別の相談可否は窓口へご確認ください。
+        </p>
+      )}
+
+      {facility.confirmationStatus === "phone_required" && (
+        <p className="w-fit rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+          利用には事前に電話での確認が必要とされています。
+        </p>
+      )}
+      {facility.confirmationStatus === "unconfirmed" && (
+        <p className="w-fit rounded-full bg-secondary px-2 py-0.5 text-xs text-secondary-foreground">
+          掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。
         </p>
       )}
 

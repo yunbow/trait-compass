@@ -27,6 +27,8 @@ function makeFacility(overrides: Partial<FacilityDisplayData> = {}): FacilityDis
     frozen: false,
     noDiagnosisOk: false,
     contactMethods: null,
+    confirmationStatus: null,
+    confirmedOn: null,
     isPathwayFacility: false,
     ...overrides,
   };
@@ -55,6 +57,34 @@ describe("FacilityCard: noDiagnosisOk バッジ(TICKET-0050)", () => {
     expect(
       screen.getByText("診断がなくても相談できるとされています。個別の相談可否は窓口へご確認ください。"),
     ).toBeTruthy();
+  });
+});
+
+describe("FacilityCard: 確認状態の注意喚起(migration 0034)", () => {
+  it("confirmationStatus='phone_required' の場合、電話確認が必要な旨を表示する", () => {
+    render(<FacilityCard facility={makeFacility({ confirmationStatus: "phone_required" })} />);
+
+    expect(screen.getByText("利用には事前に電話での確認が必要とされています。")).toBeTruthy();
+  });
+
+  it("confirmationStatus='unconfirmed' の場合、未確認の注記を表示する", () => {
+    render(<FacilityCard facility={makeFacility({ confirmationStatus: "unconfirmed" })} />);
+
+    expect(screen.getByText("掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。")).toBeTruthy();
+  });
+
+  it("confirmationStatus='confirmed' の場合、注記を表示しない", () => {
+    render(<FacilityCard facility={makeFacility({ confirmationStatus: "confirmed" })} />);
+
+    expect(screen.queryByText("利用には事前に電話での確認が必要とされています。")).toBeNull();
+    expect(screen.queryByText("掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。")).toBeNull();
+  });
+
+  it("confirmationStatus=null(CKAN/オープンデータ由来でこの概念を持たない施設)の場合、注記を表示しない", () => {
+    render(<FacilityCard facility={makeFacility({ confirmationStatus: null })} />);
+
+    expect(screen.queryByText("利用には事前に電話での確認が必要とされています。")).toBeNull();
+    expect(screen.queryByText("掲載内容は未確認の情報です。利用前に窓口へ直接ご確認ください。")).toBeNull();
   });
 });
 

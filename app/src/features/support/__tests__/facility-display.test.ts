@@ -34,6 +34,8 @@ function makeFacility(overrides: Partial<FacilityWithTags> = {}): FacilityWithTa
     frozen: false,
     noDiagnosisOk: false,
     contactMethods: null,
+    confirmationStatus: null,
+    confirmedOn: null,
     tags: [],
     matchesTags: true,
     ...overrides,
@@ -180,6 +182,25 @@ describe("toFacilityDisplayData", () => {
   it("元データの contactMethods が null(未取込)の場合はそのまま null", () => {
     const facility = makeFacility({ riskLevel: "low", contactMethods: null });
     expect(toFacilityDisplayData(facility).contactMethods).toBeNull();
+  });
+
+  it.each(["full", "summary"] as const)(
+    "confirmationStatus・confirmedOn は mode=%s によらず引き継がれる(migration 0034)",
+    (targetMode) => {
+      const riskLevel = targetMode === "full" ? "low" : "high";
+      const facility = makeFacility({ riskLevel, confirmationStatus: "phone_required", confirmedOn: "2026-07-01" });
+      const display = toFacilityDisplayData(facility);
+
+      expect(display.mode).toBe(targetMode);
+      expect(display.confirmationStatus).toBe("phone_required");
+      expect(display.confirmedOn).toBe("2026-07-01");
+    },
+  );
+
+  it("confirmationStatus が null(CKAN/オープンデータ由来でこの概念を持たない施設)の場合はそのまま null で引き継がれる", () => {
+    const display = toFacilityDisplayData(makeFacility({ confirmationStatus: null, confirmedOn: null }));
+    expect(display.confirmationStatus).toBeNull();
+    expect(display.confirmedOn).toBeNull();
   });
 
   it("鮮度注記に必要な datasetId・datasetTitle・fetchedAt・frozen を引き継ぐ(TICKET-0033 AC-1, AC-2)", () => {

@@ -77,6 +77,8 @@ function makeFacilityDisplay(overrides: Partial<FacilityDisplayData> = {}): Faci
     frozen: false,
     noDiagnosisOk: false,
     contactMethods: null,
+    confirmationStatus: null,
+    confirmedOn: null,
     isPathwayFacility: false,
     ...overrides,
   };

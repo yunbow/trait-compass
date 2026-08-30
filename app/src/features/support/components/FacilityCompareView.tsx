@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { SourceCredit } from "@/components/common/SourceCredit";
 import { FULLSCREEN_OVERLAY_CLASSNAME, FullscreenToggleButton } from "@/features/support/components/FullscreenToggleButton";
 import { useFullscreen } from "@/features/support/hooks/use-fullscreen";
-import type { FacilityDisplayData } from "@/features/support/services/facility-display";
+import { formatConfirmedOnDate, type FacilityDisplayData } from "@/features/support/services/facility-display";
 import { cn } from "@/lib/utils";
 
 export function FacilityCompareView({ facilities, onBack }: { facilities: FacilityDisplayData[]; onBack: () => void }) {
@@ -32,6 +32,7 @@ export function FacilityCompareView({ facilities, onBack }: { facilities: Facili
           <thead><tr><th scope="col" className="min-w-32 border border-border bg-muted p-3">項目</th>{facilities.map((facility) => <th key={facility.id} scope="col" className="min-w-[220px] border border-border p-3"><div>{facility.name}</div><span className="font-normal text-muted-foreground">{facility.municipality}</span></th>)}</tr></thead>
           <tbody>
             <CompareRow label="診断なし相談可" facilities={facilities} render={(facility) => facility.noDiagnosisOk ? "相談できるとされています" : "—"} />
+            <CompareRow label="情報の確認状態" facilities={facilities} render={(facility) => formatConfirmationStatus(facility)} />
             <CompareRow label="住所" facilities={facilities} render={(facility) => value(facility.address)} />
             <CompareRow label="電話" facilities={facilities} render={(facility) => facility.phone ? <a className="underline underline-offset-2" href={`tel:${facility.phone.replace(/[^0-9+]/g, "")}`}>{facility.phone}</a> : "—"} />
             <CompareRow label="電話以外の連絡手段" facilities={facilities} render={(facility) => value(facility.contactMethods)} />
@@ -43,6 +44,19 @@ export function FacilityCompareView({ facilities, onBack }: { facilities: Facili
       </div>
     </section>
   );
+}
+
+/**
+ * 「情報の確認状態」行の表示文言を組み立てる純関数(migration 0034)。noDiagnosisOk と同じく
+ * リスク区分(mode)によらない性質情報のため、mode に応じた出し分けは行わない。
+ */
+function formatConfirmationStatus(facility: FacilityDisplayData): string {
+  if (facility.confirmationStatus === "confirmed") {
+    return facility.confirmedOn ? `確認済み(${formatConfirmedOnDate(facility.confirmedOn)}時点)` : "確認済み";
+  }
+  if (facility.confirmationStatus === "phone_required") return "利用前に要電話確認";
+  if (facility.confirmationStatus === "unconfirmed") return "未確認";
+  return "—";
 }
 
 function CompareRow({ label, facilities, render }: { label: string; facilities: FacilityDisplayData[]; render: (facility: FacilityDisplayData) => React.ReactNode }) {

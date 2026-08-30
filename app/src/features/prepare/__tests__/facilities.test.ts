@@ -29,6 +29,8 @@ function makeFacility(overrides: Partial<FacilityWithTags> = {}): FacilityWithTa
     frozen: false,
     noDiagnosisOk: false,
     contactMethods: null,
+    confirmationStatus: null,
+    confirmedOn: null,
     tags: [],
     matchesTags: false,
     ...overrides,

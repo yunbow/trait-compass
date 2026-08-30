@@ -62,6 +62,13 @@ export interface FacilitySearchParams {
   lifestage?: Lifestage | null;
 }
 
+/**
+ * 施設の確認状態(migration 0034)。手動調査データ由来の施設のみが持つ性質情報。
+ * NULL は「未確認」ではなく、CKAN/オープンデータ由来でこの概念自体を持たない施設を表す
+ * (混同しないこと。防御的正規化は toFacilityRow 参照)。
+ */
+export type ConfirmationStatus = "confirmed" | "unconfirmed" | "phone_required";
+
 /** D1 の facilities × datasets JOIN 1行分(facility_tags 突合前)。 */
 export interface FacilityRow {
   id: string;
@@ -101,6 +108,15 @@ export interface FacilityRow {
    * は null の場合に何も描画しない(「無い」と誤読させない、AC-4)。
    */
   contactMethods: string | null;
+  /**
+   * 掲載内容の確認状態(migration 0034)。手動調査データ由来の性質情報のため、noDiagnosisOk と
+   * 同様にリスク区分による出し分け(FR-027)の対象外として扱う(facility-display.ts の
+   * toFacilityDisplayData は mode によらずそのまま引き継ぐ)。NULL は「未確認」ではなく、
+   * CKAN/オープンデータ由来でこの概念自体を持たない施設を表す(混同しないこと)。
+   */
+  confirmationStatus: ConfirmationStatus | null;
+  /** confirmationStatus="confirmed" の場合の確認日(YYYY-MM-DD)。値が無い場合は null。 */
+  confirmedOn: string | null;
 }
 
 /** facility_tags 突合済み。タグ一致有無を保持する(FR-024 の優先表示に使用)。 */
@@ -276,7 +292,9 @@ export const FACILITY_JOIN_SELECT = `
     d.fetched_at AS fetched_at,
     d.frozen AS frozen,
     f.no_diagnosis_ok AS no_diagnosis_ok,
-    f.contact_methods AS contact_methods
+    f.contact_methods AS contact_methods,
+    f.confirmation_status AS confirmation_status,
+    f.confirmed_on AS confirmed_on
   FROM facilities f
   JOIN datasets d ON d.id = f.dataset_id`;
 
@@ -332,6 +350,22 @@ interface FacilityJoinRow {
   frozen: 0 | 1;
   no_diagnosis_ok: 0 | 1;
   contact_methods: string | null;
+  confirmation_status: string | null;
+  confirmed_on: string | null;
+}
+
+const CONFIRMATION_STATUS_VALUES: readonly ConfirmationStatus[] = ["confirmed", "unconfirmed", "phone_required"];
+
+/**
+ * `confirmation_status` の防御的正規化(純関数)。3値のいずれかであればそのまま返し、
+ * それ以外(NULL・想定外の文字列)は null に正規化する。NULL(CKAN/オープンデータ由来で
+ * この概念を持たない施設)と想定外の文字列を区別せず一律 null に倒すのは、想定外の文字列を
+ * 「未確認」等の既知の状態に誤って解釈して表示してしまうことを避けるため(安全側)。
+ */
+function normalizeConfirmationStatus(value: string | null): ConfirmationStatus | null {
+  return (CONFIRMATION_STATUS_VALUES as readonly string[]).includes(value ?? "")
+    ? (value as ConfirmationStatus)
+    : null;
 }
 
 /**
@@ -364,6 +398,8 @@ export function toFacilityRow(row: FacilityJoinRow): FacilityRow {
     frozen: row.frozen === 1,
     noDiagnosisOk: row.no_diagnosis_ok === 1,
     contactMethods: row.contact_methods,
+    confirmationStatus: normalizeConfirmationStatus(row.confirmation_status),
+    confirmedOn: row.confirmed_on ?? null,
   };
 }
 

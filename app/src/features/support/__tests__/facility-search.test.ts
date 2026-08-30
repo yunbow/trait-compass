@@ -55,6 +55,8 @@ function makeFacility(overrides: Partial<FacilityWithTags> = {}): FacilityWithTa
     frozen: false,
     noDiagnosisOk: false,
     contactMethods: null,
+    confirmationStatus: null,
+    confirmedOn: null,
     tags: [],
     matchesTags: true,
     ...overrides,
@@ -365,6 +367,8 @@ function makeJoinRow(id: string) {
     frozen: 0 as const,
     no_diagnosis_ok: 0 as const,
     contact_methods: null,
+    confirmation_status: null,
+    confirmed_on: null,
   };
 }
 
@@ -824,6 +828,8 @@ describe("toFacilityRow", () => {
       frozen: 0 as const,
       no_diagnosis_ok: 0 as const,
       contact_methods: null,
+      confirmation_status: null,
+      confirmed_on: null,
       ...overrides,
     };
   }
@@ -846,6 +852,34 @@ describe("toFacilityRow", () => {
   it("contact_methods が null の場合は contactMethods も null になる(TICKET-0051 AC-4)", () => {
     const row = toFacilityRow(makeJoinRow({ contact_methods: null }));
     expect(row.contactMethods).toBeNull();
+  });
+
+  it.each(["confirmed", "unconfirmed", "phone_required"] as const)(
+    "confirmation_status='%s' はそのまま confirmationStatus に変換される(migration 0034)",
+    (status) => {
+      const row = toFacilityRow(makeJoinRow({ confirmation_status: status }));
+      expect(row.confirmationStatus).toBe(status);
+    },
+  );
+
+  it("confirmation_status が null の場合は confirmationStatus も null になる(CKAN/オープンデータ由来でこの概念を持たない施設)", () => {
+    const row = toFacilityRow(makeJoinRow({ confirmation_status: null }));
+    expect(row.confirmationStatus).toBeNull();
+  });
+
+  it("confirmation_status が想定外の文字列の場合は防御的に null へ正規化する(未確認等と誤表示しないため)", () => {
+    const row = toFacilityRow(makeJoinRow({ confirmation_status: "unknown" }));
+    expect(row.confirmationStatus).toBeNull();
+  });
+
+  it("confirmed_on をそのまま confirmedOn に引き継ぐ", () => {
+    const row = toFacilityRow(makeJoinRow({ confirmed_on: "2026-07-01" }));
+    expect(row.confirmedOn).toBe("2026-07-01");
+  });
+
+  it("confirmed_on が null の場合は confirmedOn も null になる", () => {
+    const row = toFacilityRow(makeJoinRow({ confirmed_on: null }));
+    expect(row.confirmedOn).toBeNull();
   });
 });
 
@@ -895,6 +929,8 @@ describe("FACILITY_JOIN_SELECT", () => {
     "frozen",
     "no_diagnosis_ok",
     "contact_methods",
+    "confirmation_status",
+    "confirmed_on",
   ];
 
   it("FacilityJoinRow の全フィールドを `AS <snake_case>` の形で含む", () => {

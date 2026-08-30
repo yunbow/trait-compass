@@ -32,6 +32,8 @@ function makeFacilityRow(overrides: Partial<FacilityRow> = {}): FacilityRow {
     frozen: false,
     noDiagnosisOk: false,
     contactMethods: null,
+    confirmationStatus: null,
+    confirmedOn: null,
     ...overrides,
   };
 }

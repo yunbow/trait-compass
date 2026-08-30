@@ -3,7 +3,7 @@
 // D1 アクセスを含まないため、カード描画コンポーネント(FacilityCard)は本ファイルが返す
 // 整形済みデータを受け取って描画するだけで済む(レンダリングのテストと純関数のテストを分離)。
 
-import type { FacilityWithTags } from "@/features/support/services/facility-search";
+import type { ConfirmationStatus, FacilityWithTags } from "@/features/support/services/facility-search";
 
 /** 要約表示(mode="summary")時の説明文の最大文字数。超過分は省略記号で切り詰める。 */
 export const SUMMARY_MAX_LENGTH = 60;
@@ -56,6 +56,15 @@ export interface FacilityDisplayData {
    * mode="full" の場合のみ表示する)。
    */
   contactMethods: string | null;
+  /**
+   * 掲載内容の確認状態(migration 0034)。noDiagnosisOk と同様、住所・電話等の事実情報とは
+   * 異なる性質情報であり、利用前の注意喚起(FacilityCard)は縮退表示でも有効なため、
+   * mode(リスク区分による出し分け、FR-027)によらず常に引き継ぐ。NULL は「未確認」ではなく、
+   * CKAN/オープンデータ由来でこの概念自体を持たない施設を表す(混同しないこと)。
+   */
+  confirmationStatus: ConfirmationStatus | null;
+  /** confirmationStatus="confirmed" の場合の確認日(YYYY-MM-DD)。mode によらず常に引き継ぐ。 */
+  confirmedOn: string | null;
   /**
    * 想定ルート(SupportPathway)のステップに登場する窓口かどうか(TICKET-未採番、想定ルート
    * 優先表示)。本関数(toFacilityDisplayData)は `FacilityWithTags` 単体からの変換であり
@@ -121,6 +130,21 @@ export function toFacilityDisplayData(facility: FacilityWithTags): FacilityDispl
     frozen: facility.frozen,
     noDiagnosisOk: facility.noDiagnosisOk,
     contactMethods: mode === "full" ? facility.contactMethods : null,
+    confirmationStatus: facility.confirmationStatus,
+    confirmedOn: facility.confirmedOn,
     isPathwayFacility: false,
   };
+}
+
+/**
+ * confirmedOn(`YYYY-MM-DD`)を「YYYY年M月D日」形式に整形する純関数(FacilityCompareView の
+ * 「情報の確認状態」行で使用)。dataset-freshness.ts の formatFetchedAtDate とは異なり、
+ * 不正な形式の場合は「不明」に潰さずそのまま返す(confirmedOn は鮮度注記ではなく確認状態の
+ * 補足情報であり、元の値を隠さない方が安全側のため)。
+ */
+export function formatConfirmedOnDate(confirmedOn: string): string {
+  const match = confirmedOn.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (!match) return confirmedOn;
+  const [, year, month, day] = match;
+  return `${year}年${Number(month)}月${Number(day)}日`;
 }
