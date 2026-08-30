@@ -32,6 +32,11 @@ export type VectorStoreFilter = Record<string, string | number | boolean>;
 export interface VectorStore {
   upsert(items: VectorStoreItem[]): Promise<void>;
   query(vector: number[], topK: number, filter?: VectorStoreFilter): Promise<VectorStoreQueryResult[]>;
+  /**
+   * 指定した ID(`VectorStoreItem.id`。呼び出し元にとっては施設 ID などのソース ID)のレコードを削除する。
+   * 空配列が渡された場合は何もせず正常終了する(呼び出し側が削除対象なしのケースを都度分岐しなくて済むように)。
+   */
+  delete(ids: string[]): Promise<void>;
 }
 
 export type VectorStoreProvider = "qdrant" | "vectorize";

@@ -298,9 +298,11 @@ describe("upsertFacilities", () => {
   it("facilities が空配列の場合は db.batch を呼ばない(既存データを巻き込んで全削除しないため、deleteStaleFacilities 自体を呼ばない)", async () => {
     const { db } = createFakeBatchDb(["fac-old-1", "fac-old-2"]);
 
-    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-jidokan", []);
+    const deletedFacilityIds = await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-jidokan", []);
 
     expect(db.batch).not.toHaveBeenCalled();
+    // 2026-08(Vectorize削除同期対応): facilities.length===0 の早期returnは常に空配列を返す。
+    expect(deletedFacilityIds).toEqual([]);
   });
 
   // ============================================================
@@ -311,7 +313,7 @@ describe("upsertFacilities", () => {
   it("配信元から消えた施設(既存にはあるが今回の正規化結果に無いID)を facility_tags → facilities の順で削除する", async () => {
     const { db, prepareCalls, bindCalls } = createFakeBatchDb(["fac-a", "fac-removed"]);
 
-    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
+    const deletedFacilityIds = await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
       makeFacility({ id: "fac-a" }),
     ]);
 
@@ -327,38 +329,45 @@ describe("upsertFacilities", () => {
     // 削除対象は「今回の正規化結果に含まれない fac-removed」のみ、現存する fac-a は対象外。
     expect(bindCalls[tagsDeleteIndex]).toEqual(["fac-removed"]);
     expect(bindCalls[facilitiesDeleteIndex]).toEqual(["fac-removed"]);
+    // 2026-08(Vectorize削除同期対応): upsertFacilities は削除した stale facility ID を返す
+    // (workers/ingest/workflow.ts が Vectorize 側の VectorStore.delete に使う)。
+    expect(deletedFacilityIds).toEqual(["fac-removed"]);
   });
 
   it("名称・住所変更でIDが変わったケース(旧IDが既存に残り、新IDが今回の結果に含まれる)も削除同期の対象になる(重複行の防止)", async () => {
     const { db, bindCalls, prepareCalls } = createFakeBatchDb(["fac-old-name-hash"]);
 
-    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
+    const deletedFacilityIds = await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
       makeFacility({ id: "fac-new-name-hash" }),
     ]);
 
     const facilitiesDeleteIndex = prepareCalls.findIndex((sql) => sql.includes("DELETE FROM facilities WHERE id IN"));
     expect(bindCalls[facilitiesDeleteIndex]).toEqual(["fac-old-name-hash"]);
+    expect(deletedFacilityIds).toEqual(["fac-old-name-hash"]);
   });
 
   it("既存の全facilityIDが今回の結果にも含まれる場合は削除同期をスキップする(db.batchはupsertの1回のみ)", async () => {
     const { db } = createFakeBatchDb(["fac-a"]);
 
-    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
+    const deletedFacilityIds = await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
       makeFacility({ id: "fac-a" }),
     ]);
 
     expect(db.batch).toHaveBeenCalledTimes(1);
+    expect(deletedFacilityIds).toEqual([]);
   });
 
-  it("削除対象が91件(MAX_IDS_PER_QUERY=90超)の場合、2チャンクに分けて削除する", async () => {
+  it("削除対象が91件(MAX_IDS_PER_QUERY=90超)の場合、2チャンクに分けて削除し、削除ID全件(91件)を返す", async () => {
     const staleIds = Array.from({ length: 91 }, (_, i) => `fac-stale-${i}`);
     const { db } = createFakeBatchDb(["fac-a", ...staleIds]);
 
-    await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
+    const deletedFacilityIds = await upsertFacilities(db as unknown as Parameters<typeof upsertFacilities>[0], "ds-taito-kuyakusho", [
       makeFacility({ id: "fac-a" }),
     ]);
 
     // 削除チャンク2回 + upsert 1回 = 3回。
     expect(db.batch).toHaveBeenCalledTimes(3);
+    // チャンク分割(MAX_IDS_PER_QUERY超)されても、返り値には削除対象91件全てが含まれる。
+    expect(deletedFacilityIds).toEqual(staleIds);
   });
 });

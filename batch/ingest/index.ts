@@ -26,6 +26,7 @@
 import { createEmbedder, EMBEDDING_DIM } from "../../app/src/lib/ai/embedder";
 import { QdrantVectorStore } from "../../app/src/lib/ai/providers/qdrant-vector-store";
 import { postSlackMessage } from "../../app/src/lib/notify/slack";
+import { EmbedRequestValidationError, readDeleteFacilityIdsFromBody } from "./embed-request";
 import { runEmbedPipeline } from "./embed-pipeline";
 import { buildFeedbackDigestMessage, countPendingFeedbackComments } from "./feedback-digest";
 import { getHealthReport } from "./health";
@@ -70,7 +71,7 @@ export default {
       if (request.method !== "POST") {
         return new Response("Method Not Allowed", { status: 405, headers: { Allow: "POST" } });
       }
-      return handleManualEmbed(env);
+      return handleManualEmbed(request, env);
     }
 
     if (url.pathname === "/") {
@@ -166,8 +167,21 @@ async function handleHealth(env: Env): Promise<Response> {
  * 実行前に `docker compose up -d qdrant ollama`(および `ollama pull bge-m3`)が必要。
  * Qdrant のコレクションは(`VectorStore` 抽象には無い Qdrant 固有の操作である)
  * `ensureCollection` で初回のみ作成する(未作成の場合、upsert 前に自動作成される)。
+ *
+ * リクエストボディ(任意) `{ "deleteFacilityIds": string[] }` を受け付ける。指定した ID を
+ * 全件 upsert に続けて `VectorStore.delete` で削除する(ローカルの `scripts/ingest-*.mjs` が、
+ * D1 側で削除同期された stale facility の Qdrant 側ベクトルを揃えるために呼ぶ想定。
+ * embed-refresh.mjs 参照)。ボディなし・空ボディは従来通り削除なし。
  */
-async function handleManualEmbed(env: Env): Promise<Response> {
+async function handleManualEmbed(request: Request, env: Env): Promise<Response> {
+  let deleteFacilityIds: string[];
+  try {
+    deleteFacilityIds = await readDeleteFacilityIdsFromBody(request);
+  } catch (err) {
+    const message = err instanceof EmbedRequestValidationError ? err.message : "リクエストボディの解析に失敗しました。";
+    return Response.json({ ok: false, error: message }, { status: 400 });
+  }
+
   try {
     const vectorStore = new QdrantVectorStore();
     await vectorStore.ensureCollection(EMBEDDING_DIM);
@@ -177,7 +191,12 @@ async function handleManualEmbed(env: Env): Promise<Response> {
       embedder: createEmbedder("ollama"),
       vectorStore,
     });
-    return Response.json({ ok: true, ...summary });
+
+    if (deleteFacilityIds.length > 0) {
+      await vectorStore.delete(deleteFacilityIds);
+    }
+
+    return Response.json({ ok: true, ...summary, deletedVectors: deleteFacilityIds.length });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     return Response.json({ ok: false, error: message }, { status: 500 });

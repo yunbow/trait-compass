@@ -54,6 +54,10 @@ export class RestVectorizeStore implements VectorStore {
     throw new Error("read-only: eval用アダプタはqueryのみ対応");
   }
 
+  async delete(_ids: string[]): Promise<void> {
+    throw new Error("read-only: eval用アダプタはqueryのみ対応");
+  }
+
   async query(vector: number[], topK: number, filter?: VectorStoreFilter): Promise<VectorStoreQueryResult[]> {
     const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/vectorize/v2/indexes/${this.indexName}/query`;
     const res = await fetch(url, {

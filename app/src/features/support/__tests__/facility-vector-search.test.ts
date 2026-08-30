@@ -14,6 +14,7 @@ function makeEmbedder(vector: number[] | null = [0.1, 0.2, 0.3]): Embedder {
 function makeVectorStore(results: VectorStoreQueryResult[]): VectorStore {
   return {
     upsert: vi.fn(async () => {}),
+    delete: vi.fn(async () => {}),
     query: vi.fn(async () => results),
   };
 }
@@ -85,6 +86,7 @@ describe("queryFacilityIds", () => {
 function makeVectorStoreByFilter(resultsByMunicipality: Record<string, VectorStoreQueryResult[]>): VectorStore {
   return {
     upsert: vi.fn(async () => {}),
+    delete: vi.fn(async () => {}),
     query: vi.fn(async (_vector: number[], _topK: number, filter?: VectorStoreFilter) => {
       const municipality = filter?.municipality as string | undefined;
       return municipality !== undefined ? (resultsByMunicipality[municipality] ?? []) : [];

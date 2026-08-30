@@ -119,12 +119,20 @@ export interface DatasetIngestResult {
   resourceFormat?: string;
   facilityCount?: number;
   error?: string;
+  /**
+   * この dataset の UPSERT に伴い削除された stale facility ID(db.ts の
+   * `deleteStaleFacilities` 参照、外部コードレビュー指摘 P0-3)。0件・未実行(UPSERT自体を
+   * 行わなかった)の場合は空配列。Cloudflare Workflows のリプレイ安全性のため、この配列は
+   * `upsertFacilities` を呼ぶ `step.do` の戻り値(シリアライズ可能な JSON)経由でのみ
+   * 伝播させ、step 外の変数への副作用としては持ち出さない。
+   */
+  deletedFacilityIds: string[];
 }
 
 /** 埋め込み生成・Vectorize 投入ステップの結果(TICKET-0021)。 */
 export type EmbeddingStepResult =
   | { status: "disabled" }
-  | { status: "ok"; facilityCount: number; batchCount: number }
+  | { status: "ok"; facilityCount: number; batchCount: number; deletedVectors: number }
   | { status: "error"; error: string };
 
 /** ジオコーディングステップの結果(FR-02A、TICKET-0028)。 */
@@ -156,9 +164,14 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
       results.push(await this.processDataset(dataset, step));
     }
 
+    // 全データセット分の削除同期結果(db.ts の deleteStaleFacilities)を集約する。
+    // 各要素は既に step.do の戻り値(上記 processDataset 内)として確定済みのプレーン配列のため、
+    // ここでの集約自体はリプレイ安全性に影響しない(step を新たに跨がない純粋な配列結合)。
+    const deletedFacilityIds = results.flatMap((result) => result.deletedFacilityIds);
+
     // D1 UPSERT 後段の埋め込み生成・Vectorize 投入(FR-03A、TICKET-0021)。
     // EMBEDDINGS_ENABLED=false(既定)の場合は何もせず、上記の CKAN→R2→D1 の結果には影響しない。
-    const embedding = await this.runEmbeddingStep(step);
+    const embedding = await this.runEmbeddingStep(step, deletedFacilityIds);
 
     // D1 UPSERT 後段の facilities ジオコーディング(FR-02A、TICKET-0028)。
     // GEOCODING_ENABLED=false(既定)の場合は何もせず、上記の結果には影響しない。
@@ -175,8 +188,19 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
    * `step.do` の自動リトライ(EMBED_STEP_CONFIG)を使い切っても失敗した場合、この関数は
    * 例外を再送出せず `{ status: "error" }` を返す。埋め込みステップの失敗によって
    * ワークフロー全体(=既に確定している CKAN→R2→D1 の `results`)を失敗扱いにしないための設計判断。
+   *
+   * `runEmbedPipeline` は毎回 D1 の埋め込み対象(risk_level='low' の facilities)を全件
+   * 取得して upsert する設計(embed-pipeline.ts の `fetchEmbeddableFacilities` →
+   * `embedAndUpsertFacilities`)のため、今回の取込で更新された facility のベクトルは
+   * この全件 upsert により自動的に上書きされる(更新分だけを別途 upsert する追加対応は不要)。
+   * 一方、削除された facility(`deletedFacilityIds`)は全件 upsert の対象に含まれないため、
+   * Vectorize 側に古いベクトルが残留する。これを防ぐため、削除 ID が1件以上あれば
+   * 別の `step.do` で明示的に `VectorStore.delete` を呼ぶ。
    */
-  private async runEmbeddingStep(step: WorkflowStep): Promise<EmbeddingStepResult> {
+  private async runEmbeddingStep(
+    step: WorkflowStep,
+    deletedFacilityIds: readonly string[],
+  ): Promise<EmbeddingStepResult> {
     if (this.env.EMBEDDINGS_ENABLED !== "true") {
       return { status: "disabled" };
     }
@@ -189,7 +213,16 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
           vectorStore: createVectorStore("vectorize", this.env.VECTORIZE),
         }),
       );
-      return { status: "ok", ...summary };
+
+      let deletedVectors = 0;
+      if (deletedFacilityIds.length > 0) {
+        deletedVectors = await step.do("delete stale facility vectors", EMBED_STEP_CONFIG, async () => {
+          await createVectorStore("vectorize", this.env.VECTORIZE).delete([...deletedFacilityIds]);
+          return deletedFacilityIds.length;
+        });
+      }
+
+      return { status: "ok", ...summary, deletedVectors };
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       return { status: "error", error: message };
@@ -240,7 +273,7 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
     // frozen(更新終了・CKAN 未登録)なデータセットはメタ情報のみ記録する(FR-034 AC-6)。
     if (dataset.frozen || !dataset.ckanPackageId) {
       await this.recordDatasetMeta(dataset, license, fetchedAt, null, notes, 0, step);
-      return { datasetId: dataset.id, status: "frozen-meta-only" };
+      return { datasetId: dataset.id, status: "frozen-meta-only", deletedFacilityIds: [] };
     }
 
     // ライセンス区分 A/F/G 以外は個別確認まで全文投入しない(FR-033)。
@@ -249,7 +282,7 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
         `ライセンス区分 ${license.category}(${license.label})のため個別確認が完了するまで本文投入を保留した(FR-033)。`,
       );
       await this.recordDatasetMeta(dataset, license, fetchedAt, null, notes, 1, step);
-      return { datasetId: dataset.id, status: "license-hold" };
+      return { datasetId: dataset.id, status: "license-hold", deletedFacilityIds: [] };
     }
 
     try {
@@ -269,14 +302,14 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
       if (!selection.resource) {
         notes.push("優先フォーマットに合致する利用可能なリソースが見つからなかった。");
         await this.recordDatasetMeta(dataset, license, fetchedAt, null, notes, 0, step);
-        return { datasetId: dataset.id, status: "no-resource" };
+        return { datasetId: dataset.id, status: "no-resource", deletedFacilityIds: [] };
       }
 
       const format = normalizeResourceFormat(selection.resource.format, selection.resource.url);
       if (!format) {
         notes.push(`未対応のリソース形式(${selection.resource.format ?? "不明"})のため取得しなかった。`);
         await this.recordDatasetMeta(dataset, license, fetchedAt, selection.resource.url, notes, 0, step);
-        return { datasetId: dataset.id, status: "no-resource" };
+        return { datasetId: dataset.id, status: "no-resource", deletedFacilityIds: [] };
       }
 
       // ③ リソース取得 → R2 保存(1ステップにまとめ、巨大バイナリを step 結果として
@@ -337,19 +370,29 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
         );
       });
 
-      if (facilities.length > 0) {
-        await step.do(`upsert facilities: ${dataset.id}`, async () => {
-          await upsertFacilities(this.env.DB, dataset.id, facilities);
-        });
-      }
+      // 削除同期(deleteStaleFacilities、db.ts 参照)の結果を、Cloudflare Workflows の
+      // リプレイ安全性のため、この step.do の戻り値(シリアライズ可能な配列)として返す
+      // (step 外の変数への副作用として持ち出さない)。
+      const deletedFacilityIds =
+        facilities.length > 0
+          ? await step.do(`upsert facilities: ${dataset.id}`, async () =>
+              upsertFacilities(this.env.DB, dataset.id, facilities),
+            )
+          : [];
 
-      return { datasetId: dataset.id, status: "ok", resourceFormat: format, facilityCount: facilities.length };
+      return {
+        datasetId: dataset.id,
+        status: "ok",
+        resourceFormat: format,
+        facilityCount: facilities.length,
+        deletedFacilityIds,
+      };
     } catch (err) {
       // package_show / リソース取得のリトライを使い果たして失敗した場合(死活監視、FR-029/034)。
       const message = err instanceof Error ? err.message : String(err);
       notes.push(`取得に失敗したため is_alive=0 として記録した: ${message}`);
       await this.recordDatasetMeta(dataset, license, fetchedAt, null, notes, 0, step);
-      return { datasetId: dataset.id, status: "error", error: message };
+      return { datasetId: dataset.id, status: "error", error: message, deletedFacilityIds: [] };
     }
   }
 

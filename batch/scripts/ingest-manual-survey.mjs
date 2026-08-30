@@ -15,6 +15,7 @@ import { fileURLToPath } from "node:url";
 
 import YAML from "yaml";
 import { geocodeAddressesThrottled } from "../ingest/geocoding.mjs";
+import { captureFacilityIdsBeforeApply, buildRemoteEmbedGuidance, finishLocalEmbedRefresh } from "./lib/embed-refresh.mjs";
 import { PUBLISHABLE_LICENSE_STATUSES, validateMunicipalitySurvey } from "./validate-manual.mjs";
 
 // npm scripts resolve `wrangler` through node_modules/.bin. Resolve that same
@@ -312,14 +313,33 @@ export async function main(args = process.argv.slice(2)) {
     const programsFilled = programs.filter((program, index) => program.address && program.lat == null && program.lng == null && geocodedPrograms[index].lat != null && geocodedPrograms[index].lng != null).length;
     console.log(`ジオコーディング: ${programsFilled}/${programTargetCount} 件の窓口(programs)に座標を付与しました。`);
   }
+  // 埋め込みリフレッシュ(--localのみ)対象の dataset ID(buildSql 内で使う値と同じ組み立て方)。
+  const datasetId = `ds-${survey.municipalityCode}-manual-survey-programs`;
+  const beforeFacilityIds = target === "--local" ? captureFacilityIdsBeforeApply({ datasetIds: [datasetId] }) : [];
+
   const tempFile = join(tmpdir(), `trait-compass-manual-survey-${process.pid}-${Date.now()}.sql`);
   await writeFile(tempFile, buildSql(effectiveSurvey, { includeRestricted: flags.includes("--include-restricted") }), "utf8");
+  let sqlSucceeded = false;
   try {
     const result = spawnSync(wranglerPath, ["d1", "execute", "trait-compass", target, `--file=${tempFile}`], { stdio: "inherit" });
     if (result.error) throw result.error;
-    if (result.status !== 0) process.exitCode = result.status ?? 1;
+    if (result.status !== 0) {
+      process.exitCode = result.status ?? 1;
+    } else {
+      sqlSucceeded = true;
+    }
   } finally {
     await unlink(tempFile).catch(() => {});
+  }
+
+  // 埋め込みリフレッシュは SQL 適用が成功した場合のみ行う(失敗してもこのスクリプト自体の
+  // exit code は汚さない、finishLocalEmbedRefresh 内部で例外を握りつぶす設計)。
+  if (sqlSucceeded) {
+    if (target === "--local") {
+      await finishLocalEmbedRefresh({ datasetIds: [datasetId], beforeIds: beforeFacilityIds });
+    } else {
+      console.log(buildRemoteEmbedGuidance());
+    }
   }
 }
 

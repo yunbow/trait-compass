@@ -106,7 +106,7 @@ async function deleteStaleFacilities(
   db: D1Database,
   datasetId: string,
   currentIds: readonly string[],
-): Promise<void> {
+): Promise<string[]> {
   const { results } = await db
     .prepare(`SELECT id AS id FROM facilities WHERE dataset_id = ?1`)
     .bind(datasetId)
@@ -114,7 +114,7 @@ async function deleteStaleFacilities(
 
   const currentIdSet = new Set(currentIds);
   const staleIds = (results ?? []).map((row) => row.id).filter((id) => !currentIdSet.has(id));
-  if (staleIds.length === 0) return;
+  if (staleIds.length === 0) return [];
 
   for (let start = 0; start < staleIds.length; start += MAX_IDS_PER_QUERY) {
     const chunk = staleIds.slice(start, start + MAX_IDS_PER_QUERY);
@@ -124,6 +124,7 @@ async function deleteStaleFacilities(
       db.prepare(`DELETE FROM facilities WHERE id IN (${placeholders})`).bind(...chunk),
     ]);
   }
+  return staleIds;
 }
 
 /**
@@ -131,15 +132,19 @@ async function deleteStaleFacilities(
  * facility_tags(相談分野タグ)は TICKET-0013 でタグ語彙確定後に投入する想定のため、
  * 本 Worker では扱わない(意図的なスコープ外。ただし削除同期(上記 deleteStaleFacilities)は
  * facility_tags の外部キー制約に抵触しないよう先に消す必要があるため例外的に扱う)。
+ *
+ * 戻り値は `deleteStaleFacilities` が削除した facility ID の一覧(削除なしなら空配列)。
+ * 呼び出し元(workers/ingest/workflow.ts の `processDataset`)はこれを Vectorize 側の
+ * ベクトル削除同期(`VectorStore.delete`)に使う。
  */
 export async function upsertFacilities(
   db: D1Database,
   datasetId: string,
   facilities: readonly NormalizedFacility[],
-): Promise<void> {
-  if (facilities.length === 0) return;
+): Promise<string[]> {
+  if (facilities.length === 0) return [];
 
-  await deleteStaleFacilities(db, datasetId, facilities.map((facility) => facility.id));
+  const deletedFacilityIds = await deleteStaleFacilities(db, datasetId, facilities.map((facility) => facility.id));
 
   const statements = facilities.map((facility) =>
     db
@@ -196,6 +201,7 @@ export async function upsertFacilities(
   );
 
   await db.batch(statements);
+  return deletedFacilityIds;
 }
 
 // ============================================================

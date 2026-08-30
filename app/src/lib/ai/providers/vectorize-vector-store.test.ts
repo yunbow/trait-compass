@@ -32,6 +32,25 @@ describe("VectorizeVectorStore", () => {
     expect(getCloudflareContextMock).not.toHaveBeenCalled();
   });
 
+  it("delete は明示的に渡された Vectorize バインディングの deleteByIds を ID 配列で呼ぶ", async () => {
+    const deleteByIdsMock = vi.fn().mockResolvedValue({ mutationId: "m1" });
+    const store = new VectorizeVectorStore({ deleteByIds: deleteByIdsMock } as unknown as Vectorize);
+
+    await store.delete(["1", "2"]);
+
+    expect(deleteByIdsMock).toHaveBeenCalledWith(["1", "2"]);
+    expect(getCloudflareContextMock).not.toHaveBeenCalled();
+  });
+
+  it("delete は空配列が渡された場合、deleteByIds を呼ばずに正常終了する", async () => {
+    const deleteByIdsMock = vi.fn();
+    const store = new VectorizeVectorStore({ deleteByIds: deleteByIdsMock } as unknown as Vectorize);
+
+    await expect(store.delete([])).resolves.toBeUndefined();
+
+    expect(deleteByIdsMock).not.toHaveBeenCalled();
+  });
+
   it("query は topK/filter を渡し、matches を id/score/metadata に変換して返す", async () => {
     const queryMock = vi.fn().mockResolvedValue({
       count: 1,

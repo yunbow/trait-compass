@@ -15,7 +15,7 @@ vi.mock("@/lib/ai/embedder", () => ({
 
 const { vectorQueryMock } = vi.hoisted(() => ({ vectorQueryMock: vi.fn() }));
 vi.mock("@/lib/ai/vector-store", () => ({
-  createVectorStore: () => ({ query: vectorQueryMock, upsert: vi.fn() }),
+  createVectorStore: () => ({ query: vectorQueryMock, upsert: vi.fn(), delete: vi.fn() }),
 }));
 
 const { generateMock } = vi.hoisted(() => ({ generateMock: vi.fn() }));

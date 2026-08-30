@@ -52,6 +52,11 @@ export class VectorizeVectorStore implements VectorStore {
     await this.getBinding().upsert(items.map(toVectorizeVector));
   }
 
+  async delete(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+    await this.getBinding().deleteByIds(ids);
+  }
+
   async query(vector: number[], topK: number, filter?: VectorStoreFilter): Promise<VectorStoreQueryResult[]> {
     const result = await this.getBinding().query(vector, {
       topK,

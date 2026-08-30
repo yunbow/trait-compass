@@ -113,6 +113,17 @@ export function buildQdrantFilter(filter?: VectorStoreFilter) {
   };
 }
 
+/**
+ * Qdrant の points delete リクエストボディを組み立てる。
+ * `ids`(呼び出し元由来のソース ID)は `toQdrantPointId` で upsert 時と同じ point ID に変換する
+ * (変換前の ID をそのまま渡すと、upsert 済みのポイントと一致せず削除されない)。
+ */
+export function buildQdrantDeleteBody(ids: string[]) {
+  return {
+    points: ids.map(toQdrantPointId),
+  };
+}
+
 /** Qdrant の points search リクエストボディを組み立てる。 */
 export function buildQdrantSearchBody(vector: number[], topK: number, filter?: VectorStoreFilter) {
   return {
@@ -166,6 +177,20 @@ export class QdrantVectorStore implements VectorStore {
     if (!res.ok) {
       const detail = await res.text().catch(() => "");
       throw new Error(`Qdrant upsert failed: ${res.status} ${res.statusText} ${detail}`.trim());
+    }
+  }
+
+  async delete(ids: string[]): Promise<void> {
+    if (ids.length === 0) return;
+
+    const res = await fetch(`${this.baseUrl}/collections/${this.collection}/points/delete`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(buildQdrantDeleteBody(ids)),
+    });
+    if (!res.ok) {
+      const detail = await res.text().catch(() => "");
+      throw new Error(`Qdrant delete failed: ${res.status} ${res.statusText} ${detail}`.trim());
     }
   }
 

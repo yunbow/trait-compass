@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   QdrantVectorStore,
+  buildQdrantDeleteBody,
   buildQdrantFilter,
   buildQdrantSearchBody,
   buildQdrantUpsertBody,
@@ -55,6 +56,18 @@ describe("buildQdrantUpsertBody", () => {
     const body = buildQdrantUpsertBody([{ id: "fac-1a2b3c4d", vector: [0.1] }]);
     expect(body.points[0].id).toBe(toQdrantPointId("fac-1a2b3c4d"));
     expect(body.points[0].payload).toEqual({ [SOURCE_ID_PAYLOAD_KEY]: "fac-1a2b3c4d" });
+  });
+});
+
+describe("buildQdrantDeleteBody", () => {
+  it("ID を toQdrantPointId で変換した point ID の配列にする", () => {
+    expect(buildQdrantDeleteBody(["1", "fac-1a2b3c4d"])).toEqual({
+      points: ["1", toQdrantPointId("fac-1a2b3c4d")],
+    });
+  });
+
+  it("空配列の場合は points も空配列になる", () => {
+    expect(buildQdrantDeleteBody([])).toEqual({ points: [] });
   });
 });
 
@@ -115,6 +128,42 @@ describe("QdrantVectorStore", () => {
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(store.upsert([{ id: "1", vector: [0.1] }])).rejects.toThrow(/500/);
+
+    vi.unstubAllGlobals();
+  });
+
+  it("delete は POST /collections/{collection}/points/delete にリクエストし、point ID は toQdrantPointId で変換される", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await store.delete(["1", "fac-1a2b3c4d"]);
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("http://localhost:16333/collections/trait-compass/points/delete");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body as string)).toEqual({
+      points: ["1", toQdrantPointId("fac-1a2b3c4d")],
+    });
+
+    vi.unstubAllGlobals();
+  });
+
+  it("delete は空配列が渡された場合、fetch を呼ばずに正常終了する", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(store.delete([])).resolves.toBeUndefined();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    vi.unstubAllGlobals();
+  });
+
+  it("delete 失敗時は例外を投げる", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(new Response("boom", { status: 500, statusText: "Error" }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(store.delete(["1"])).rejects.toThrow(/Qdrant delete failed: 500/);
 
     vi.unstubAllGlobals();
   });

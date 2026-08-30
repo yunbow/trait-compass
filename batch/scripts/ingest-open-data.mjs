@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { JSDOM } from "jsdom";
 import YAML from "yaml";
 
+import { captureFacilityIdsBeforeApply, buildRemoteEmbedGuidance, finishLocalEmbedRefresh } from "./lib/embed-refresh.mjs";
 import { idFor } from "./ingest-manual-survey.mjs";
 import {
   BROAD_AREA_MUNICIPALITY_CODE,
@@ -621,6 +622,11 @@ async function main() {
   }
 
   const target = flags.includes("--remote") ? "--remote" : "--local";
+  // 埋め込みリフレッシュ(--localのみ)用に、対象データセット全件のIDをSQL適用前に確定しておく
+  // (このスクリプトは source ごとに DELETE→INSERT するため、事前IDはループ開始前に一括取得する)。
+  const datasetIds = selectedSources.map((source) => source.dataset_id ?? `ds-${source.id}`);
+  const beforeFacilityIds = target === "--local" ? captureFacilityIdsBeforeApply({ datasetIds }) : [];
+
   let hasSourceFailure = false;
   for (const source of selectedSources) {
     try {
@@ -633,6 +639,7 @@ async function main() {
         console.log(`license-hold(またはメタのみ): ${source.id}`);
       }
       await executeSqlChunks(sqlChunks, target);
+      if (process.exitCode) hasSourceFailure = true;
     } catch (error) {
       hasSourceFailure = true;
       console.error(`${source.id}: ${error instanceof Error ? error.message : error}`);
@@ -640,6 +647,15 @@ async function main() {
   }
   if (hasSourceFailure) {
     process.exitCode = 1;
+    return;
+  }
+
+  // 埋め込みリフレッシュは全 source の SQL 適用が成功した場合のみ行う(埋め込み自体の失敗で
+  // このスクリプトの exit code を汚さないよう、finishLocalEmbedRefresh 内部で例外を握りつぶす)。
+  if (target === "--local") {
+    await finishLocalEmbedRefresh({ datasetIds, beforeIds: beforeFacilityIds });
+  } else {
+    console.log(buildRemoteEmbedGuidance());
   }
 }
 
