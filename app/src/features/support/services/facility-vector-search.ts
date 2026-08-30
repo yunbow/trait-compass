@@ -59,6 +59,31 @@ export interface FacilityVectorSearchMultiQuery {
   filters: VectorStoreFilter[];
 }
 
+/** {@link queryFacilityIdsAcrossFilters} の1件分の戻り値。 */
+export interface ScoredFacilityId {
+  id: string;
+  score: number;
+}
+
+/**
+ * 複数の `{ id, score }` 配列(異なるフィルタ・異なるクエリ回による結果)を、同一 id は
+ * 最良スコアを採用してデデュープし、スコア降順で1本にマージする純関数(2026-08是正、
+ * 外部コードレビュー指摘)。`queryFacilityIdsAcrossFilters` 自身のフィルタ間マージと、
+ * route.ts の初回クエリ+追加取得クエリのマージの両方で共有する。
+ */
+export function mergeScoredFacilityIds(...resultGroups: readonly (readonly ScoredFacilityId[])[]): ScoredFacilityId[] {
+  const bestScoreById = new Map<string, number>();
+  for (const results of resultGroups) {
+    for (const result of results) {
+      const currentBest = bestScoreById.get(result.id);
+      if (currentBest === undefined || result.score > currentBest) {
+        bestScoreById.set(result.id, result.score);
+      }
+    }
+  }
+  return [...bestScoreById.entries()].sort(([, a], [, b]) => b - a).map(([id, score]) => ({ id, score }));
+}
+
 /**
  * `queryFacilityIds` の複数フィルタ版(2026-08是正、外部コードレビュー指摘)。
  *
@@ -69,11 +94,18 @@ export interface FacilityVectorSearchMultiQuery {
  * ことで、呼び出し側(route.ts)が「選択自治体」「広域(東京都)」を別々に確保できるようにする。
  *
  * embed はクエリテキストにつき1回のみ行う(フィルタ数だけ埋め込み課金が増えることを避ける)。
+ *
+ * 2026-08是正(外部コードレビュー指摘): 戻り値を facility_id の配列ではなく
+ * `{ id, score }` の配列にした。呼び出し側(route.ts)が初回クエリと追加取得クエリの結果を
+ * 単純な配列連結(`[...a, ...b]`)でマージすると、スコアを保持していないため、追加取得側に
+ * より高スコアの候補が含まれていてもID列の末尾に追いやられてしまう(Vectorize/Qdrant は
+ * 近似最近傍探索であり、topK を変えた際に上位N件が単純な部分集合になる保証はない)。
+ * スコアを呼び出し側まで持ち越すことで、複数回のクエリ結果を正しくスコア順に再統合できる。
  */
 export async function queryFacilityIdsAcrossFilters(
   query: FacilityVectorSearchMultiQuery,
   deps: FacilityVectorSearchDeps,
-): Promise<string[]> {
+): Promise<ScoredFacilityId[]> {
   const { text, topK, filters } = query;
   const { embedder, vectorStore } = deps;
 
@@ -82,15 +114,5 @@ export async function queryFacilityIdsAcrossFilters(
 
   const resultsPerFilter = await Promise.all(filters.map((filter) => vectorStore.query(vector, topK, filter)));
 
-  const bestScoreById = new Map<string, number>();
-  for (const results of resultsPerFilter) {
-    for (const result of results) {
-      const currentBest = bestScoreById.get(result.id);
-      if (currentBest === undefined || result.score > currentBest) {
-        bestScoreById.set(result.id, result.score);
-      }
-    }
-  }
-
-  return [...bestScoreById.entries()].sort(([, a], [, b]) => b - a).map(([id]) => id);
+  return mergeScoredFacilityIds(...resultsPerFilter);
 }

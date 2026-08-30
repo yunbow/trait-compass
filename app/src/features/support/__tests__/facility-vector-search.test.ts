@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { queryFacilityIds, queryFacilityIdsAcrossFilters } from "@/features/support/services/facility-vector-search";
+import { mergeScoredFacilityIds, queryFacilityIds, queryFacilityIdsAcrossFilters } from "@/features/support/services/facility-vector-search";
 import type { Embedder } from "@/lib/ai/embedder";
 import type { VectorStore, VectorStoreFilter, VectorStoreQueryResult } from "@/lib/ai/vector-store";
 
@@ -100,12 +100,12 @@ describe("queryFacilityIdsAcrossFilters", () => {
       東京都: [{ id: "fac-broad", score: 0.8 }],
     });
 
-    const ids = await queryFacilityIdsAcrossFilters(
+    const results = await queryFacilityIdsAcrossFilters(
       { text: "台東区 小中学生 感覚過敏", topK: 10, filters: [{ municipality: "台東区" }, { municipality: "東京都" }] },
       { embedder, vectorStore },
     );
 
-    expect(ids).toEqual(["fac-broad"]);
+    expect(results).toEqual([{ id: "fac-broad", score: 0.8 }]);
   });
 
   it("両フィルタの結果をスコア降順でマージする", async () => {
@@ -115,12 +115,15 @@ describe("queryFacilityIdsAcrossFilters", () => {
       東京都: [{ id: "fac-broad", score: 0.9 }],
     });
 
-    const ids = await queryFacilityIdsAcrossFilters(
+    const results = await queryFacilityIdsAcrossFilters(
       { text: "感覚過敏", topK: 10, filters: [{ municipality: "台東区" }, { municipality: "東京都" }] },
       { embedder, vectorStore },
     );
 
-    expect(ids).toEqual(["fac-broad", "fac-local"]);
+    expect(results).toEqual([
+      { id: "fac-broad", score: 0.9 },
+      { id: "fac-local", score: 0.7 },
+    ]);
   });
 
   it("同一idが複数フィルタにヒットした場合は最良スコアを採用し重複させない", async () => {
@@ -130,12 +133,12 @@ describe("queryFacilityIdsAcrossFilters", () => {
       東京都: [{ id: "fac-both", score: 0.95 }],
     });
 
-    const ids = await queryFacilityIdsAcrossFilters(
+    const results = await queryFacilityIdsAcrossFilters(
       { text: "感覚過敏", topK: 10, filters: [{ municipality: "台東区" }, { municipality: "東京都" }] },
       { embedder, vectorStore },
     );
 
-    expect(ids).toEqual(["fac-both"]);
+    expect(results).toEqual([{ id: "fac-both", score: 0.95 }]);
     expect(vectorStore.query).toHaveBeenCalledTimes(2);
   });
 
@@ -156,12 +159,39 @@ describe("queryFacilityIdsAcrossFilters", () => {
     const embedder = makeEmbedder(null);
     const vectorStore = makeVectorStoreByFilter({ 台東区: [{ id: "fac-1", score: 1 }] });
 
-    const ids = await queryFacilityIdsAcrossFilters(
+    const results = await queryFacilityIdsAcrossFilters(
       { text: "", topK: 5, filters: [{ municipality: "台東区" }] },
       { embedder, vectorStore },
     );
 
-    expect(ids).toEqual([]);
+    expect(results).toEqual([]);
     expect(vectorStore.query).not.toHaveBeenCalled();
+  });
+});
+
+describe("mergeScoredFacilityIds", () => {
+  it("複数配列をスコア降順でマージする", () => {
+    const merged = mergeScoredFacilityIds(
+      [{ id: "fac-a", score: 0.4 }],
+      [{ id: "fac-b", score: 0.8 }],
+    );
+
+    expect(merged).toEqual([
+      { id: "fac-b", score: 0.8 },
+      { id: "fac-a", score: 0.4 },
+    ]);
+  });
+
+  it("同一idが複数配列にある場合は最良スコアを採用する", () => {
+    const merged = mergeScoredFacilityIds(
+      [{ id: "fac-a", score: 0.4 }],
+      [{ id: "fac-a", score: 0.9 }],
+    );
+
+    expect(merged).toEqual([{ id: "fac-a", score: 0.9 }]);
+  });
+
+  it("引数が無い場合は空配列を返す", () => {
+    expect(mergeScoredFacilityIds()).toEqual([]);
   });
 });

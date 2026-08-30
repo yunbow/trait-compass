@@ -40,9 +40,9 @@ import {
   searchFacilitiesWithFreshnessPolicy,
 } from "@/features/support/services/facility-search";
 import { municipalityToCode } from "@/features/support/constants/municipality-codes";
+import { CATEGORY_TYPES } from "@/features/support/constants/category-types";
 import type { FacilityRow } from "@/features/support/services/facility-search";
-import { queryFacilityIdsAcrossFilters } from "@/features/support/services/facility-vector-search";
-import { getUnhealthyDatasets } from "@/features/support/services/dataset-status";
+import { mergeScoredFacilityIds, queryFacilityIdsAcrossFilters } from "@/features/support/services/facility-vector-search";
 
 // `/api/recommend`(TICKET-0023)。年齢区分・区市町村・相談分野タグ・相談したい内容の自由文から、
 // VectorStore(Vectorize/Qdrant)検索 → D1 JOIN で事実情報を取得 → LlmClient で「合いそうな理由」を
@@ -165,24 +165,32 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const queryText = buildEmbeddingQueryText(query, tags);
     const filters = [{ municipality }, { municipality: BROAD_AREA_MUNICIPALITY }];
 
-    const facilityIds = await queryFacilityIdsAcrossFilters(
+    const facilityScores = await queryFacilityIdsAcrossFilters(
       { text: queryText, topK: RECOMMEND_TOP_K, filters },
       { embedder, vectorStore },
     );
+    const facilityIds = facilityScores.map((s) => s.id);
 
     if (facilityIds.length > 0) {
       const rows = await fetchFacilitiesByIds(db, facilityIds, { ageGroup: age, municipality, lifestage });
       orderedRows = reorderFacilitiesByIds(rows, facilityIds);
 
       if (orderedRows.length < RECOMMEND_TOP_K) {
-        const expandedIds = await queryFacilityIdsAcrossFilters(
+        const expandedScores = await queryFacilityIdsAcrossFilters(
           { text: queryText, topK: RECOMMEND_TOP_K * RAG_RETRY_TOP_K_MULTIPLIER, filters },
           { embedder, vectorStore },
         );
-        const additionalIds = expandedIds.filter((id) => !facilityIds.includes(id));
-        if (additionalIds.length > 0) {
+        const additionalScores = expandedScores.filter((s) => !facilityIds.includes(s.id));
+        if (additionalScores.length > 0) {
+          const additionalIds = additionalScores.map((s) => s.id);
           const additionalRows = await fetchFacilitiesByIds(db, additionalIds, { ageGroup: age, municipality, lifestage });
-          const combinedIds = [...facilityIds, ...additionalIds];
+          // 2026-08是正(外部コードレビュー指摘): 単純な配列連結([...facilityIds, ...additionalIds])
+          // だとスコアを無視した順序になり、追加取得側により高スコアの候補が含まれていても
+          // 末尾に追いやられてしまう(Vectorize/Qdrant は近似最近傍探索のため、topK を広げた際に
+          // 上位N件が単純な部分集合になる保証はない)。mergeScoredFacilityIds でスコアに基づいて
+          // 再統合してから並べ替える。
+          const combinedScores = mergeScoredFacilityIds(facilityScores, additionalScores);
+          const combinedIds = combinedScores.map((s) => s.id);
           orderedRows = reorderFacilitiesByIds([...rows, ...additionalRows], combinedIds).slice(0, RECOMMEND_TOP_K);
         }
       }
@@ -190,23 +198,22 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       usedRag = orderedRows.length > 0;
     }
 
-    // 鮮度ポリシー(オープンデータ30日超過・手動調査データ365日超過)。検索結果画面
-    // (/support/results)はどちらの由来でも当該施設を広域窓口のみへ縮退表示するため、本APIでも
-    // 同じ施設を返すと表示/非表示が食い違ってしまう。以前は kind="manual-expired" のみ除外し、
-    // オープンデータ側(kind="open-data-unhealthy")は素通りしていた(2026-08是正、外部コード
-    // レビュー指摘)。getUnhealthyDatasets の両kindの集合で除外する(orderedRows が空の場合は
-    // 無駄なD1呼び出しを避けるため usedRag のときのみ実行)。
+    // 鮮度ポリシー(通常結果画面と同じ粒度、2026-08是正・外部コードレビュー指摘)。以前は
+    // facility単位でmanual-expired/open-data-unhealthyのデータセットに属する施設「だけ」を
+    // 除外しており、通常結果画面(/support/results)がカテゴリ単位で「不健全なデータセットが
+    // 1件でもあれば同カテゴリの正常な区市町村施設も含めて広域窓口のみへ縮退する」のとは
+    // 粒度が異なっていた(例: 「相談窓口」カテゴリに期限切れ施設Aと正常施設Bがある場合、
+    // 通常画面ではBも広域窓口のみへ縮退して消えるが、AI推薦ではBが表示され続ける不整合)。
+    // searchFacilitiesWithFreshnessPolicy が返す「このage/municipality/lifestageで許可される
+    // 施設ID」集合とRAG候補を突合することで、通常結果画面と同じ縮退ポリシーを適用する
+    // (orderedRows が空の場合は無駄なD1呼び出しを避けるため usedRag のときのみ実行)。
     if (usedRag) {
-      const unhealthyDatasets = await getUnhealthyDatasets(db);
-      const unhealthyDatasetIds = new Set(
-        unhealthyDatasets
-          .filter((dataset) => dataset.kind === "manual-expired" || dataset.kind === "open-data-unhealthy")
-          .map((dataset) => dataset.id),
+      const freshnessResult = await searchFacilitiesWithFreshnessPolicy(db, { ageGroup: age, municipality, tags, lifestage });
+      const permittedIds = new Set(
+        CATEGORY_TYPES.flatMap((type) => freshnessResult.facilitiesByCategory[type].map((row) => row.id)),
       );
-      if (unhealthyDatasetIds.size > 0) {
-        orderedRows = orderedRows.filter((row) => !unhealthyDatasetIds.has(row.datasetId));
-        usedRag = orderedRows.length > 0;
-      }
+      orderedRows = orderedRows.filter((row) => permittedIds.has(row.id));
+      usedRag = orderedRows.length > 0;
     }
   } catch {
     // NFR-36: Embedder/VectorStore/D1 の例外詳細をログに出力しない。usedRag=false のまま

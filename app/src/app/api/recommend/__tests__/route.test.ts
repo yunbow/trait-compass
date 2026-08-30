@@ -81,27 +81,38 @@ function createQueueDb(responses: unknown[][]) {
 }
 
 /**
- * SQL文字列の内容(FROM句)でどの問い合わせかを判定して応答を出し分けるフェイクD1
- * (2026-08是正のテスト用: searchFacilitiesWithFreshnessPolicy・RAG成功時の期限切れ除外は
+ * SQL文字列の内容(FROM句・WHERE句)でどの問い合わせかを判定して応答を出し分けるフェイクD1
+ * (2026-08是正のテスト用: searchFacilitiesWithFreshnessPolicy・RAG成功時の鮮度ポリシー突合は
  * 複数クエリを Promise.all で並行実行するため、実行順序に依存しない判定が必要。
  * src/app/api/prepare/__tests__/route.test.ts の createDispatchingDb と同じ方針)。
+ *
+ * RAG経路(fetchFacilitiesByIds、`f.id IN (...)`)と、鮮度ポリシー突合用の全件検索
+ * (searchFacilitiesWithFreshnessPolicy 内部の searchFacilities、`f.municipality_code = ?`)は
+ * 同じ `FROM facilities f JOIN datasets d` 系の SQL だが WHERE 句が異なるため、
+ * `f.id IN` の有無で区別する。`f.id IN` クエリは `facilityRows` プールから bind された
+ * id にマッチする行だけを返す(初回クエリ・追加取得クエリで問い合わせ対象idが異なるため)。
  */
 function createDispatchingDb(options: {
-  facilityRows: unknown[];
+  facilityRows: (unknown & { id: string })[];
+  fullSearchFacilityRows?: unknown[];
   unhealthyDatasetRows?: unknown[];
   tagRows?: unknown[];
 }) {
-  const { facilityRows, unhealthyDatasetRows = [], tagRows = [] } = options;
+  const { facilityRows, fullSearchFacilityRows = facilityRows, unhealthyDatasetRows = [], tagRows = [] } = options;
   return {
     prepare: vi.fn((sql: string) => {
-      const respond = async () => {
+      const respondFor = (boundArgs: unknown[]) => async () => {
         if (sql.includes("FROM datasets")) return { results: unhealthyDatasetRows };
         if (sql.includes("FROM facility_tags")) return { results: tagRows };
-        return { results: facilityRows };
+        if (sql.includes("f.id IN")) {
+          const requestedIds = new Set(boundArgs.filter((a) => typeof a === "string"));
+          return { results: facilityRows.filter((row) => requestedIds.has(row.id)) };
+        }
+        return { results: fullSearchFacilityRows };
       };
       return {
-        all: vi.fn(respond),
-        bind: vi.fn(() => ({ all: vi.fn(respond) })),
+        all: vi.fn(respondFor([])),
+        bind: vi.fn((...args: unknown[]) => ({ all: vi.fn(respondFor(args)) })),
       };
     }),
   };
@@ -259,7 +270,7 @@ describe("POST /api/recommend", () => {
     vectorQueryMock.mockResolvedValue([{ id: "fac-001", score: 0.95 }]);
     generateMock.mockResolvedValue({ text: "落ち着いた環境で相談できる点が、今の悩みに合いそうです。" });
 
-    const { db } = createQueueDb([[makeFacilityJoinRow()]]);
+    const db = createDispatchingDb({ facilityRows: [makeFacilityJoinRow()] });
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
@@ -280,7 +291,7 @@ describe("POST /api/recommend", () => {
     // D1 の実際の電話番号(03-1234-5678)とは異なる、捏造された電話番号を含む応答。
     generateMock.mockResolvedValue({ text: "お電話は 090-9999-9999 までどうぞ、とても良い施設です。" });
 
-    const { db } = createQueueDb([[makeFacilityJoinRow({ phone: "03-1234-5678" })]]);
+    const db = createDispatchingDb({ facilityRows: [makeFacilityJoinRow({ phone: "03-1234-5678" })] });
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
@@ -296,7 +307,7 @@ describe("POST /api/recommend", () => {
     vectorQueryMock.mockResolvedValue([{ id: "fac-001", score: 0.95 }]);
     generateMock.mockResolvedValue({ text: "あなたはADHDです。" });
 
-    const { db } = createQueueDb([[makeFacilityJoinRow()]]);
+    const db = createDispatchingDb({ facilityRows: [makeFacilityJoinRow()] });
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
@@ -311,7 +322,7 @@ describe("POST /api/recommend", () => {
     vectorQueryMock.mockResolvedValue([{ id: "fac-001", score: 0.95 }]);
     generateMock.mockResolvedValue({ text: "不注意の傾向が高いためADHDが原因です。" });
 
-    const { db } = createQueueDb([[makeFacilityJoinRow()]]);
+    const db = createDispatchingDb({ facilityRows: [makeFacilityJoinRow()] });
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
@@ -385,7 +396,10 @@ describe("POST /api/recommend", () => {
 
   // 2026-08是正: 手動調査データの有効期限365日超過(getUnhealthyDatasets の
   // kind="manual-expired")由来の施設を、/support/results と同じく本APIでも除外する。
-  it("期限切れ手動データセット由来の施設を除外し、それ以外の施設のみ返す(残りがある場合)", async () => {
+  // 2026-08是正(外部コードレビュー指摘): RAG成功時の鮮度ポリシーを通常結果画面と同じ
+  // 「カテゴリ単位」の粒度にしたため、期限切れ施設と同じカテゴリの施設は(健全でも)
+  // 広域窓口以外は縮退対象になる。別カテゴリの健全な施設は影響を受けないことを確認する。
+  it("期限切れ手動データセット由来の施設を除外し、別カテゴリの健全な施設は影響を受けない", async () => {
     embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
     vectorQueryMock.mockResolvedValue([
       { id: "fac-expired", score: 0.95 },
@@ -393,14 +407,15 @@ describe("POST /api/recommend", () => {
     ]);
     generateMock.mockResolvedValue({ text: "落ち着いた環境で相談できる点が合いそうです。" });
 
-    // 0回目: fetchFacilitiesByIds(2件)。1回目: getUnhealthyDatasets(期限切れ1件)。
-    const { db } = createQueueDb([
-      [
-        makeFacilityJoinRow({ id: "fac-expired", dataset_id: "ds-13106-manual-survey-programs" }),
-        makeFacilityJoinRow({ id: "fac-healthy", dataset_id: "ds-a" }),
+    const db = createDispatchingDb({
+      facilityRows: [
+        makeFacilityJoinRow({ id: "fac-expired", dataset_id: "ds-13106-manual-survey-programs", category_type: "相談窓口" }),
+        makeFacilityJoinRow({ id: "fac-healthy", dataset_id: "ds-a", category_type: "支援制度" }),
       ],
-      [{ id: "ds-13106-manual-survey-programs", isAlive: 1, fetchedAt: "2020-01-01T00:00:00.000Z", license: "manual-fact-verified" }],
-    ]);
+      unhealthyDatasetRows: [
+        { id: "ds-13106-manual-survey-programs", isAlive: 1, fetchedAt: "2020-01-01T00:00:00.000Z", license: "manual-fact-verified" },
+      ],
+    });
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
@@ -414,14 +429,20 @@ describe("POST /api/recommend", () => {
     embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
     vectorQueryMock.mockResolvedValue([{ id: "fac-expired", score: 0.95 }]);
 
-    // 0回目: fetchFacilitiesByIds(1件、期限切れ由来)。1回目: getUnhealthyDatasets。
-    // 2回目・3回目: フォールバック先の searchFacilities(施設1件+タグ)。
-    const { db } = createQueueDb([
-      [makeFacilityJoinRow({ id: "fac-expired", dataset_id: "ds-13106-manual-survey-programs" })],
-      [{ id: "ds-13106-manual-survey-programs", isAlive: 1, fetchedAt: "2020-01-01T00:00:00.000Z", license: "manual-fact-verified" }],
-      [makeFacilityJoinRow({ id: "fac-fallback" })],
-      [],
-    ]);
+    const db = createDispatchingDb({
+      // RAG(fetchFacilitiesByIds)は期限切れ施設のみヒット。
+      facilityRows: [makeFacilityJoinRow({ id: "fac-expired", dataset_id: "ds-13106-manual-survey-programs", category_type: "相談窓口" })],
+      // 鮮度ポリシー突合・フォールバック時の全件検索は、期限切れ施設(相談窓口)に加えて
+      // 別カテゴリの健全な施設(fac-fallback、支援制度)も返す。
+      fullSearchFacilityRows: [
+        makeFacilityJoinRow({ id: "fac-expired", dataset_id: "ds-13106-manual-survey-programs", category_type: "相談窓口" }),
+        makeFacilityJoinRow({ id: "fac-fallback", dataset_id: "ds-a", category_type: "支援制度" }),
+      ],
+      unhealthyDatasetRows: [
+        { id: "ds-13106-manual-survey-programs", isAlive: 1, fetchedAt: "2020-01-01T00:00:00.000Z", license: "manual-fact-verified" },
+      ],
+      tagRows: [],
+    });
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
@@ -516,7 +537,7 @@ describe("POST /api/recommend", () => {
     });
     generateMock.mockResolvedValue({ text: "広域の窓口ですが、悩みに合いそうです。" });
 
-    const { db } = createQueueDb([[makeFacilityJoinRow({ id: "fac-broad", municipality: "東京都" })]]);
+    const db = createDispatchingDb({ facilityRows: [makeFacilityJoinRow({ id: "fac-broad", municipality: "東京都" })] });
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
@@ -544,8 +565,9 @@ describe("POST /api/recommend", () => {
     });
     generateMock.mockResolvedValue({ text: "合いそうな理由です。" });
 
-    // 0回目: fetchFacilitiesByIds(初回、fac-first のみ)。1回目: fetchFacilitiesByIds(追加分、fac-second)。
-    const { db } = createQueueDb([[makeFacilityJoinRow({ id: "fac-first" })], [makeFacilityJoinRow({ id: "fac-second" })]]);
+    const db = createDispatchingDb({
+      facilityRows: [makeFacilityJoinRow({ id: "fac-first" }), makeFacilityJoinRow({ id: "fac-second" })],
+    });
     getDbMock.mockReturnValue(db);
 
     const res = await POST(buildRequest(VALID_BODY));
@@ -554,6 +576,38 @@ describe("POST /api/recommend", () => {
     const json = await res.json();
     expect(json.isAiEnabled).toBe(true);
     expect(json.facilities.map((f: { id: string }) => f.id)).toEqual(["fac-first", "fac-second"]);
+  });
+
+  // 2026-08是正(外部コードレビュー指摘): 追加取得後に [...facilityIds, ...additionalIds] と
+  // 単純連結すると、追加取得側により高スコアの候補が含まれていても末尾に追いやられていた
+  // (Vectorize/Qdrant は近似最近傍探索のため、topKを広げた際に上位N件が単純な部分集合になる
+  // 保証はない)。初回のスコア0.4の候補より、追加取得のスコア0.8の候補が正しく先に来ることの
+  // 回帰ガード。
+  it("追加取得の候補が初回取得の候補よりスコアが高い場合、スコア順が正しく再統合される", async () => {
+    embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
+    vectorQueryMock.mockImplementation(async (_vector: number[], topK: number) => {
+      if (topK === RECOMMEND_TOP_K) return [{ id: "fac-low-score", score: 0.4 }];
+      // 追加取得(topKを広げた回)では、初回より高スコアの新規候補が見つかる
+      // (近似最近傍探索でtopKを広げた際に上位の入れ替わりが起きるケースを模擬)。
+      return [
+        { id: "fac-high-score", score: 0.8 },
+        { id: "fac-low-score", score: 0.4 },
+      ];
+    });
+    generateMock.mockResolvedValue({ text: "合いそうな理由です。" });
+
+    const db = createDispatchingDb({
+      facilityRows: [makeFacilityJoinRow({ id: "fac-low-score" }), makeFacilityJoinRow({ id: "fac-high-score" })],
+    });
+    getDbMock.mockReturnValue(db);
+
+    const res = await POST(buildRequest(VALID_BODY));
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.isAiEnabled).toBe(true);
+    // スコア0.8のfac-high-scoreが、スコア0.4のfac-low-scoreより先に来ること。
+    expect(json.facilities.map((f: { id: string }) => f.id)).toEqual(["fac-high-score", "fac-low-score"]);
   });
 });
 
