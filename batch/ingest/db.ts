@@ -139,9 +139,27 @@ async function deleteStaleFacilities(
 }
 
 /**
- * `pending_vector_deletions`(Vectorize 削除同期用の outbox、migration 0036)の全行の
- * facility_id を取得する(`workflow.ts` の `runEmbeddingStep` が毎回全件を読み取り、リトライ対象
- * にする自己修復設計のため、今回のWorkflow実行に限らず過去の失敗分も含めて全件返す)。
+ * 1回のWorkflow実行(埋め込みステップ)で処理する `pending_vector_deletions` 件数の上限。
+ * `workflow.ts` の `runEmbeddingStep` は取得した ID を `VECTORIZE_DELETE_CHUNK_SIZE`(500件)
+ * ごとのチャンクに分割して削除するため、上限を大きくし過ぎなければ何チャンクでも処理できるが、
+ * `EMBED_STEP_CONFIG` のタイムアウト("2 minutes")内に収める安全弁として上限を設ける
+ * (5,000件 ÷ 500件 = 10チャンク程度であれば十分収まる想定)。この上限を超えた分は今回の
+ * Workflow 実行では処理されず、`pending_vector_deletions` に残ったままになるが、
+ * 次回の Workflow 実行で `fetchPendingVectorDeletionIds` が再度呼ばれた際に続きから
+ * 自動的に処理される(既存の自己修復設計と整合、`clearPendingVectorDeletions` が処理済み分
+ * だけを都度取り除くため取りこぼしは無い)。
+ */
+const MAX_PENDING_DELETIONS_PER_RUN = 5000;
+
+/**
+ * `pending_vector_deletions`(Vectorize 削除同期用の outbox、migration 0036)の行の
+ * facility_id を取得する(`workflow.ts` の `runEmbeddingStep` が毎回読み取り、リトライ対象
+ * にする自己修復設計のため、今回のWorkflow実行に限らず過去の失敗分も含めて対象になる)。
+ *
+ * 2026-08是正(poison queue対策): 1回のWorkflow実行で処理する件数には `MAX_PENDING_
+ * DELETIONS_PER_RUN` の上限があり、outbox の行数がそれを超える場合は `LIMIT` により
+ * 一部のみを返す(全件返すわけではない)。超過分は次回以降のWorkflow実行で自動的に続きから
+ * 処理されるため、取りこぼしにはならない(詳細は `MAX_PENDING_DELETIONS_PER_RUN` のコメント参照)。
  *
  * 2026-08是正(オーケストレーターレビュー指摘、クロス実行エッジケース): 「facilities に現存する
  * facility_id は削除済みではあり得ない」という不変条件(`ingest-manual-survey.mjs` の
@@ -166,7 +184,10 @@ export async function fetchPendingVectorDeletionIds(db: D1Database): Promise<str
     .prepare(`DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities)`)
     .run();
 
-  const { results } = await db.prepare(`SELECT facility_id AS id FROM pending_vector_deletions`).all<{ id: string }>();
+  const { results } = await db
+    .prepare(`SELECT facility_id AS id FROM pending_vector_deletions LIMIT ?1`)
+    .bind(MAX_PENDING_DELETIONS_PER_RUN)
+    .all<{ id: string }>();
   return (results ?? []).map((row) => row.id);
 }
 

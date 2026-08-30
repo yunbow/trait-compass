@@ -463,4 +463,42 @@ describe("fetchPendingVectorDeletionIds / clearPendingVectorDeletions", () => {
 
     expect(db.prepare).toHaveBeenCalledTimes(2);
   });
+
+  // ============================================================
+  // 1回のWorkflow実行で処理する件数の上限(poison queue対策、MAX_PENDING_DELETIONS_PER_RUN=5000)
+  // ============================================================
+
+  it("fetchPendingVectorDeletionIds はSELECTにLIMIT句を付け、上限件数を超える分は今回取得しない(残りは次回実行に委ねる)", async () => {
+    const MAX_PENDING_DELETIONS_PER_RUN = 5000;
+    const allPendingIds = Array.from({ length: MAX_PENDING_DELETIONS_PER_RUN + 5 }, (_, i) => `fac-pending-${i}`);
+
+    const prepareCalls: string[] = [];
+    const bindCalls: unknown[][] = [];
+
+    const db = {
+      prepare: vi.fn((sql: string) => {
+        prepareCalls.push(sql);
+        if (sql.includes("DELETE FROM pending_vector_deletions WHERE facility_id IN (SELECT id FROM facilities)")) {
+          return { run: vi.fn(async () => ({})) };
+        }
+        // LIMIT の効果をフェイクDB側でも再現する(実際のD1のLIMIT句の挙動を模す)。
+        return {
+          bind: vi.fn((...args: unknown[]) => {
+            bindCalls.push(args);
+            const limit = args[0] as number;
+            return { all: vi.fn(async () => ({ results: allPendingIds.slice(0, limit).map((id) => ({ id })) })) };
+          }),
+        };
+      }),
+    };
+
+    const ids = await fetchPendingVectorDeletionIds(db as unknown as Parameters<typeof fetchPendingVectorDeletionIds>[0]);
+
+    expect(prepareCalls[1]).toContain("LIMIT");
+    expect(bindCalls[0]).toEqual([MAX_PENDING_DELETIONS_PER_RUN]);
+    expect(ids).toHaveLength(MAX_PENDING_DELETIONS_PER_RUN);
+    // 上限を超えた末尾の5件は今回のIDに含まれない(次回実行の fetchPendingVectorDeletionIds で
+    // outboxに残っている分として再取得される想定)。
+    expect(ids).not.toContain(`fac-pending-${MAX_PENDING_DELETIONS_PER_RUN}`);
+  });
 });

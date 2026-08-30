@@ -64,6 +64,48 @@ const EMBED_STEP_CONFIG: WorkflowStepConfig = {
 };
 
 /**
+ * 2026-08是正(poison queue対策): `VectorStore.delete`(Cloudflare Vectorize の
+ * `deleteByIds`)は1回の呼び出しで扱えるID数に上限(1,000件)があり、`pending_vector_
+ * deletions`(outbox)に1,001件以上が溜まると毎回失敗し続け、outboxが永久に消化されない
+ * poison queue状態になっていた。この上限に対する安全マージンとして、500件ずつの
+ * チャンクに分割して削除する(`deleteStaleVectorsInChunks` 参照)。
+ */
+const VECTORIZE_DELETE_CHUNK_SIZE = 500;
+
+/**
+ * `pending_vector_deletions` の削除待ちID配列を `chunkSize` ごとのチャンクに分割し、
+ * チャンクごとに `deleteChunk`(VectorStore.delete)→ 成功したら `clearChunk`
+ * (`clearPendingVectorDeletions` でoutboxから除去)の順に呼ぶ(TICKET外部レビュー指摘:
+ * poison queue対策)。
+ *
+ * **あるチャンクで `deleteChunk` が失敗した場合、例外はそのまま呼び出し元へ伝播させる**
+ * (`step.do` の自動リトライ(`EMBED_STEP_CONFIG`)に任せる設計。ここで catch して握り潰さない)。
+ * それ以前に成功したチャンクは既に `clearChunk` によりoutboxから消えているため、
+ * 次回のWorkflow実行で `fetchPendingVectorDeletionIds` が呼ばれた際には失敗したチャンク以降の
+ * 残りだけが対象になる(部分成功を許容し、outbox全体を巻き戻さない自己修復設計)。
+ *
+ * VectorStore・D1への実アクセスをテストの都合で切り離すため、`deleteChunk`/`clearChunk` を
+ * 呼び出し元(`runEmbeddingStep`)から注入する形にしている(vitestでの単体テストを可能にする)。
+ *
+ * 戻り値は実際に削除(`clearChunk`まで完了)できたID数の合計。
+ */
+export async function deleteStaleVectorsInChunks(
+  ids: readonly string[],
+  chunkSize: number,
+  deleteChunk: (chunk: string[]) => Promise<void>,
+  clearChunk: (chunk: string[]) => Promise<void>,
+): Promise<number> {
+  let deletedCount = 0;
+  for (let start = 0; start < ids.length; start += chunkSize) {
+    const batch = ids.slice(start, start + chunkSize);
+    await deleteChunk(batch);
+    await clearChunk(batch);
+    deletedCount += batch.length;
+  }
+  return deletedCount;
+}
+
+/**
  * ジオコーディングステップ(FR-02A、TICKET-0028)。1件ずつ1秒スロットルで逐次実行するため
  * 対象件数によっては数分かかり得る一方、個々の失敗は `geocodeAddressesThrottled` 内で
  * 吸収済み(例外を投げない)なので、ステップ自体の再試行は軽め(1回)に留める
@@ -175,7 +217,8 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
     // D1 UPSERT 後段の埋め込み生成・Vectorize 投入(FR-03A、TICKET-0021)。
     // EMBEDDINGS_ENABLED=false(既定)の場合は何もせず、上記の CKAN→R2→D1 の結果には影響しない。
     // 2026-08是正(外部コードレビュー指摘 項目1): Vectorize 側の削除同期は `pending_vector_
-    // deletions`(outbox)を毎回全件読み取る自己修復設計に変わったため、今回の Workflow 実行分
+    // deletions`(outbox)を毎回読み取る(上限は db.ts の `MAX_PENDING_DELETIONS_PER_RUN`、
+    // 超過分は次回実行に持ち越し)自己修復設計に変わったため、今回の Workflow 実行分
     // (`results` の `deletedFacilityIds`)をここで集約して渡す必要は無くなった。
     const embedding = await this.runEmbeddingStep(step);
 
@@ -203,11 +246,19 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
    * 2026-08是正(外部コードレビュー指摘 項目1): 削除された facility のベクトル削除同期は、
    * 今回の Workflow 実行分の ID を引数で受け取る方式(失敗すると ID が失われ復旧不能だった)
    * から、`pending_vector_deletions`(outbox、migration 0036、db.ts の `deleteStaleFacilities`
-   * が facilities/facility_tags の削除と同一トランザクションで記録)を毎回全件読み取る
+   * が facilities/facility_tags の削除と同一トランザクションで記録)を毎回読み取る
+   * (1回の実行あたり db.ts の `MAX_PENDING_DELETIONS_PER_RUN` 件まで、超過分は次回持ち越し)
    * 自己修復方式に変更した。過去の Workflow 実行で `VectorStore.delete` が失敗した分も
    * outbox に残り続けているため、今回の実行で自動的にリトライされる。`VectorStore.delete`
    * が成功した ID のみ `clearPendingVectorDeletions` で outbox から取り除く(失敗時は
    * 例外が catch 節に送られ、outbox には触れないため次回実行時に再度リトライされる)。
+   *
+   * 2026-08是正(poison queue対策): `VectorStore.delete` は1回の呼び出しにID数上限
+   * (Vectorize は1,000件)があるため、`deleteStaleVectorsInChunks` で
+   * `VECTORIZE_DELETE_CHUNK_SIZE`(500件)ごとのチャンクに分割して削除する。あるチャンクで
+   * 失敗した場合、それ以前に成功したチャンクは既に outbox から取り除かれているため、
+   * 例外を再送出してこの `step.do` 自体を失敗させても(catch 節で `{ status: "error" }` に
+   * 丸める)、次回実行時には残りのチャンク分だけが outbox から再取得されリトライされる。
    */
   private async runEmbeddingStep(step: WorkflowStep): Promise<EmbeddingStepResult> {
     if (this.env.EMBEDDINGS_ENABLED !== "true") {
@@ -230,9 +281,13 @@ export class IngestWorkflow extends WorkflowEntrypoint<IngestEnv, IngestWorkflow
       let deletedVectors = 0;
       if (pendingDeletionIds.length > 0) {
         deletedVectors = await step.do("delete stale facility vectors", EMBED_STEP_CONFIG, async () => {
-          await createVectorStore("vectorize", this.env.VECTORIZE).delete([...pendingDeletionIds]);
-          await clearPendingVectorDeletions(this.env.DB, pendingDeletionIds);
-          return pendingDeletionIds.length;
+          const vectorStore = createVectorStore("vectorize", this.env.VECTORIZE);
+          return deleteStaleVectorsInChunks(
+            pendingDeletionIds,
+            VECTORIZE_DELETE_CHUNK_SIZE,
+            (chunk) => vectorStore.delete(chunk),
+            (chunk) => clearPendingVectorDeletions(this.env.DB, chunk),
+          );
         });
       }
 
