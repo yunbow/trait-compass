@@ -547,8 +547,84 @@ describe("POST /api/recommend", () => {
     expect(json.isAiEnabled).toBe(true);
     expect(json.facilities.map((f: { id: string }) => f.id)).toEqual(["fac-broad"]);
     // 選択自治体・広域の2フィルタで問い合わせている(1回だけの無条件クエリに戻っていないことの確認)。
+    // 2026-08是正(外部コードレビュー指摘 項目5): 最も厳しい段階(municipality + age_range)から
+    // 試すため、age_range の $in 条件が含まれる。
+    expect(vectorQueryMock).toHaveBeenCalledWith(expect.anything(), RECOMMEND_TOP_K, {
+      municipality: "世田谷区",
+      age_range: { $in: ["both", "adult"] },
+    });
+    expect(vectorQueryMock).toHaveBeenCalledWith(expect.anything(), RECOMMEND_TOP_K, {
+      municipality: "東京都",
+      age_range: { $in: ["both", "adult"] },
+    });
+  });
+
+  // 2026-08是正(外部コードレビュー指摘 項目5): Vectorize はメタデータインデックス未作成の
+  // フィールドを含む filter に対して0件を返す。年齢/ライフステージの絞り込みフィールドに
+  // インデックスが無い(移行期間中)場合でも、municipality のみの緩いフィルタへ自動的に
+  // フォールバックして候補を拾えることの回帰ガード。
+  it("age_range フィルタ付き問い合わせが全滅する場合(メタデータインデックス未作成を想定)、municipalityのみの緩いフィルタにフォールバックする", async () => {
+    embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
+    vectorQueryMock.mockImplementation(async (_vector: number[], _topK: number, filter?: Record<string, unknown>) => {
+      if (filter && "age_range" in filter) return []; // age_range を含む段階は全滅させる。
+      return [{ id: "fac-loose", score: 0.8 }]; // municipality のみの最終段階でヒット。
+    });
+    generateMock.mockResolvedValue({ text: "合いそうな理由です。" });
+
+    const db = createDispatchingDb({ facilityRows: [makeFacilityJoinRow({ id: "fac-loose" })] });
+    getDbMock.mockReturnValue(db);
+
+    const res = await POST(buildRequest(VALID_BODY));
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.isAiEnabled).toBe(true);
+    expect(json.facilities.map((f: { id: string }) => f.id)).toEqual(["fac-loose"]);
+    // 最終段階(municipalityのみ)まで緩めて問い合わせていることの確認。
     expect(vectorQueryMock).toHaveBeenCalledWith(expect.anything(), RECOMMEND_TOP_K, { municipality: "世田谷区" });
-    expect(vectorQueryMock).toHaveBeenCalledWith(expect.anything(), RECOMMEND_TOP_K, { municipality: "東京都" });
+  });
+
+  // lifestage 指定時、最も厳しい段階(municipality + age_range + lifestage_min/max)から
+  // 問い合わせることの確認(項目5の主目的: 対象外年齢の施設が上位を占める問題への対策)。
+  it("lifestage 指定時、VectorStore への問い合わせに lifestage_min/max の範囲条件が含まれる", async () => {
+    embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
+    vectorQueryMock.mockResolvedValue([{ id: "fac-001", score: 0.95 }]);
+    generateMock.mockResolvedValue({ text: "落ち着いた環境で相談できる点が合いそうです。" });
+
+    const db = createDispatchingDb({ facilityRows: [makeFacilityJoinRow()] });
+    getDbMock.mockReturnValue(db);
+
+    const res = await POST(buildRequest({ ...VALID_BODY, lifestage: "high-school" }));
+
+    expect(res.status).toBe(200);
+    expect(vectorQueryMock).toHaveBeenCalledWith(expect.anything(), RECOMMEND_TOP_K, {
+      municipality: "世田谷区",
+      age_range: { $in: ["both", "adult"] },
+      lifestage_min: { $lte: 2 }, // LIFESTAGE_ORDINAL["high-school"]
+      lifestage_max: { $gte: 2 },
+    });
+  });
+
+  // lifestage を含む最も厳しい段階が全滅しても、age_range のみの段階、さらに municipality の
+  // みの段階へと緩めていき、最終的に候補を拾えることの回帰ガード。
+  it("lifestage を含む段階が全滅する場合、age_range のみ→municipalityのみの順に緩めて候補を拾う", async () => {
+    embedMock.mockResolvedValue([[0.1, 0.2, 0.3]]);
+    vectorQueryMock.mockImplementation(async (_vector: number[], _topK: number, filter?: Record<string, unknown>) => {
+      if (filter && "lifestage_min" in filter) return []; // lifestage を含む最厳格段階は全滅。
+      if (filter && "age_range" in filter) return []; // age_range のみの段階も全滅。
+      return [{ id: "fac-loosest", score: 0.6 }]; // municipality のみの最終段階でヒット。
+    });
+    generateMock.mockResolvedValue({ text: "合いそうな理由です。" });
+
+    const db = createDispatchingDb({ facilityRows: [makeFacilityJoinRow({ id: "fac-loosest" })] });
+    getDbMock.mockReturnValue(db);
+
+    const res = await POST(buildRequest({ ...VALID_BODY, lifestage: "high-school" }));
+
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.isAiEnabled).toBe(true);
+    expect(json.facilities.map((f: { id: string }) => f.id)).toEqual(["fac-loosest"]);
   });
 
   // 2026-08是正(外部コードレビュー指摘): D1側の絞り込み後にRECOMMEND_TOP_K未満しか残らない場合、

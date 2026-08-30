@@ -21,6 +21,15 @@
 import type { Embedder } from "../../app/src/lib/ai/embedder";
 import type { VectorStore, VectorStoreItem } from "../../app/src/lib/ai/vector-store";
 import { FACILITY_BASE_WHERE } from "../../app/src/features/support/services/facility-search";
+import { LIFESTAGE_VALUES } from "../../app/src/features/support/services/lifestage-mapping";
+
+/**
+ * D1 facilities.lifestage_min/max の序数域(migration 0016、db/schema.sql の
+ * `CHECK (lifestage_min BETWEEN 0 AND 4)` 相当)。`LIFESTAGE_VALUES` の並び順に対応するため、
+ * ここではハードコードせず `lifestage-mapping.ts` から導出する(2区分に増減しても追従する)。
+ */
+const LIFESTAGE_ORDINAL_MIN = 0;
+const LIFESTAGE_ORDINAL_MAX = LIFESTAGE_VALUES.length - 1;
 
 /** 埋め込み対象の facility 行(facilities × datasets(risk_level) × facility_tags の JOIN 結果)。 */
 export interface EmbeddableFacilityRow {
@@ -30,6 +39,19 @@ export interface EmbeddableFacilityRow {
   description: string | null;
   /** facility_tags.tag を GROUP_CONCAT で結合したもの(カンマ区切り、タグ無しは null)。 */
   tags: string | null;
+  /**
+   * D1 facilities.age_range(child/adult/both、NOT NULL)。VectorStore の年齢絞り込みフィルタ用
+   * (2026-08是正、外部コードレビュー指摘 項目5)。
+   */
+  age_range: "child" | "adult" | "both";
+  /**
+   * D1 facilities.lifestage_min(migration 0016、0〜4 または NULL)。NULL は「対象ライフステージの
+   * 細分なし(age_range のみで判定)」を意味する。`buildFacilityMetadata` で番兵値に変換する
+   * (詳細は同関数のコメント参照)。
+   */
+  lifestage_min: number | null;
+  /** D1 facilities.lifestage_max(migration 0016、0〜4 または NULL)。意味は lifestage_min と対。 */
+  lifestage_max: number | null;
 }
 
 /**
@@ -62,14 +84,33 @@ export function buildEmbeddingText(facility: EmbeddableFacilityRow): string {
 }
 
 /**
- * VectorStore へ渡すメタデータを組み立てる純関数(AC-2、NFR-23)。
- * facility_id(D1 主キー)と municipality のみを持たせ、施設名・説明等の長い文字列は含めない
- * (NFR-23 のメタデータ文字列 64 バイト制約を超過しやすいフィールドを避ける設計)。
+ * VectorStore へ渡すメタデータを組み立てる純関数(AC-2、NFR-23、2026-08是正・外部コードレビュー
+ * 指摘 項目5で age_range/lifestage_min/lifestage_max を追加)。
+ * facility_id(D1 主キー)・municipality・年齢/ライフステージ絞り込み用の3フィールドのみを持たせ、
+ * 施設名・説明等の長い文字列は含めない(NFR-23 のメタデータ文字列 64 バイト制約を超過しやすい
+ * フィールドを避ける設計)。
+ *
+ * **lifestage_min/max が NULL の場合の扱い(設計判断の根拠)**: D1 側では NULL は「対象ライフ
+ * ステージの細分なし = age_range のみで判定する制限なし施設」を意味する
+ * (facility-search.ts の `lifestageFilterClause`)。しかし Vectorize/Qdrant のメタデータフィルタは、
+ * フィールド自体が欠損しているレコードは `$lte`/`$gte` 等の範囲比較にマッチせず「除外」される
+ * のが一般的な挙動であり、NULL をメタデータキーの省略で表現すると「制限なし」のつもりが
+ * 「候補から漏れる」に転倒してしまう。そこで、NULL は lifestage_min/max の取り得る全域
+ * (`LIFESTAGE_ORDINAL_MIN`〜`LIFESTAGE_ORDINAL_MAX`、db/schema.sql の CHECK 制約と同じ 0〜4)を
+ * 表す番兵値に変換して格納する。これにより、クエリ側が任意の序数(0〜4のいずれか)で
+ * `lifestage_min <= 序数 AND lifestage_max >= 序数` を問い合わせても、制限なし施設は
+ * 常にマッチする(D1 の「lifestage_min IS NULL は常に許可」と同じ意味論を再現できる)。
  */
 export function buildFacilityMetadata(
-  facility: Pick<EmbeddableFacilityRow, "id" | "municipality">,
-): Record<string, string> {
-  return { facility_id: facility.id, municipality: facility.municipality };
+  facility: Pick<EmbeddableFacilityRow, "id" | "municipality" | "age_range" | "lifestage_min" | "lifestage_max">,
+): Record<string, string | number> {
+  return {
+    facility_id: facility.id,
+    municipality: facility.municipality,
+    age_range: facility.age_range,
+    lifestage_min: facility.lifestage_min ?? LIFESTAGE_ORDINAL_MIN,
+    lifestage_max: facility.lifestage_max ?? LIFESTAGE_ORDINAL_MAX,
+  };
 }
 
 /** 配列を指定サイズごとのバッチに分割する純関数(AC-1 のバッチ処理)。 */
@@ -126,11 +167,15 @@ export async function embedAndUpsertFacilities(
  * `f.is_medical = 0 AND f.is_out_of_scope = 0`)を通常のD1検索と共有する。以前は
  * risk_level のみで絞っており、医療機関・対象外施設もベクトル埋め込み対象になっていた
  * (通常のD1検索では常に除外される行が、RAG検索の topK 候補枠を無駄に消費していた)。
+ *
+ * 2026-08是正(外部コードレビュー指摘 項目5): SELECT 列に `age_range`/`lifestage_min`/
+ * `lifestage_max` を追加(`buildFacilityMetadata` が VectorStore メタデータに含めるため)。
  */
 export async function fetchEmbeddableFacilities(db: D1Database): Promise<EmbeddableFacilityRow[]> {
   const { results } = await db
     .prepare(
       `SELECT f.id AS id, f.name AS name, f.municipality AS municipality, f.description AS description,
+              f.age_range AS age_range, f.lifestage_min AS lifestage_min, f.lifestage_max AS lifestage_max,
               GROUP_CONCAT(ft.tag) AS tags
        FROM facilities f
        JOIN datasets d ON d.id = f.dataset_id

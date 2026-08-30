@@ -22,7 +22,31 @@ export interface VectorStoreQueryResult {
   metadata?: Record<string, string | number | boolean>;
 }
 
-export type VectorStoreFilter = Record<string, string | number | boolean>;
+/**
+ * メタデータ値に対する比較演算子付きフィルタ条件(2026-08是正、外部コードレビュー指摘 項目5:
+ * 年齢・ライフステージ絞り込みの VectorStore フィルタ対応)。
+ *
+ * - `$in`: 複数値のいずれかに一致(例: `age_range` が `'both'` または選択した年齢区分)。
+ * - `$lte`/`$gte`: 数値の範囲比較(例: `lifestage_min <= 選択序数`、`lifestage_max >= 選択序数`)。
+ *   施設側は範囲(min〜max)、クエリ側は単一値という非対称な関係を、`lifestage_min` フィールドに
+ *   `{ $lte: 選択序数 }`、`lifestage_max` フィールドに `{ $gte: 選択序数 }` を別々に指定する
+ *   ことで表現する(1フィールド1演算子。AND 結合は複数キーで表現)。
+ * - `$eq`: 単一値との一致(プレーンな scalar 値と同義。明示したい場合のみ使う)。
+ *
+ * Vectorize(`$eq/$ne/$lt/$lte/$gt/$gte`・`$in/$nin`)・Qdrant(`match`/`range`)双方への変換は
+ * 各プロバイダ実装(vectorize-vector-store.ts の pass-through、qdrant-vector-store.ts の
+ * `buildQdrantFilter`)側で行う。
+ */
+export interface VectorStoreFilterCondition {
+  $eq?: string | number | boolean;
+  $in?: (string | number)[];
+  $lte?: number;
+  $gte?: number;
+}
+
+export type VectorStoreFilterValue = string | number | boolean | VectorStoreFilterCondition;
+
+export type VectorStoreFilter = Record<string, VectorStoreFilterValue>;
 
 /**
  * ベクトルストアの抽象インターフェース。

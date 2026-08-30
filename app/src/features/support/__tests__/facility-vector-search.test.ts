@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 
-import { mergeScoredFacilityIds, queryFacilityIds, queryFacilityIdsAcrossFilters } from "@/features/support/services/facility-vector-search";
+import {
+  buildRecommendFilterTiers,
+  mergeScoredFacilityIds,
+  queryFacilityIds,
+  queryFacilityIdsAcrossFilters,
+  queryFacilityIdsWithFilterCascade,
+} from "@/features/support/services/facility-vector-search";
 import type { Embedder } from "@/lib/ai/embedder";
 import type { VectorStore, VectorStoreFilter, VectorStoreQueryResult } from "@/lib/ai/vector-store";
 
@@ -168,6 +174,156 @@ describe("queryFacilityIdsAcrossFilters", () => {
 
     expect(results).toEqual([]);
     expect(vectorStore.query).not.toHaveBeenCalled();
+  });
+});
+
+describe("buildRecommendFilterTiers (2026-08是正、外部コードレビュー指摘 項目5)", () => {
+  const municipalityFilters = [{ municipality: "台東区" }, { municipality: "東京都" }];
+
+  it("lifestageOrdinal 未指定の場合は2段階(municipality+age_range → municipalityのみ)になる", () => {
+    const tiers = buildRecommendFilterTiers({ municipalityFilters, ageGroup: "adult", lifestageOrdinal: null });
+
+    expect(tiers).toEqual([
+      [
+        { municipality: "台東区", age_range: { $in: ["both", "adult"] } },
+        { municipality: "東京都", age_range: { $in: ["both", "adult"] } },
+      ],
+      [{ municipality: "台東区" }, { municipality: "東京都" }],
+    ]);
+  });
+
+  it("lifestageOrdinal 指定の場合は3段階(municipality+age_range+lifestage → +age_range → municipalityのみ)になる", () => {
+    const tiers = buildRecommendFilterTiers({ municipalityFilters, ageGroup: "child", lifestageOrdinal: 2 });
+
+    expect(tiers).toEqual([
+      [
+        {
+          municipality: "台東区",
+          age_range: { $in: ["both", "child"] },
+          lifestage_min: { $lte: 2 },
+          lifestage_max: { $gte: 2 },
+        },
+        {
+          municipality: "東京都",
+          age_range: { $in: ["both", "child"] },
+          lifestage_min: { $lte: 2 },
+          lifestage_max: { $gte: 2 },
+        },
+      ],
+      [
+        { municipality: "台東区", age_range: { $in: ["both", "child"] } },
+        { municipality: "東京都", age_range: { $in: ["both", "child"] } },
+      ],
+      [{ municipality: "台東区" }, { municipality: "東京都" }],
+    ]);
+  });
+
+  it("最終段階は元の municipalityFilters を書き換えずそのまま使う(従来相当の緩いクエリ)", () => {
+    const tiers = buildRecommendFilterTiers({ municipalityFilters, ageGroup: "adult", lifestageOrdinal: 0 });
+
+    expect(tiers[tiers.length - 1]).toBe(municipalityFilters);
+  });
+});
+
+describe("queryFacilityIdsWithFilterCascade (2026-08是正、外部コードレビュー指摘 項目5)", () => {
+  it("最初の段階で候補が得られた場合、以降の段階は試さない", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const queryMock = vi.fn().mockResolvedValue([{ id: "fac-strict", score: 0.9 }]);
+    const vectorStore: VectorStore = { upsert: vi.fn(), delete: vi.fn(), query: queryMock };
+
+    const results = await queryFacilityIdsWithFilterCascade(
+      {
+        text: "感覚過敏",
+        topK: 10,
+        filterTiers: [[{ municipality: "台東区", age_range: { $in: ["both", "adult"] } }], [{ municipality: "台東区" }]],
+      },
+      { embedder, vectorStore },
+    );
+
+    expect(results).toEqual([{ id: "fac-strict", score: 0.9 }]);
+    expect(queryMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("最初の段階が0件の場合、次の段階(緩いフィルタ)にフォールバックする(Vectorize のメタデータ" +
+    "インデックス未作成期間でも劣化しない設計の回帰ガード)", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const queryMock = vi
+      .fn()
+      .mockResolvedValueOnce([]) // 1段階目(厳しいフィルタ): 0件
+      .mockResolvedValueOnce([{ id: "fac-loose", score: 0.7 }]); // 2段階目(緩いフィルタ)
+    const vectorStore: VectorStore = { upsert: vi.fn(), delete: vi.fn(), query: queryMock };
+
+    const results = await queryFacilityIdsWithFilterCascade(
+      {
+        text: "感覚過敏",
+        topK: 10,
+        filterTiers: [[{ municipality: "台東区", age_range: { $in: ["both", "adult"] } }], [{ municipality: "台東区" }]],
+      },
+      { embedder, vectorStore },
+    );
+
+    expect(results).toEqual([{ id: "fac-loose", score: 0.7 }]);
+    expect(queryMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("全段階が0件の場合は空配列を返す", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const vectorStore: VectorStore = { upsert: vi.fn(), delete: vi.fn(), query: vi.fn().mockResolvedValue([]) };
+
+    const results = await queryFacilityIdsWithFilterCascade(
+      { text: "感覚過敏", topK: 10, filterTiers: [[{ municipality: "台東区" }], [{ municipality: "東京都" }]] },
+      { embedder, vectorStore },
+    );
+
+    expect(results).toEqual([]);
+  });
+
+  it("段階内は複数フィルタをスコアでマージする(既存の queryFacilityIdsAcrossFilters と同じ挙動)", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const vectorStore = makeVectorStoreByFilter({
+      台東区: [{ id: "fac-local", score: 0.6 }],
+      東京都: [{ id: "fac-broad", score: 0.9 }],
+    });
+
+    const results = await queryFacilityIdsWithFilterCascade(
+      { text: "感覚過敏", topK: 10, filterTiers: [[{ municipality: "台東区" }, { municipality: "東京都" }]] },
+      { embedder, vectorStore },
+    );
+
+    expect(results).toEqual([
+      { id: "fac-broad", score: 0.9 },
+      { id: "fac-local", score: 0.6 },
+    ]);
+  });
+
+  it("embed がベクトルを返さない場合は空配列を返し、query を呼ばない", async () => {
+    const embedder = makeEmbedder(null);
+    const vectorStore: VectorStore = { upsert: vi.fn(), delete: vi.fn(), query: vi.fn() };
+
+    const results = await queryFacilityIdsWithFilterCascade(
+      { text: "", topK: 5, filterTiers: [[{ municipality: "台東区" }]] },
+      { embedder, vectorStore },
+    );
+
+    expect(results).toEqual([]);
+    expect(vectorStore.query).not.toHaveBeenCalled();
+  });
+
+  it("embed はクエリテキストにつき1回のみ行う(段階を跨いでも埋め込みは使い回す)", async () => {
+    const embedder = makeEmbedder([0.1, 0.2, 0.3]);
+    const queryMock = vi.fn().mockResolvedValueOnce([]).mockResolvedValueOnce([{ id: "fac-1", score: 0.5 }]);
+    const vectorStore: VectorStore = { upsert: vi.fn(), delete: vi.fn(), query: queryMock };
+
+    await queryFacilityIdsWithFilterCascade(
+      {
+        text: "感覚過敏",
+        topK: 10,
+        filterTiers: [[{ municipality: "台東区" }], [{ municipality: "台東区" }]],
+      },
+      { embedder, vectorStore },
+    );
+
+    expect(embedder.embed).toHaveBeenCalledTimes(1);
   });
 });
 

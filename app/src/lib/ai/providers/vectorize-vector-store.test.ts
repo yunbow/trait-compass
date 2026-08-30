@@ -68,6 +68,32 @@ describe("VectorizeVectorStore", () => {
     });
   });
 
+  // 2026-08是正(外部コードレビュー指摘 項目5): 年齢・ライフステージ絞り込み用の演算子条件
+  // ($in/$lte/$gte)は変換せずそのまま Vectorize の filter にパススルーされることを確認する
+  // (VectorStoreFilter は Vectorize の VectorizeVectorMetadataFilter と構造的に互換なため)。
+  it("演算子条件($in/$lte/$gte)を含む filter はそのまま Vectorize の filter として渡す", async () => {
+    const queryMock = vi.fn().mockResolvedValue({ count: 0, matches: [] });
+    const store = new VectorizeVectorStore({ query: queryMock } as unknown as Vectorize);
+
+    await store.query([0.1, 0.2], 5, {
+      municipality: "新宿区",
+      age_range: { $in: ["both", "adult"] },
+      lifestage_min: { $lte: 2 },
+      lifestage_max: { $gte: 2 },
+    });
+
+    expect(queryMock).toHaveBeenCalledWith([0.1, 0.2], {
+      topK: 5,
+      returnMetadata: true,
+      filter: {
+        municipality: "新宿区",
+        age_range: { $in: ["both", "adult"] },
+        lifestage_min: { $lte: 2 },
+        lifestage_max: { $gte: 2 },
+      },
+    });
+  });
+
   it("filter 未指定時は filter キーを渡さない", async () => {
     const queryMock = vi.fn().mockResolvedValue({ count: 0, matches: [] });
     const store = new VectorizeVectorStore({ query: queryMock } as unknown as Vectorize);

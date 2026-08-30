@@ -105,11 +105,39 @@ export function buildQdrantUpsertBody(items: VectorStoreItem[]) {
   };
 }
 
-/** 共通の `VectorStoreFilter`(フラットな等価条件)を Qdrant の filter DSL に変換する。 */
+/**
+ * `VectorStoreFilter` の1キー分の条件を Qdrant の `must` 句1要素に変換する。
+ * プレーンな scalar 値(string/number/boolean)は従来どおり `match.value` の等価条件にする。
+ * 演算子オブジェクト(`VectorStoreFilterCondition`)は以下のように変換する
+ * (2026-08是正、外部コードレビュー指摘 項目5):
+ * - `$in`: Qdrant の `match.any`(複数値のいずれかに一致)。
+ * - `$eq`: `match.value`(scalar 指定と同義)。
+ * - `$lte`/`$gte`: Qdrant の `range`(数値の範囲比較。両方指定時は1つの `range` にまとめる)。
+ */
+function buildQdrantCondition(key: string, value: VectorStoreFilter[string]) {
+  if (value !== null && typeof value === "object") {
+    if (value.$in !== undefined) {
+      return { key, match: { any: value.$in } };
+    }
+    if (value.$eq !== undefined) {
+      return { key, match: { value: value.$eq } };
+    }
+    if (value.$lte !== undefined || value.$gte !== undefined) {
+      const range: Record<string, number> = {};
+      if (value.$gte !== undefined) range.gte = value.$gte;
+      if (value.$lte !== undefined) range.lte = value.$lte;
+      return { key, range };
+    }
+    throw new Error(`buildQdrantFilter: unsupported filter condition for key "${key}"`);
+  }
+  return { key, match: { value } };
+}
+
+/** 共通の `VectorStoreFilter`(等価条件・`$in`/`$lte`/`$gte` 演算子条件)を Qdrant の filter DSL に変換する。 */
 export function buildQdrantFilter(filter?: VectorStoreFilter) {
   if (!filter || Object.keys(filter).length === 0) return undefined;
   return {
-    must: Object.entries(filter).map(([key, value]) => ({ key, match: { value } })),
+    must: Object.entries(filter).map(([key, value]) => buildQdrantCondition(key, value)),
   };
 }
 

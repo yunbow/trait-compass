@@ -42,7 +42,12 @@ import {
 import { municipalityToCode } from "@/features/support/constants/municipality-codes";
 import { CATEGORY_TYPES } from "@/features/support/constants/category-types";
 import type { FacilityRow } from "@/features/support/services/facility-search";
-import { mergeScoredFacilityIds, queryFacilityIdsAcrossFilters } from "@/features/support/services/facility-vector-search";
+import {
+  buildRecommendFilterTiers,
+  mergeScoredFacilityIds,
+  queryFacilityIdsWithFilterCascade,
+} from "@/features/support/services/facility-vector-search";
+import { lifestageToOrdinal } from "@/features/support/services/lifestage-mapping";
 
 // `/api/recommend`(TICKET-0023)。年齢区分・区市町村・相談分野タグ・相談したい内容の自由文から、
 // VectorStore(Vectorize/Qdrant)検索 → D1 JOIN で事実情報を取得 → LlmClient で「合いそうな理由」を
@@ -154,19 +159,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // 少数のまま返る、という問題があった。
   //
   // 対策: VectorStore への問い合わせを「選択自治体」「広域(東京都)」の2フィルタに分け、
-  // スコア順にマージする(queryFacilityIdsAcrossFilters)。それでも D1 側の絞り込み後に
-  // RECOMMEND_TOP_K 未満しか残らない場合は、既取得分を除いて topK を広げた1回だけの
-  // 追加クエリで補充する(無制限リトライはコスト増大につながるため避け、上限1回に固定)。
+  // スコア順にマージする。加えて(2026-08是正、外部コードレビュー指摘 項目5)、年齢
+  // (age_range)・ライフステージ(lifestage_min/max)による VectorStore 側の絞り込みを
+  // 「厳しい→緩い」段階(buildRecommendFilterTiers)で試す(queryFacilityIdsWithFilterCascade)。
+  // ある段階が0件の場合のみ次の段階へ緩め、全段階が0件の場合のみ空になる設計のため、
+  // Vectorize のメタデータインデックス未作成期間中(該当フィールドを含む filter は0件になる)
+  // でも、従来の「municipality のみでフィルタ」相当の挙動まで自動的にフォールバックし、
+  // 既存の挙動より劣化しない。
+  //
+  // それでも D1 側の絞り込み後に RECOMMEND_TOP_K 未満しか残らない場合は、既取得分を除いて
+  // topK を広げた1回だけの追加クエリ(同じフィルタ段階を再度カスケード)で補充する
+  // (無制限リトライはコスト増大につながるため避け、上限1回に固定)。
   let orderedRows: FacilityRow[] = [];
   let usedRag = false;
   try {
     const embedder = createEmbedder();
     const vectorStore = createVectorStore();
     const queryText = buildEmbeddingQueryText(query, tags);
-    const filters = [{ municipality }, { municipality: BROAD_AREA_MUNICIPALITY }];
+    const municipalityFilters = [{ municipality }, { municipality: BROAD_AREA_MUNICIPALITY }];
+    const lifestageOrdinal = lifestage != null ? lifestageToOrdinal(lifestage) : null;
+    const filterTiers = buildRecommendFilterTiers({ municipalityFilters, ageGroup: age, lifestageOrdinal });
 
-    const facilityScores = await queryFacilityIdsAcrossFilters(
-      { text: queryText, topK: RECOMMEND_TOP_K, filters },
+    const facilityScores = await queryFacilityIdsWithFilterCascade(
+      { text: queryText, topK: RECOMMEND_TOP_K, filterTiers },
       { embedder, vectorStore },
     );
     const facilityIds = facilityScores.map((s) => s.id);
@@ -176,8 +191,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       orderedRows = reorderFacilitiesByIds(rows, facilityIds);
 
       if (orderedRows.length < RECOMMEND_TOP_K) {
-        const expandedScores = await queryFacilityIdsAcrossFilters(
-          { text: queryText, topK: RECOMMEND_TOP_K * RAG_RETRY_TOP_K_MULTIPLIER, filters },
+        const expandedScores = await queryFacilityIdsWithFilterCascade(
+          { text: queryText, topK: RECOMMEND_TOP_K * RAG_RETRY_TOP_K_MULTIPLIER, filterTiers },
           { embedder, vectorStore },
         );
         const additionalScores = expandedScores.filter((s) => !facilityIds.includes(s.id));

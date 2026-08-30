@@ -58,10 +58,19 @@ export class VectorizeVectorStore implements VectorStore {
   }
 
   async query(vector: number[], topK: number, filter?: VectorStoreFilter): Promise<VectorStoreQueryResult[]> {
+    // `VectorStoreFilter` は Vectorize の `VectorizeVectorMetadataFilter`(`$eq/$ne/$lt/$lte/$gt/$gte`・
+    // `$in/$nin` を各フィールドにネストした形)と構造的に互換なため、変換なしでそのまま渡せる
+    // (2026-08是正、外部コードレビュー指摘 項目5。年齢・ライフステージの範囲/複数値フィルタ対応)。
+    // Vectorize 側でフィルタが機能するには対象フィールドごとの `create-metadata-index` が
+    // 事前に必要(未作成のフィールドを含む filter は 0 件になる)。呼び出し側
+    // (facility-vector-search.ts の `queryFacilityIdsWithFilterCascade`)がフィルタ段階的
+    // フォールバックを行うことで、インデックス未作成期間でも劣化しない設計にしている。
     const result = await this.getBinding().query(vector, {
       topK,
       returnMetadata: true,
-      ...(filter && Object.keys(filter).length > 0 ? { filter } : {}),
+      ...(filter && Object.keys(filter).length > 0
+        ? { filter: filter as NonNullable<Parameters<Vectorize["query"]>[1]>["filter"] }
+        : {}),
     });
     return result.matches.map((match) => ({
       id: match.id,

@@ -13,6 +13,7 @@
 
 import type { Embedder } from "@/lib/ai/embedder";
 import type { VectorStore, VectorStoreFilter } from "@/lib/ai/vector-store";
+import type { AgeGroup } from "@/features/support/schema/age-group";
 
 export interface FacilityVectorSearchQuery {
   /** 検索クエリテキスト(自由記述・カテゴリタグ等を組み合わせた文字列)。 */
@@ -115,4 +116,105 @@ export async function queryFacilityIdsAcrossFilters(
   const resultsPerFilter = await Promise.all(filters.map((filter) => vectorStore.query(vector, topK, filter)));
 
   return mergeScoredFacilityIds(...resultsPerFilter);
+}
+
+/**
+ * {@link buildRecommendFilterTiers} のパラメータ。
+ */
+export interface RecommendFilterTierParams {
+  /** 選択自治体・広域(東京都)等、複数の municipality フィルタ(`queryFacilityIdsAcrossFilters` と同じ形)。 */
+  municipalityFilters: VectorStoreFilter[];
+  /** D1 の `facilities.age_range`(child/adult/both)と同じ粗い年齢区分。 */
+  ageGroup: AgeGroup;
+  /**
+   * 任意。`lifestage-mapping.ts` の `lifestageToOrdinal` で変換した序数(0〜4)。
+   * 未指定(null/undefined)の場合、VectorStore 側では lifestage_min/max の絞り込みを行わない
+   * (D1 の `lifestageFilterClause` は「未指定時は lifestage_min/max が NULL の施設のみ許可」という
+   * 逆方向の厳しい絞り込みを行うため、VectorStore 側で先読み的に同じ絞り込みを再現しようとすると
+   * 候補選定の意図(関連度の高い施設を広く拾う)に反する。VectorStore はあくまで候補選定であり、
+   * 正しさの最終判定は D1 の `fetchFacilitiesByIds`/`searchFacilities` が担う)。
+   */
+  lifestageOrdinal?: number | null;
+}
+
+/**
+ * 年齢(`age_range`)・ライフステージ(`lifestage_min`/`lifestage_max`)による VectorStore
+ * フィルタの段階(厳しい→緩い順)を組み立てる純関数(外部コードレビュー指摘 項目5)。
+ *
+ * 段階を分ける理由: Cloudflare Vectorize はフィールドごとに事前の
+ * `wrangler vectorize create-metadata-index` が無いとそのフィールドを含む filter が
+ * (エラーにならず)0件を返す。また、インデックス作成前に upsert 済みのベクトルは
+ * インデックス作成後の再 upsert までフィルタ対象にならない。段階的フォールバック設計
+ * (`queryFacilityIdsWithFilterCascade` が空段階をスキップする)により、本番導入初期・
+ * メタデータインデックス未作成期間中でも「年齢・ライフステージで絞り込めないだけで、
+ * 絞り込み自体ができず全滅する」ことを避け、既存(フィルタ無し)の挙動より劣化しない。
+ *
+ * 各段階内では従来どおり `municipalityFilters`(選択自治体/広域)をマージする
+ * (`queryFacilityIdsWithFilterCascade` が段階ごとに実行)。
+ *
+ * 段階の構成:
+ * 1. (lifestageOrdinal 指定時のみ) municipality + age_range + lifestage_min/max
+ * 2. municipality + age_range
+ * 3. municipality のみ(従来相当。フィルタ由来の 0 件はここまで緩めて最終的に拾う)
+ */
+export function buildRecommendFilterTiers(params: RecommendFilterTierParams): VectorStoreFilter[][] {
+  const { municipalityFilters, ageGroup, lifestageOrdinal } = params;
+
+  const withAgeFilters = municipalityFilters.map((filter) => ({
+    ...filter,
+    age_range: { $in: ["both", ageGroup] },
+  }));
+
+  const tiers: VectorStoreFilter[][] = [];
+
+  if (lifestageOrdinal != null) {
+    tiers.push(
+      withAgeFilters.map((filter) => ({
+        ...filter,
+        lifestage_min: { $lte: lifestageOrdinal },
+        lifestage_max: { $gte: lifestageOrdinal },
+      })),
+    );
+  }
+
+  tiers.push(withAgeFilters);
+  tiers.push(municipalityFilters);
+
+  return tiers;
+}
+
+export interface FacilityVectorSearchCascadeQuery {
+  /** 検索クエリテキスト(自由記述・カテゴリタグ等を組み合わせた文字列)。 */
+  text: string;
+  /** フィルタごとに取得する件数。 */
+  topK: number;
+  /** {@link buildRecommendFilterTiers} 等で組み立てた、厳しい→緩い順のフィルタ段階。 */
+  filterTiers: VectorStoreFilter[][];
+}
+
+/**
+ * `queryFacilityIdsAcrossFilters` のフィルタ段階(カスケード)版(外部コードレビュー指摘 項目5)。
+ *
+ * `filterTiers` を先頭(最も厳しい)から順に試し、ある段階の結果(段階内は
+ * `mergeScoredFacilityIds` でマージ)が1件でもあれば、それ以降の段階は試さずに返す。
+ * 全段階が0件の場合のみ空配列を返す。embed はクエリテキストにつき1回のみ行う
+ * (`queryFacilityIdsAcrossFilters` と同じ方針)。
+ */
+export async function queryFacilityIdsWithFilterCascade(
+  query: FacilityVectorSearchCascadeQuery,
+  deps: FacilityVectorSearchDeps,
+): Promise<ScoredFacilityId[]> {
+  const { text, topK, filterTiers } = query;
+  const { embedder, vectorStore } = deps;
+
+  const [vector] = await embedder.embed([text]);
+  if (!vector) return [];
+
+  for (const filters of filterTiers) {
+    const resultsPerFilter = await Promise.all(filters.map((filter) => vectorStore.query(vector, topK, filter)));
+    const merged = mergeScoredFacilityIds(...resultsPerFilter);
+    if (merged.length > 0) return merged;
+  }
+
+  return [];
 }

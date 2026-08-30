@@ -18,6 +18,9 @@ function makeRow(overrides: Partial<EmbeddableFacilityRow> = {}): EmbeddableFaci
     municipality: "新宿区",
     description: "発達障害に関する相談を受け付けています。",
     tags: "対人・コミュニケーション,こころ・感情",
+    age_range: "both",
+    lifestage_min: null,
+    lifestage_max: null,
     ...overrides,
   };
 }
@@ -60,23 +63,41 @@ describe("buildEmbeddingText", () => {
 });
 
 describe("buildFacilityMetadata", () => {
-  it("facility_id と municipality のみを含む(NFR-23: 施設名・説明等は含めない)", () => {
+  it("facility_id/municipality/age_range/lifestage_min/lifestage_max を含む(NFR-23: 施設名・説明等は含めない)", () => {
     const metadata = buildFacilityMetadata(makeRow());
-    expect(metadata).toEqual({ facility_id: "fac-00000001", municipality: "新宿区" });
+    expect(metadata).toEqual({
+      facility_id: "fac-00000001",
+      municipality: "新宿区",
+      age_range: "both",
+      lifestage_min: 0,
+      lifestage_max: 4,
+    });
+  });
+
+  it("lifestage_min/max が非 NULL の場合はそのまま格納する(番兵値に変換しない)", () => {
+    const metadata = buildFacilityMetadata(makeRow({ age_range: "adult", lifestage_min: 1, lifestage_max: 3 }));
+    expect(metadata.lifestage_min).toBe(1);
+    expect(metadata.lifestage_max).toBe(3);
+  });
+
+  it("lifestage_min/max が NULL の場合は全域をカバーする番兵値(0/4)に変換する(2026-08是正、外部コードレビュー指摘 項目5)", () => {
+    const metadata = buildFacilityMetadata(makeRow({ lifestage_min: null, lifestage_max: null }));
+    expect(metadata.lifestage_min).toBe(0);
+    expect(metadata.lifestage_max).toBe(4);
   });
 
   it("64 バイト制約以内に収まる(通常の区市町村名・facility id 長を想定)", () => {
     const metadata = buildFacilityMetadata(makeRow());
     const encoder = new TextEncoder();
     for (const value of Object.values(metadata)) {
-      expect(encoder.encode(value).length).toBeLessThanOrEqual(64);
+      expect(encoder.encode(String(value)).length).toBeLessThanOrEqual(64);
     }
   });
 
   it("東京都(広域)の municipality でも 64 バイト以内", () => {
     const metadata = buildFacilityMetadata(makeRow({ municipality: "東京都" }));
     const encoder = new TextEncoder();
-    expect(encoder.encode(metadata.municipality).length).toBeLessThanOrEqual(64);
+    expect(encoder.encode(metadata.municipality as string).length).toBeLessThanOrEqual(64);
   });
 });
 
@@ -147,7 +168,7 @@ describe("embedAndUpsertFacilities", () => {
     expect(vectorStore.upsertedBatches.map((batch) => batch.length)).toEqual([2, 2, 1]);
   });
 
-  it("id=facility id、vector=embed結果、metadata=facility_id/municipality のみで upsert する", async () => {
+  it("id=facility id、vector=embed結果、metadata=facility_id/municipality/age_range/lifestage_min/max で upsert する", async () => {
     const rows = [makeRow()];
     const embedder = makeEmbedderMock();
     const vectorStore = makeVectorStoreMock();
@@ -158,7 +179,13 @@ describe("embedAndUpsertFacilities", () => {
       {
         id: "fac-00000001",
         vector: [0.1, 0.2, 0.3],
-        metadata: { facility_id: "fac-00000001", municipality: "新宿区" },
+        metadata: {
+          facility_id: "fac-00000001",
+          municipality: "新宿区",
+          age_range: "both",
+          lifestage_min: 0,
+          lifestage_max: 4,
+        },
       },
     ]);
   });

@@ -85,6 +85,59 @@ describe("buildQdrantFilter", () => {
     expect(buildQdrantFilter(undefined)).toBeUndefined();
     expect(buildQdrantFilter({})).toBeUndefined();
   });
+
+  // 2026-08是正(外部コードレビュー指摘 項目5): 年齢・ライフステージ絞り込み用の演算子条件対応。
+  it("$in 条件は match.any に変換する(age_range が複数値のいずれかに一致)", () => {
+    expect(buildQdrantFilter({ age_range: { $in: ["both", "adult"] } })).toEqual({
+      must: [{ key: "age_range", match: { any: ["both", "adult"] } }],
+    });
+  });
+
+  it("$eq 条件は scalar 指定と同じ match.value に変換する", () => {
+    expect(buildQdrantFilter({ municipality: { $eq: "新宿区" } })).toEqual({
+      must: [{ key: "municipality", match: { value: "新宿区" } }],
+    });
+  });
+
+  it("$lte/$gte 条件は range に変換する(lifestage_min/max の範囲比較)", () => {
+    expect(
+      buildQdrantFilter({
+        lifestage_min: { $lte: 2 },
+        lifestage_max: { $gte: 2 },
+      }),
+    ).toEqual({
+      must: [
+        { key: "lifestage_min", range: { lte: 2 } },
+        { key: "lifestage_max", range: { gte: 2 } },
+      ],
+    });
+  });
+
+  it("$lte と $gte が同一キーに両方指定された場合は1つの range にまとめる", () => {
+    expect(buildQdrantFilter({ score: { $gte: 1, $lte: 5 } })).toEqual({
+      must: [{ key: "score", range: { gte: 1, lte: 5 } }],
+    });
+  });
+
+  it("スカラー条件と演算子条件を混在させても正しく変換する", () => {
+    expect(
+      buildQdrantFilter({
+        municipality: "新宿区",
+        age_range: { $in: ["both", "adult"] },
+        lifestage_min: { $lte: 2 },
+      }),
+    ).toEqual({
+      must: [
+        { key: "municipality", match: { value: "新宿区" } },
+        { key: "age_range", match: { any: ["both", "adult"] } },
+        { key: "lifestage_min", range: { lte: 2 } },
+      ],
+    });
+  });
+
+  it("サポート外の演算子条件(すべてのキーが undefined)の場合は例外を投げる", () => {
+    expect(() => buildQdrantFilter({ broken: {} })).toThrow(/unsupported filter condition/);
+  });
 });
 
 describe("buildQdrantSearchBody", () => {
