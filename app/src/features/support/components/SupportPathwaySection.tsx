@@ -19,9 +19,8 @@ interface SupportPathwaySectionProps {
  * 各ステップの title/note に用語集(`pathway-term-glossary`)登録済みの語が含まれる場合、
  * 初出のステップにのみ、画面上部の用語解説を添える。
  *
- * 出典は自治体の二次利用許諾条件対応として展開操作なしで全件常時表示し、掲載情報の訂正・
- * 更新報告(content-report)へのリンクをその下に添える。AskAiPanel(質問する)はこの
- * セクションではスコープ外とする。
+ * 出典と掲載情報の訂正・更新報告(content-report)へのリンクは、必要な人だけが確認できる
+ * 開閉領域にまとめる。AskAiPanel(質問する)はこのセクションではスコープ外とする。
  */
 export function SupportPathwaySection({ data }: SupportPathwaySectionProps) {
   const termMatches = findPathwayTerms(data.steps);
@@ -101,12 +100,17 @@ export function SupportPathwaySection({ data }: SupportPathwaySectionProps) {
         })}
       </ol>
 
-      <div className="border-t border-border pt-3">
-        <SourceList sources={data.sources} />
-        <div role="group" aria-label={`想定ルート（${data.purposeLabel}）の補助操作`} className="mt-3 grid grid-cols-1 gap-1">
-          <AuxActionLink href={reportHref} ariaLabel={`想定ルート（${data.purposeLabel}）の掲載情報の訂正・更新を報告`} icon={<Flag aria-hidden="true" className="size-3.5" />}>訂正・更新</AuxActionLink>
+      <details className="border-t border-border pt-3">
+        <summary className="cursor-pointer text-sm font-medium text-primary outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+          出典・訂正情報を開く
+        </summary>
+        <div className="mt-3">
+          <SourceList sources={data.sources} />
+          <div role="group" aria-label={`想定ルート（${data.purposeLabel}）の補助操作`} className="mt-3 grid grid-cols-1 gap-1">
+            <AuxActionLink href={reportHref} ariaLabel={`想定ルート（${data.purposeLabel}）の掲載情報の訂正・更新を報告`} icon={<Flag aria-hidden="true" className="size-3.5" />}>訂正・更新</AuxActionLink>
+          </div>
         </div>
-      </div>
+      </details>
     </section>
   );
 }

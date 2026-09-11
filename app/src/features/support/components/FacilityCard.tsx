@@ -26,7 +26,8 @@ interface FacilityCardProps {
  * 施設カード(FR-024, FR-026, FR-027)。
  * リスク区分に応じて表示内容を切り替える: mode="full"(低リスク)は住所・電話・説明文を
  * 全文表示、mode="summary"(中〜高リスク)はタイトル+要約+外部リンク誘導のみとする。
- * 出典クレジット(SourceCredit)は mode によらず展開操作なしで常時表示する(FR-026, NFR-54)。
+ * 連絡・地図・出典・訂正・質問の各操作は開閉領域にまとめ、カード一覧では施設の概要を
+ * 優先して見せる(FR-026, NFR-54)。
  * 施設サブタイプがある場合は、`onSubtypeClick` があれば絞り込み操作に使い、地図ポップアップでは従来どおり識別用バッジとして表示する。
  * 既知の施設サブタイプには、施設名の下に補足説明を表示する。
  *
@@ -140,41 +141,46 @@ export function FacilityCard({ facility, selectedMunicipality, selectable = fals
         facility.summary && <p className="line-clamp-3 text-sm text-muted-foreground">{facility.summary}</p>
       )}
 
-      {(facility.phone || facility.url || showMapButton) && (
-        <div className="flex flex-col gap-2">
-          {facility.phone && (
-            <Button render={<a href={`tel:${facility.phone.replace(/[^0-9+]/g, "")}`} />} nativeButton={false} size="lg" className="w-full">
-              <Phone aria-hidden="true" />
-              電話する
-            </Button>
-          )}
-          {(facility.url || showMapButton) && (
-            <div className="flex flex-col gap-2 sm:flex-row">
-              {facility.url && (
-                <Button render={<a href={facility.url} target="_blank" rel="noopener noreferrer" />} nativeButton={false} variant={facility.phone ? "outline" : "default"} size="lg" className="w-full sm:flex-1">
-                  <ExternalLink aria-hidden="true" />
-                  {facility.mode === "full" ? "詳細を見る" : "公式サイトで確認する"}
+      <details className="border-t border-border pt-3">
+        <summary className="cursor-pointer text-sm font-medium text-primary outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+          連絡先・出典・その他を開く
+        </summary>
+        <div className="mt-3 flex flex-col gap-3">
+          {(facility.phone || facility.url || showMapButton) && (
+            <div className="flex flex-col gap-2">
+              {facility.phone && (
+                <Button render={<a href={`tel:${facility.phone.replace(/[^0-9+]/g, "")}`} />} nativeButton={false} size="lg" className="w-full">
+                  <Phone aria-hidden="true" />
+                  電話する
                 </Button>
               )}
-              {showMapButton && (
-                <Button render={<a href={mapHref} target="_blank" rel="noopener noreferrer" />} nativeButton={false} variant={(facility.phone || facility.url) ? "outline" : "default"} size="lg" className="w-full sm:flex-1">
-                  <MapPin aria-hidden="true" />
-                  地図で探す
-                </Button>
+              {(facility.url || showMapButton) && (
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  {facility.url && (
+                    <Button render={<a href={facility.url} target="_blank" rel="noopener noreferrer" />} nativeButton={false} variant={facility.phone ? "outline" : "default"} size="lg" className="w-full sm:flex-1">
+                      <ExternalLink aria-hidden="true" />
+                      {facility.mode === "full" ? "詳細を見る" : "公式サイトで確認する"}
+                    </Button>
+                  )}
+                  {showMapButton && (
+                    <Button render={<a href={mapHref} target="_blank" rel="noopener noreferrer" />} nativeButton={false} variant={(facility.phone || facility.url) ? "outline" : "default"} size="lg" className="w-full sm:flex-1">
+                      <MapPin aria-hidden="true" />
+                      地図で探す
+                    </Button>
+                  )}
+                </div>
               )}
             </div>
           )}
-        </div>
-      )}
 
-      <SourceCredit credit={facility.sourceCredit} sourceUrl={facility.sourceUrl} />
+          <SourceCredit credit={facility.sourceCredit} sourceUrl={facility.sourceUrl} />
 
-      <div className="border-t border-border pt-3">
-        <div role="group" aria-label={`${facility.name}の補助操作`} className="grid grid-cols-2 gap-1">
-          <AuxActionLink href={reportHref} ariaLabel={`${facility.name}の掲載情報の訂正・更新を報告`} icon={<Flag aria-hidden="true" className="size-3.5" />}>訂正・更新</AuxActionLink>
-          <AuxActionLink href={askHref} ariaLabel={`${facility.name}の掲載情報について質問する`} icon={<MessageCircle aria-hidden="true" className="size-3.5" />}>質問する</AuxActionLink>
+          <div role="group" aria-label={`${facility.name}の補助操作`} className="grid grid-cols-2 gap-1">
+            <AuxActionLink href={reportHref} ariaLabel={`${facility.name}の掲載情報の訂正・更新を報告`} icon={<Flag aria-hidden="true" className="size-3.5" />}>訂正・更新</AuxActionLink>
+            <AuxActionLink href={askHref} ariaLabel={`${facility.name}の掲載情報について質問する`} icon={<MessageCircle aria-hidden="true" className="size-3.5" />}>質問する</AuxActionLink>
+          </div>
         </div>
-      </div>
+      </details>
     </article>
   );
 }
