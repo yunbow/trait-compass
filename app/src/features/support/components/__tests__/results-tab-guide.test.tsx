@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { ResultsTabGuide } from "@/features/support/components/ResultsTabGuide";
@@ -23,30 +23,37 @@ describe("ResultsTabGuide", () => {
     expect(container.firstChild).toBeNull();
   });
 
-  it("訂正・更新報告リンクに自治体コードを使う", () => {
+  it("詳しい説明を開くと、訂正・更新報告リンクに自治体コードを使う", () => {
     render(<ResultsTabGuide municipalityCode="13106" activeTab="福祉ガイド" municipalityNote={null} lifestage="preschool" />);
+    fireEvent.click(screen.getByText("詳しい説明・出典を開く"));
     const link = screen.getByRole("link", { name: "児童発達支援の費用と手続きの解説の訂正・更新を報告" });
     expect(link.getAttribute("href")).toContain("municipality=13106");
     expect(link.getAttribute("href")).toContain("lifestage=preschool");
     expect(screen.getByText(/障害児通所支援事業/)).toBeTruthy();
   });
 
-  it("サマリー文言は「制度の説明を詳しく読む」で、出典・更新ボタンは表示しない", () => {
+  it("サマリー文言は「詳しい説明・出典を開く」で、閉じている間は出典と訂正・更新を表示しない", () => {
     render(<ResultsTabGuide municipalityCode="13106" activeTab="福祉ガイド" municipalityNote={null} lifestage="preschool" />);
 
-    expect(screen.getByText("制度の説明を詳しく読む").closest("summary")).toBeTruthy();
-    expect(screen.queryByText("制度の説明・出典を詳しく読む")).toBeNull();
-    expect(screen.queryByRole("button", { name: "出典・更新" })).toBeNull();
+    const summary = screen.getByText("詳しい説明・出典を開く").closest("summary");
+    expect(summary).toBeTruthy();
+    const details = summary?.closest("details");
+    expect(details?.hasAttribute("open")).toBe(false);
+    expect(screen.getByText(/障害児通所支援事業/).closest("details")).toBe(details);
+    expect(screen.getByRole("link", { name: "児童発達支援の費用と手続きの解説の訂正・更新を報告" }).closest("details")).toBe(details);
   });
 
-  it("出典は<details>の外に常時表示され、<details>が閉じた状態でも見える", () => {
+  it("出典と訂正・更新は<details>内にあり、開いたときに確認できる", () => {
     render(<ResultsTabGuide municipalityCode="13106" activeTab="福祉ガイド" municipalityNote={null} lifestage="preschool" />);
 
-    const summary = screen.getByText("制度の説明を詳しく読む").closest("summary");
+    const summary = screen.getByText("詳しい説明・出典を開く").closest("summary");
     const details = summary?.closest("details");
     expect(details?.hasAttribute("open")).toBe(false);
 
+    fireEvent.click(summary!);
+    expect(details?.hasAttribute("open")).toBe(true);
     const sourceText = screen.getByText(/障害児通所支援事業/);
-    expect(sourceText.closest("details")).toBeNull();
+    expect(sourceText.closest("details")).toBe(details);
+    expect(screen.getByRole("link", { name: "児童発達支援の費用と手続きの解説の訂正・更新を報告" }).closest("details")).toBe(details);
   });
 });

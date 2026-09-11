@@ -61,6 +61,21 @@ describe("SchoolCard: 学校公式サイトへのリンク(詳細を見る)", ()
   });
 });
 
+describe("SchoolCard: 連絡先・出典・その他の開閉", () => {
+  it("連絡先・出典・その他を開く操作を表示し、各補助操作を開閉領域に含める", () => {
+    render(<SchoolCard school={makeSchool({ id: "school-1", phone: "03-0000-0000", url: "https://example-elementary.tokyo.jp" })} schools={[]} municipality="台東区" />);
+
+    const summary = screen.getByText("連絡先・出典・その他を開く").closest("summary");
+    const details = summary?.closest("details");
+    expect(details?.hasAttribute("open")).toBe(false);
+    expect(screen.getByRole("button", { name: "電話する" }).closest("details")).toBe(details);
+    expect(screen.getByRole("button", { name: "詳細を見る" }).closest("details")).toBe(details);
+    expect(screen.getByRole("button", { name: "地図で探す" }).closest("details")).toBe(details);
+    expect(screen.getByRole("link", { name: "上野小学校の掲載情報の訂正・更新を報告" }).closest("details")).toBe(details);
+    expect(screen.getByRole("link", { name: "上野小学校の掲載情報について質問する" }).closest("details")).toBe(details);
+  });
+});
+
 describe("SchoolCard: 電話番号への発信リンク(電話する)", () => {
   it("school.phone が設定されている場合、「電話する」操作を tel: リンク(ハイフン除去)として表示する", () => {
     render(<SchoolCard school={makeSchool({ phone: "03-0000-0000" })} schools={[]} municipality="台東区" />);

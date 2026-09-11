@@ -142,8 +142,8 @@ describe("SupportPathwaySection: status に応じた未確認情報の注記", (
   });
 });
 
-describe("SupportPathwaySection: 出典表示(展開操作なしで常時表示)", () => {
-  it("出典・更新ボタンは表示せず、出典一覧を展開操作なしで初期レンダリング時から全件表示する", () => {
+describe("SupportPathwaySection: 出典・訂正情報の開閉", () => {
+  it("出典・訂正情報を開く操作を表示し、出典一覧をその開閉領域に含める", () => {
     render(
       <SupportPathwaySection
         data={makePathwayData({
@@ -152,8 +152,10 @@ describe("SupportPathwaySection: 出典表示(展開操作なしで常時表示)
       />,
     );
 
-    expect(screen.queryByRole("button", { name: "出典・更新" })).toBeNull();
-    expect(screen.getByRole("link", { name: "台東区公式サイト" })).toBeTruthy();
+    const summary = screen.getByText("出典・訂正情報を開く").closest("summary");
+    const details = summary?.closest("details");
+    expect(details?.hasAttribute("open")).toBe(false);
+    expect(screen.getByRole("link", { name: "台東区公式サイト" }).closest("details")).toBe(details);
   });
 
   it("url がある出典は label をリンクテキストとしたリンクとして表示され、confirmedOn も表示される", () => {
@@ -209,10 +211,11 @@ describe("SupportPathwaySection: 出典表示(展開操作なしで常時表示)
 });
 
 describe("SupportPathwaySection: 掲載情報の訂正・更新報告リンク", () => {
-  it("専用ページ(/support/content-report)へのリンクとして表示する(P0対応: 検索条件を back クエリへ埋め込まない)", () => {
+  it("開閉領域内に、専用ページ(/support/content-report)へのリンクとして表示する(P0対応: 検索条件を back クエリへ埋め込まない)", () => {
     render(<SupportPathwaySection data={makePathwayData({ id: "pathway-1", purposeLabel: "児童発達支援・療育を利用したい" })} />);
 
     const link = screen.getByRole("link", { name: "想定ルート（児童発達支援・療育を利用したい）の掲載情報の訂正・更新を報告" });
+    expect(link.closest("details")).toBeTruthy();
     const href = link.getAttribute("href") ?? "";
     expect(href).toBe(`/support/content-report?targetType=pathway&targetId=${encodeURIComponent("pathway-1")}`);
     expect(href).not.toContain("back=");

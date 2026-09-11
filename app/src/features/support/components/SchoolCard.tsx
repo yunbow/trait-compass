@@ -87,12 +87,12 @@ export function FixedClassBadges({ school, onTagClick, activeTags }: { school: S
 interface SchoolCardProps { school: School; schools: School[]; municipality: string; selectable?: boolean; selected?: boolean; onSelectedChange?: (checked: boolean) => void; showLevel?: boolean; onTagClick?: (tag: string) => void; activeTags?: string[]; }
 
 /**
- * 末尾の補助操作フッター(出典・更新/訂正・更新/質問する)は `FacilityCard.tsx` と同じ
- * パターン。ただし `school.id`(D1 `schools.id`)は手組みのテスト用フィクスチャ等では
+ * 連絡・地図・出典・訂正・質問の各操作は `FacilityCard.tsx` と同じ開閉領域へまとめる。
+ * ただし `school.id`(D1 `schools.id`)は手組みのテスト用フィクスチャ等では
  * 省略されうるため、`id` が無い場合は出典・更新のみ(grid-cols-1)を表示し、
  * 訂正・更新・質問する(いずれも id を要する)は表示しない。質問するはインライン展開せず、
  * `/support/ask` 専用ページへ遷移する方式に統一する。
- * 代表出典1件は常時表示し、全出典リストのみ展開式とする。
+ * 代表出典と全出典リストは、どちらも開閉領域内で確認できるようにする。
  */
 export function SchoolCard({ school, schools, municipality, selectable = false, selected = false, onSelectedChange, showLevel = true, onTagClick, activeTags }: SchoolCardProps) {
   const resourceRoom = school.resourceRoom;
@@ -116,54 +116,59 @@ export function SchoolCard({ school, schools, municipality, selectable = false, 
       {school.address && <p className="flex items-start gap-1.5 text-muted-foreground"><MapPin aria-hidden="true" className="mt-0.5 size-4 shrink-0" />{school.address}</p>}
       {school.phone && <p className="flex items-center gap-1.5 text-muted-foreground"><Phone aria-hidden="true" className="size-4 shrink-0" />{school.phone}</p>}
     </div>
-    <div className="flex flex-col gap-2">
-      {school.phone && (
-        <Button render={<a href={`tel:${school.phone.replace(/[^0-9+]/g, "")}`} />} nativeButton={false} variant="outline" size="lg" className="w-full">
-          <Phone aria-hidden="true" />
-          電話する
-        </Button>
-      )}
-      <div className="flex flex-col gap-2 sm:flex-row">
-        {school.url && (
-          <Button render={<a href={school.url} target="_blank" rel="noopener noreferrer" />} nativeButton={false} variant="outline" size="lg" className="w-full sm:flex-1">
-            <ExternalLink aria-hidden="true" />
-            詳細を見る
-          </Button>
+    <details className="border-t border-border pt-3">
+      <summary className="cursor-pointer text-sm font-medium text-primary outline-none focus-visible:ring-3 focus-visible:ring-ring/50">
+        連絡先・出典・その他を開く
+      </summary>
+      <div className="mt-3 flex flex-col gap-3">
+        <div className="flex flex-col gap-2">
+          {school.phone && (
+            <Button render={<a href={`tel:${school.phone.replace(/[^0-9+]/g, "")}`} />} nativeButton={false} variant="outline" size="lg" className="w-full">
+              <Phone aria-hidden="true" />
+              電話する
+            </Button>
+          )}
+          <div className="flex flex-col gap-2 sm:flex-row">
+            {school.url && (
+              <Button render={<a href={school.url} target="_blank" rel="noopener noreferrer" />} nativeButton={false} variant="outline" size="lg" className="w-full sm:flex-1">
+                <ExternalLink aria-hidden="true" />
+                詳細を見る
+              </Button>
+            )}
+            <Button render={<a href={mapHref} target="_blank" rel="noopener noreferrer" />} nativeButton={false} variant={(school.phone || school.url) ? "outline" : "default"} size="lg" className="w-full sm:flex-1">
+              <MapPin aria-hidden="true" />
+              地図で探す
+            </Button>
+          </div>
+        </div>
+
+        {dedupedSources[0] && (
+          <p className="text-xs text-muted-foreground">
+            出典:{" "}
+            {dedupedSources[0].url ? (
+              <a href={dedupedSources[0].url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{dedupedSources[0].label}</a>
+            ) : (
+              dedupedSources[0].label
+            )}
+            {dedupedSources[0].confirmedOn && `（確認日: ${dedupedSources[0].confirmedOn}）`}
+            {dedupedSources.length > 1 && ` ほか${dedupedSources.length - 1}件`}
+          </p>
         )}
-        <Button render={<a href={mapHref} target="_blank" rel="noopener noreferrer" />} nativeButton={false} variant={(school.phone || school.url) ? "outline" : "default"} size="lg" className="w-full sm:flex-1">
-          <MapPin aria-hidden="true" />
-          地図で探す
-        </Button>
+
+        <div role="group" aria-label={`${school.name}の補助操作`} className={cn("grid gap-1", school.id === undefined ? "grid-cols-1" : "grid-cols-3")}>
+          <AuxActionButton expanded={expandedAction === "source"} controlsId={`school-source-${domId}`} onClick={() => setExpandedAction((current) => current === "source" ? null : "source")} icon={<BookOpen aria-hidden="true" className="size-3.5" />}>出典・更新</AuxActionButton>
+          {school.id !== undefined && (
+            <>
+              <AuxActionLink href={reportHref} ariaLabel={`${school.name}の掲載情報の訂正・更新を報告`} icon={<Flag aria-hidden="true" className="size-3.5" />}>訂正・更新</AuxActionLink>
+              <AuxActionLink href={askHref} ariaLabel={`${school.name}の掲載情報について質問する`} icon={<MessageCircle aria-hidden="true" className="size-3.5" />}>質問する</AuxActionLink>
+            </>
+          )}
+        </div>
+
+        {expandedAction === "source" && (
+          <AuxActionPanel id={`school-source-${domId}`}><SourceList sources={dedupedSources} /></AuxActionPanel>
+        )}
       </div>
-    </div>
-
-    {dedupedSources[0] && (
-      <p className="text-xs text-muted-foreground">
-        出典:{" "}
-        {dedupedSources[0].url ? (
-          <a href={dedupedSources[0].url} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2">{dedupedSources[0].label}</a>
-        ) : (
-          dedupedSources[0].label
-        )}
-        {dedupedSources[0].confirmedOn && `（確認日: ${dedupedSources[0].confirmedOn}）`}
-        {dedupedSources.length > 1 && ` ほか${dedupedSources.length - 1}件`}
-      </p>
-    )}
-
-    <div className="border-t border-border pt-3">
-      <div role="group" aria-label={`${school.name}の補助操作`} className={cn("grid gap-1", school.id === undefined ? "grid-cols-1" : "grid-cols-3")}>
-        <AuxActionButton expanded={expandedAction === "source"} controlsId={`school-source-${domId}`} onClick={() => setExpandedAction((current) => current === "source" ? null : "source")} icon={<BookOpen aria-hidden="true" className="size-3.5" />}>出典・更新</AuxActionButton>
-        {school.id !== undefined && (
-          <>
-            <AuxActionLink href={reportHref} ariaLabel={`${school.name}の掲載情報の訂正・更新を報告`} icon={<Flag aria-hidden="true" className="size-3.5" />}>訂正・更新</AuxActionLink>
-            <AuxActionLink href={askHref} ariaLabel={`${school.name}の掲載情報について質問する`} icon={<MessageCircle aria-hidden="true" className="size-3.5" />}>質問する</AuxActionLink>
-          </>
-        )}
-      </div>
-
-      {expandedAction === "source" && (
-        <AuxActionPanel id={`school-source-${domId}`}><SourceList sources={dedupedSources} /></AuxActionPanel>
-      )}
-    </div>
+    </details>
   </article>;
 }

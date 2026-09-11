@@ -345,24 +345,28 @@ describe("FacilityCard: 掲載情報の誤り報告リンク(TICKET-0064)", () =
   });
 });
 
-describe("FacilityCard: 出典クレジットの常時表示(FR-026, NFR-54)", () => {
-  it("展開操作なしで初期レンダリング時から出典クレジットを表示する", () => {
+describe("FacilityCard: 連絡先・出典・その他の開閉(FR-026, NFR-54)", () => {
+  it("連絡先・出典・その他を開く操作を表示し、出典クレジットを開閉領域に含める", () => {
     render(<FacilityCard facility={makeFacility({ sourceCredit: "出典: ダミーデータセット(ダミー団体)、CC BY 4.0" })} />);
 
-    expect(screen.getByText(/出典: ダミーデータセット/)).toBeTruthy();
+    const summary = screen.getByText("連絡先・出典・その他を開く").closest("summary");
+    const details = summary?.closest("details");
+    expect(details?.hasAttribute("open")).toBe(false);
+    expect(screen.getByText(/出典: ダミーデータセット/).closest("details")).toBe(details);
   });
 
-  it("sourceUrl がある場合、「データセットを見る」リンクも初期レンダリング時から表示する", () => {
+  it("sourceUrl がある場合、「データセットを見る」リンクも開閉領域に含める", () => {
     render(<FacilityCard facility={makeFacility({ sourceUrl: "https://example.com/dataset" })} />);
 
     const link = screen.getByText("データセットを見る").closest("a");
     expect(link?.getAttribute("href")).toBe("https://example.com/dataset");
+    expect(link?.closest("details")).toBeTruthy();
   });
 
-  it("mode=summary(中〜高リスク)でも出典クレジットは表示される(住所・電話等とは異なる出し分け対象外の情報)", () => {
+  it("mode=summary(中〜高リスク)でも出典クレジットは開閉領域に含める", () => {
     render(<FacilityCard facility={makeFacility({ mode: "summary", address: null, phone: null })} />);
 
-    expect(screen.getByText(/出典: ダミーデータセット/)).toBeTruthy();
+    expect(screen.getByText(/出典: ダミーデータセット/).closest("details")).toBeTruthy();
   });
 
   it("補助操作は「質問する」「訂正・更新」の2つのみで、出典・更新ボタンは表示しない", () => {
