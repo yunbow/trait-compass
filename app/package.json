@@ -43,7 +43,7 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@axe-core/playwright": "^4.12.1",
+    "@axe-core/playwright": "^4.13.0",
     "@cloudflare/workers-types": "^4.20260701.1",
     "@playwright/test": "^1.58.2",
     "@tailwindcss/postcss": "^4",
