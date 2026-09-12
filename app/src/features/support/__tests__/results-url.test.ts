@@ -74,6 +74,28 @@ describe("results URL builders", () => {
     expect(result.searchParams.get("subtype")).toBe(subtype);
   });
 
+  it("buildPurposeToResultsHref は社会人の手帳・自立支援医療目的で tab=福祉ガイド・subtype=自立訓練を付ける", () => {
+    const result = url(buildPurposeToResultsHref({ age: "adult", municipalityCode: CODE, lifestage: "working-adult", tags: [], purposeId: "certificate-medical-subsidy" }));
+    expect(result.searchParams.get("tab")).toBe("福祉ガイド");
+    expect(result.searchParams.get("subtype")).toBe("自立訓練");
+  });
+
+  it.each([
+    ["high-school", "consult-employment"],
+    ["university-vocational", "consult-employment-adult"],
+    ["working-adult", "consult-employment-adult"],
+  ] as const)("buildPurposeToResultsHref は %s の就労相談目的で tab=福祉ガイド・subtype=就労移行支援を付ける", (lifestage, purposeId) => {
+    const result = url(buildPurposeToResultsHref({ age: "adult", municipalityCode: CODE, lifestage, tags: [], purposeId }));
+    expect(result.searchParams.get("tab")).toBe("福祉ガイド");
+    expect(result.searchParams.get("subtype")).toBe("就労移行支援");
+  });
+
+  it("buildPurposeToResultsHref は大学生・専門学校生の手帳・自立支援医療目的で tab=福祉ガイド・subtype=自立訓練を付ける", () => {
+    const result = url(buildPurposeToResultsHref({ age: "adult", municipalityCode: CODE, lifestage: "university-vocational", tags: [], purposeId: "certificate-medical-subsidy" }));
+    expect(result.searchParams.get("tab")).toBe("福祉ガイド");
+    expect(result.searchParams.get("subtype")).toBe("自立訓練");
+  });
+
   it("buildPurposeToResultsHref は対応表に無い目的の場合 tab・subtype クエリを付けない", () => {
     const result = url(buildPurposeToResultsHref({ age: "child", municipalityCode: CODE, lifestage: "preschool", tags: [], purposeId: "consult-development" }));
     expect(result.searchParams.has("tab")).toBe(false);

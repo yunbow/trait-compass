@@ -23,12 +23,21 @@ const ELEMENTARY_JUNIOR_HIGH_PURPOSE_DEFAULT_SUBTYPES: PurposeDefaultSubtypes = 
 /** 高校生(high-school)向け。「放課後等デイサービスを継続利用したい」。 */
 const HIGH_SCHOOL_PURPOSE_DEFAULT_SUBTYPES: PurposeDefaultSubtypes = {
   "use-day-service": "放課後等デイサービス",
+  "consult-employment": "就労移行支援",
+};
+
+/** 大学生・専門学校生(university-vocational)/社会人(working-adult)向け。 */
+const ADULT_PURPOSE_DEFAULT_SUBTYPES: PurposeDefaultSubtypes = {
+  "certificate-medical-subsidy": "自立訓練",
+  "consult-employment-adult": "就労移行支援",
 };
 
 const PURPOSE_DEFAULT_SUBTYPES_BY_LIFESTAGE: Partial<Record<Lifestage, PurposeDefaultSubtypes>> = {
   preschool: PRESCHOOL_PURPOSE_DEFAULT_SUBTYPES,
   "elementary-junior-high": ELEMENTARY_JUNIOR_HIGH_PURPOSE_DEFAULT_SUBTYPES,
   "high-school": HIGH_SCHOOL_PURPOSE_DEFAULT_SUBTYPES,
+  "university-vocational": ADULT_PURPOSE_DEFAULT_SUBTYPES,
+  "working-adult": ADULT_PURPOSE_DEFAULT_SUBTYPES,
 };
 
 /** 対応表に無い場合は`undefined`(呼び出し側で`subtype`クエリを付けない)。 */
