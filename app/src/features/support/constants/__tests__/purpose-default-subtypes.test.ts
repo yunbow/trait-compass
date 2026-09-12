@@ -15,6 +15,22 @@ describe("getPurposeDefaultSubtype", () => {
     expect(getPurposeDefaultSubtype("high-school", "use-day-service")).toBe("放課後等デイサービス");
   });
 
+  it("高校生の「就労について相談したい」は就労移行支援を既定subtypeとする", () => {
+    expect(getPurposeDefaultSubtype("high-school", "consult-employment")).toBe("就労移行支援");
+  });
+
+  it("社会人の「手帳・自立支援医療について知りたい」は自立訓練を既定subtypeとする", () => {
+    expect(getPurposeDefaultSubtype("working-adult", "certificate-medical-subsidy")).toBe("自立訓練");
+  });
+
+  it.each(["university-vocational", "working-adult"] as const)("%s の「就労について相談したい」は就労移行支援を既定subtypeとする", (lifestage) => {
+    expect(getPurposeDefaultSubtype(lifestage, "consult-employment-adult")).toBe("就労移行支援");
+  });
+
+  it("大学生・専門学校生の「手帳・自立支援医療について知りたい」は自立訓練を既定subtypeとする", () => {
+    expect(getPurposeDefaultSubtype("university-vocational", "certificate-medical-subsidy")).toBe("自立訓練");
+  });
+
   it("対応表に無い目的の場合は undefined を返す", () => {
     expect(getPurposeDefaultSubtype("preschool", "consult-development")).toBeUndefined();
     expect(getPurposeDefaultSubtype("elementary-junior-high", "certificate-info")).toBeUndefined();

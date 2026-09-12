@@ -25,12 +25,21 @@ const ELEMENTARY_JUNIOR_HIGH_PURPOSE_DEFAULT_TABS: PurposeDefaultTabs = {
 /** 高校生(high-school)向け。 */
 const HIGH_SCHOOL_PURPOSE_DEFAULT_TABS: PurposeDefaultTabs = {
   "use-day-service": "福祉ガイド",
+  "consult-employment": "福祉ガイド",
+};
+
+/** 大学生・専門学校生(university-vocational)/社会人(working-adult)向け。 */
+const ADULT_PURPOSE_DEFAULT_TABS: PurposeDefaultTabs = {
+  "certificate-medical-subsidy": "福祉ガイド",
+  "consult-employment-adult": "福祉ガイド",
 };
 
 const PURPOSE_DEFAULT_TABS_BY_LIFESTAGE: Partial<Record<Lifestage, PurposeDefaultTabs>> = {
   preschool: PRESCHOOL_PURPOSE_DEFAULT_TABS,
   "elementary-junior-high": ELEMENTARY_JUNIOR_HIGH_PURPOSE_DEFAULT_TABS,
   "high-school": HIGH_SCHOOL_PURPOSE_DEFAULT_TABS,
+  "university-vocational": ADULT_PURPOSE_DEFAULT_TABS,
+  "working-adult": ADULT_PURPOSE_DEFAULT_TABS,
 };
 
 /** 対応表に無い場合は`undefined`(呼び出し側で既存の既定タブ挙動にフォールバックする)。 */

@@ -25,6 +25,22 @@ describe("getPurposeDefaultTab", () => {
     expect(getPurposeDefaultTab("high-school", "use-day-service")).toBe("福祉ガイド");
   });
 
+  it("高校生の「就労について相談したい」は福祉ガイドを既定タブとする", () => {
+    expect(getPurposeDefaultTab("high-school", "consult-employment")).toBe("福祉ガイド");
+  });
+
+  it("社会人の「手帳・自立支援医療について知りたい」は福祉ガイドを既定タブとする", () => {
+    expect(getPurposeDefaultTab("working-adult", "certificate-medical-subsidy")).toBe("福祉ガイド");
+  });
+
+  it.each(["university-vocational", "working-adult"] as const)("%s の「就労について相談したい」は福祉ガイドを既定タブとする", (lifestage) => {
+    expect(getPurposeDefaultTab(lifestage, "consult-employment-adult")).toBe("福祉ガイド");
+  });
+
+  it("大学生・専門学校生の「手帳・自立支援医療について知りたい」は福祉ガイドを既定タブとする", () => {
+    expect(getPurposeDefaultTab("university-vocational", "certificate-medical-subsidy")).toBe("福祉ガイド");
+  });
+
   it("対応表に無いライフステージの場合は undefined を返す", () => {
     expect(getPurposeDefaultTab("university-vocational", "use-day-service")).toBeUndefined();
     expect(getPurposeDefaultTab("working-adult", "use-day-service")).toBeUndefined();
